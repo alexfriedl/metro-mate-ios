@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var metronome = MetronomeManager()
     @State private var showSettings = false
+    @State private var showQuickNoteValuePicker = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -42,9 +43,13 @@ struct ContentView: View {
                         Text("BPM")
                             .font(.title2)
                             .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                        Text("(\(metronome.noteValue.displayName))")
-                            .font(.caption)
-                            .foregroundColor(Color(hex: "#F54206"))
+                        
+                        Button(action: { showQuickNoteValuePicker = true }) {
+                            Text("(\(metronome.noteValue.displayName))")
+                                .font(.caption)
+                                .foregroundColor(Color(hex: "#F54206"))
+                                .underline()
+                        }
                     }
                 }
                 
@@ -97,6 +102,14 @@ struct ContentView: View {
         .background(Color(hex: "#242424"))
         .sheet(isPresented: $showSettings) {
             SettingsView(metronome: metronome)
+        }
+        .confirmationDialog("Notenwert wählen", isPresented: $showQuickNoteValuePicker) {
+            ForEach(NoteValue.allCases, id: \.self) { noteValue in
+                Button(noteValue.displayName) {
+                    metronome.updateNoteValue(noteValue)
+                }
+            }
+            Button("Abbrechen", role: .cancel) { }
         }
     }
 }
