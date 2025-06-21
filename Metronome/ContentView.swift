@@ -6,56 +6,185 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    @StateObject private var metronome = MetronomeManager()
+    @State private var showSettings = false
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        GeometryReader { geometry in
+            VStack(spacing: 30) {
+                // Header with settings
+                HStack {
+                    Text("Metronome")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(hex: "#DDDDDD"))
+                    
+                    Spacer()
+                    
+                    Button(action: { showSettings.toggle() }) {
+                        Image(systemName: "gear")
+                            .font(.title2)
+                            .foregroundColor(Color(hex: "#DDDDDD"))
                     }
                 }
-                .onDelete(perform: deleteItems)
+                .padding(.horizontal)
+                
+                Spacer()
+                
+                // BPM Display
+                VStack {
+                    Text("\(Int(metronome.bpm))")
+                        .font(.system(size: 60, weight: .light, design: .monospaced))
+                        .foregroundColor(Color(hex: "#DDDDDD"))
+                    Text("BPM")
+                        .font(.title2)
+                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                }
+                
+                // BPM Slider
+                VStack {
+                    Slider(value: $metronome.bpm, in: 40...200, step: 1)
+                        .accentColor(Color(hex: "#F54206"))
+                        .onChange(of: metronome.bpm) { oldValue, newValue in
+                            metronome.updateBPM(newValue)
+                        }
+                    
+                    HStack {
+                        Text("40")
+                            .font(.caption)
+                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                        Spacer()
+                        Text("200")
+                            .font(.caption)
+                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                    }
+                }
+                .padding(.horizontal)
+                
+                // Beat Pattern Grid
+                GridView(metronome: metronome)
+                
+                Spacer()
+                
+                // Central Play Button
+                Button(action: {
+                    metronome.togglePlayback()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#303030"))
+                            .frame(width: 120, height: 120)
+                            .scaleEffect(metronome.shouldBlink ? 1.1 : 1.0)
+                            .animation(.easeInOut(duration: 0.1), value: metronome.shouldBlink)
+                        
+                        Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 40))
+                            .foregroundColor(Color(hex: "#DDDDDD"))
+                    }
+                }
+                
+                Spacer()
             }
+            .padding()
+        }
+        .background(Color(hex: "#242424"))
+        .sheet(isPresented: $showSettings) {
+            SettingsView(metronome: metronome)
+        }
+    }
+}
+
+struct GridView: View {
+    @ObservedObject var metronome: MetronomeManager
+    
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 4), spacing: 2) {
+            ForEach(0..<metronome.beatsPerMeasure, id: \.self) { beat in
+                Button(action: {
+                    metronome.toggleGridCell(row: 0, col: beat)
+                }) {
+                    Rectangle()
+                        .fill(getGridColor(for: beat))
+                        .frame(width: 50, height: 50)
+                        .cornerRadius(6)
+                        .overlay(
+                            Text("\(beat + 1)")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color(hex: "#DDDDDD"))
+                        )
+                }
+            }
+        }
+    }
+    
+    private func getGridColor(for beat: Int) -> Color {
+        let isActive = beat < metronome.gridPattern.count && 
+                      beat < metronome.gridPattern[0].count && 
+                      metronome.gridPattern[0][beat]
+        
+        let isCurrentBeat = beat == metronome.currentBeat && metronome.isPlaying
+        
+        if isCurrentBeat && isActive {
+            return Color(hex: "#F54206")
+        } else if isCurrentBeat {
+            return Color(hex: "#F54206").opacity(0.5)
+        } else if isActive {
+            return Color(hex: "#2D2D2D")
+        } else {
+            return Color(hex: "#575554")
+        }
+    }
+}
+
+struct SettingsView: View {
+    @ObservedObject var metronome: MetronomeManager
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section("Beat Configuration") {
+                    Stepper("Beats per Measure: \(metronome.beatsPerMeasure)", 
+                           value: $metronome.beatsPerMeasure, 
+                           in: 1...12)
+                    .onChange(of: metronome.beatsPerMeasure) { oldValue, newValue in
+                        metronome.updateBeatsPerMeasure(newValue)
+                    }
+                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .accentColor(Color(hex: "#F54206"))
+                }
+                
+                Section("Grid Configuration") {
+                    Stepper("Grid Size: \(metronome.gridSize)x\(metronome.gridSize)", 
+                           value: $metronome.gridSize, 
+                           in: 2...8)
+                    .onChange(of: metronome.gridSize) { oldValue, newValue in
+                        metronome.updateGridSize(newValue)
+                    }
+                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .accentColor(Color(hex: "#F54206"))
+                }
+            }
+            .background(Color(hex: "#242424"))
+            .scrollContentBackground(.hidden)
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                    Button("Done") {
+                        dismiss()
                     }
+                    .foregroundColor(Color(hex: "#DDDDDD"))
                 }
             }
-        } detail: {
-            Text("Select an item")
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
+        .background(Color(hex: "#242424"))
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }
