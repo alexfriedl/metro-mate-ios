@@ -100,22 +100,36 @@ struct GridView: View {
     @ObservedObject var metronome: MetronomeManager
     
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 4), spacing: 1) {
-            ForEach(0..<metronome.beatsPerMeasure, id: \.self) { beat in
-                Button(action: {
-                    metronome.toggleGridCell(row: 0, col: beat)
-                }) {
-                    Rectangle()
-                        .fill(getGridColor(for: beat))
-                        .frame(width: 50, height: 50)
-                        .cornerRadius(6)
-                        .opacity(getGridOpacity(for: beat))
-                        .overlay(
-                            getGridContent(for: beat)
-                        )
+        VStack(spacing: 8) {
+            ForEach(0..<numberOfRows(), id: \.self) { row in
+                HStack(spacing: 8) {
+                    ForEach(0..<tilesInRow(row), id: \.self) { col in
+                        let beat = row * 4 + col
+                        Button(action: {
+                            metronome.toggleGridCell(row: 0, col: beat)
+                        }) {
+                            Rectangle()
+                                .fill(getGridColor(for: beat))
+                                .frame(width: 50, height: 50)
+                                .cornerRadius(6)
+                                .opacity(getGridOpacity(for: beat))
+                                .overlay(
+                                    getGridContent(for: beat)
+                                )
+                        }
+                    }
                 }
             }
         }
+    }
+    
+    private func numberOfRows() -> Int {
+        return (metronome.beatsPerMeasure + 3) / 4
+    }
+    
+    private func tilesInRow(_ row: Int) -> Int {
+        let remainingBeats = metronome.beatsPerMeasure - (row * 4)
+        return min(4, remainingBeats)
     }
     
     private func isActiveBeat(_ beat: Int) -> Bool {
