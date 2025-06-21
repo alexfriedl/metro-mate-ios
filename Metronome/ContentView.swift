@@ -38,9 +38,14 @@ struct ContentView: View {
                     Text("\(Int(metronome.bpm))")
                         .font(.system(size: 60, weight: .light, design: .monospaced))
                         .foregroundColor(Color(hex: "#DDDDDD"))
-                    Text("BPM")
-                        .font(.title2)
-                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                    HStack {
+                        Text("BPM")
+                            .font(.title2)
+                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                        Text("(\(metronome.noteValue.displayName))")
+                            .font(.caption)
+                            .foregroundColor(Color(hex: "#F54206"))
+                    }
                 }
                 
                 // BPM Slider
@@ -175,6 +180,7 @@ struct GridView: View {
 struct SettingsView: View {
     @ObservedObject var metronome: MetronomeManager
     @Environment(\.dismiss) var dismiss
+    @State private var showNoteValuePicker = false
     
     var body: some View {
         NavigationView {
@@ -188,6 +194,26 @@ struct SettingsView: View {
                     }
                     .foregroundColor(Color(hex: "#DDDDDD"))
                     .accentColor(Color(hex: "#F54206"))
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Notenwerte")
+                            .foregroundColor(Color(hex: "#DDDDDD"))
+                        
+                        Button(action: { 
+                            showNoteValuePicker = true 
+                        }) {
+                            HStack {
+                                Text(metronome.noteValue.displayName)
+                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                Spacer()
+                                Image(systemName: "chevron.down")
+                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                            }
+                            .padding()
+                            .background(Color(hex: "#303030"))
+                            .cornerRadius(8)
+                        }
+                    }
                 }
                 
                 Section("Grid Configuration") {
@@ -215,6 +241,14 @@ struct SettingsView: View {
             }
         }
         .background(Color(hex: "#242424"))
+        .confirmationDialog("Notenwert wählen", isPresented: $showNoteValuePicker) {
+            ForEach(NoteValue.allCases, id: \.self) { noteValue in
+                Button(noteValue.displayName) {
+                    metronome.updateNoteValue(noteValue)
+                }
+            }
+            Button("Abbrechen", role: .cancel) { }
+        }
     }
 }
 

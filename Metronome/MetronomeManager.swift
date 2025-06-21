@@ -1,6 +1,50 @@
 import Foundation
 import AVFoundation
 
+enum NoteValue: String, CaseIterable {
+    case quarter = "1/4"
+    case eighth = "1/8"
+    case sixteenth = "1/16"
+    case quarterTriplet = "1/4T"
+    case eighthTriplet = "1/8T"
+    case sixteenthTriplet = "1/16T"
+    
+    var multiplier: Double {
+        switch self {
+        case .quarter: return 1.0
+        case .eighth: return 2.0
+        case .sixteenth: return 4.0
+        case .quarterTriplet: return 3.0/2.0
+        case .eighthTriplet: return 3.0
+        case .sixteenthTriplet: return 6.0
+        }
+    }
+    
+    var displayName: String {
+        switch self {
+        case .quarter: return "Viertel"
+        case .eighth: return "Achtel"
+        case .sixteenth: return "Sechzehntel"
+        case .quarterTriplet: return "Viertel-Triolen"
+        case .eighthTriplet: return "Achtel-Triolen"
+        case .sixteenthTriplet: return "Sechzehntel-Triolen"
+        }
+    }
+    
+    var isTriplet: Bool {
+        switch self {
+        case .quarterTriplet, .eighthTriplet, .sixteenthTriplet:
+            return true
+        default:
+            return false
+        }
+    }
+    
+    var beatsPerMeasure: Int {
+        return isTriplet ? 6 : 4
+    }
+}
+
 class MetronomeManager: ObservableObject {
     @Published var isPlaying = false
     @Published var bpm: Double = 120
@@ -9,6 +53,7 @@ class MetronomeManager: ObservableObject {
     @Published var shouldBlink = false
     @Published var gridPattern: [[Bool]] = Array(repeating: Array(repeating: false, count: 16), count: 4)
     @Published var gridSize = 4
+    @Published var noteValue: NoteValue = .quarter
     
     private var audioEngine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
@@ -74,7 +119,13 @@ class MetronomeManager: ObservableObject {
         
         audioBuffer.frameLength = frameCount
         
-        let frequency: Float = currentBeat == 0 ? 800 : 400
+        let shouldAccent: Bool
+        if noteValue.isTriplet {
+            shouldAccent = (currentBeat == 0 || currentBeat == 3)
+        } else {
+            shouldAccent = (currentBeat == 0)
+        }
+        let frequency: Float = shouldAccent ? 800 : 400
         
         guard let channelData = audioBuffer.floatChannelData?[0] else { return nil }
         
@@ -87,10 +138,24 @@ class MetronomeManager: ObservableObject {
     }
     
     private func setupDefaultPattern() {
-        gridPattern[0][0] = true
-        gridPattern[0][1] = true
-        gridPattern[0][2] = true
-        gridPattern[0][3] = true
+        // Clear all patterns first
+        for i in 0..<gridPattern.count {
+            for j in 0..<gridPattern[i].count {
+                gridPattern[i][j] = false
+            }
+        }
+        
+        if noteValue.isTriplet {
+            // Triplet pattern: 6 beats (2 groups of 3)
+            for i in 0..<6 {
+                gridPattern[0][i] = true
+            }
+        } else {
+            // Regular pattern: 4 beats
+            for i in 0..<4 {
+                gridPattern[0][i] = true
+            }
+        }
     }
     
     func togglePlayback() {
@@ -108,7 +173,7 @@ class MetronomeManager: ObservableObject {
         // Immediate first tick for beat 1
         tick()
         
-        let interval = 60.0 / bpm
+        let interval = (60.0 / bpm) / noteValue.multiplier
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
             self.tick()
         }
@@ -142,7 +207,16 @@ class MetronomeManager: ObservableObject {
     private func playClick() {
         guard let playerNode = playerNode else { return }
         
-        let audioFile = currentBeat == 0 ? accentClickFile : normalClickFile
+        let shouldAccent: Bool
+        if noteValue.isTriplet {
+            // Triplet accent pattern: beats 0, 3 are accented (1st beat of each triplet group)
+            shouldAccent = (currentBeat == 0 || currentBeat == 3)
+        } else {
+            // Regular pattern: only first beat is accented
+            shouldAccent = (currentBeat == 0)
+        }
+        
+        let audioFile = shouldAccent ? accentClickFile : normalClickFile
         
         if let audioFile = audioFile {
             playerNode.scheduleFile(audioFile, at: nil)
@@ -167,7 +241,31 @@ class MetronomeManager: ObservableObject {
         bpm = newBPM
         if isPlaying {
             timer?.invalidate()
-            let interval = 60.0 / bpm
+            let interval = (60.0 / bpm) / noteValue.multiplier
+            timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+                self.tick()
+            }
+        }
+    }
+    
+    func updateNoteValue(_ newNoteValue: NoteValue) {
+        noteValue = newNoteValue
+        beatsPerMeasure = newNoteValue.beatsPerMeasure
+        currentBeat = -1
+        
+        // Reset grid pattern for new beat count
+        if gridPattern.count > 0 && gridPattern[0].count < beatsPerMeasure {
+            for i in 0..<gridPattern.count {
+                while gridPattern[i].count < beatsPerMeasure {
+                    gridPattern[i].append(false)
+                }
+            }
+        }
+        setupDefaultPattern()
+        
+        if isPlaying {
+            timer?.invalidate()
+            let interval = (60.0 / bpm) / noteValue.multiplier
             timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
                 self.tick()
             }
