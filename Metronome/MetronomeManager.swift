@@ -5,9 +5,9 @@ class MetronomeManager: ObservableObject {
     @Published var isPlaying = false
     @Published var bpm: Double = 120
     @Published var beatsPerMeasure = 4
-    @Published var currentBeat = 0
+    @Published var currentBeat = -1
     @Published var shouldBlink = false
-    @Published var gridPattern: [[Bool]] = Array(repeating: Array(repeating: false, count: 4), count: 4)
+    @Published var gridPattern: [[Bool]] = Array(repeating: Array(repeating: false, count: 16), count: 4)
     @Published var gridSize = 4
     
     private var audioEngine: AVAudioEngine?
@@ -103,7 +103,7 @@ class MetronomeManager: ObservableObject {
     
     private func start() {
         isPlaying = true
-        currentBeat = 0
+        currentBeat = -1  // Start at -1 so first increment makes it 0 (beat 1)
         
         // Immediate first tick for beat 1
         tick()
@@ -118,25 +118,25 @@ class MetronomeManager: ObservableObject {
         isPlaying = false
         timer?.invalidate()
         timer = nil
-        currentBeat = 0
+        currentBeat = -1
         shouldBlink = false
     }
     
     private func tick() {
+        // Update beat counter BEFORE playing sound and visual update
+        currentBeat = (currentBeat + 1) % beatsPerMeasure
+        
         // Update visual immediately
         DispatchQueue.main.async {
             self.triggerVisualBlink()
         }
         
         // Check if this beat should play based on grid pattern
-        let shouldPlayBeat = gridPattern[0][currentBeat % gridSize]
+        let shouldPlayBeat = currentBeat < gridPattern[0].count && gridPattern[0][currentBeat]
         
         if shouldPlayBeat {
             playClick()
         }
-        
-        // Update beat counter AFTER playing the sound
-        currentBeat = (currentBeat + 1) % beatsPerMeasure
     }
     
     private func playClick() {
@@ -176,7 +176,7 @@ class MetronomeManager: ObservableObject {
     
     func updateBeatsPerMeasure(_ beats: Int) {
         beatsPerMeasure = beats
-        currentBeat = 0
+        currentBeat = -1
         
         // Ensure grid pattern accommodates new beat count
         if gridPattern.count > 0 && gridPattern[0].count < beats {
@@ -195,7 +195,7 @@ class MetronomeManager: ObservableObject {
     
     func updateGridSize(_ size: Int) {
         gridSize = size
-        gridPattern = Array(repeating: Array(repeating: false, count: max(size, beatsPerMeasure)), count: size)
+        gridPattern = Array(repeating: Array(repeating: false, count: max(16, beatsPerMeasure)), count: size)
         setupDefaultPattern()
     }
 }

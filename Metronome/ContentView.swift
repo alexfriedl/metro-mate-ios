@@ -100,7 +100,7 @@ struct GridView: View {
     @ObservedObject var metronome: MetronomeManager
     
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 4), spacing: 2) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 4), spacing: 1) {
             ForEach(0..<metronome.beatsPerMeasure, id: \.self) { beat in
                 Button(action: {
                     metronome.toggleGridCell(row: 0, col: beat)
@@ -109,32 +109,51 @@ struct GridView: View {
                         .fill(getGridColor(for: beat))
                         .frame(width: 50, height: 50)
                         .cornerRadius(6)
+                        .opacity(getGridOpacity(for: beat))
                         .overlay(
-                            Text("\(beat + 1)")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                            getGridContent(for: beat)
                         )
                 }
             }
         }
     }
     
+    private func isActiveBeat(_ beat: Int) -> Bool {
+        return beat < metronome.gridPattern[0].count && metronome.gridPattern[0][beat]
+    }
+    
+    private func isCurrentBeat(_ beat: Int) -> Bool {
+        return beat == metronome.currentBeat && metronome.isPlaying
+    }
+    
     private func getGridColor(for beat: Int) -> Color {
-        let isActive = beat < metronome.gridPattern.count && 
-                      beat < metronome.gridPattern[0].count && 
-                      metronome.gridPattern[0][beat]
-        
-        let isCurrentBeat = beat == metronome.currentBeat && metronome.isPlaying
-        
-        if isCurrentBeat && isActive {
-            return Color(hex: "#F54206")
-        } else if isCurrentBeat {
-            return Color(hex: "#F54206").opacity(0.5)
-        } else if isActive {
-            return Color(hex: "#2D2D2D")
+        if isCurrentBeat(beat) {
+            return Color(hex: "#F54206") // Orange für aktuellen Beat
+        } else if isActiveBeat(beat) {
+            return Color(hex: "#303030") // Aktive Beats
         } else {
-            return Color(hex: "#575554")
+            return Color(hex: "#575554") // Inaktive Beats
+        }
+    }
+    
+    private func getGridOpacity(for beat: Int) -> Double {
+        return isActiveBeat(beat) ? 1.0 : 0.5
+    }
+    
+    private func getGridContent(for beat: Int) -> some View {
+        if isActiveBeat(beat) {
+            return AnyView(
+                Text("\(beat + 1)")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(Color(hex: "#DDDDDD"))
+            )
+        } else {
+            return AnyView(
+                Image(systemName: "minus")
+                    .font(.title2)
+                    .foregroundColor(Color(hex: "#DDDDDD"))
+            )
         }
     }
 }
@@ -149,7 +168,7 @@ struct SettingsView: View {
                 Section("Beat Configuration") {
                     Stepper("Beats per Measure: \(metronome.beatsPerMeasure)", 
                            value: $metronome.beatsPerMeasure, 
-                           in: 1...12)
+                           in: 1...16)
                     .onChange(of: metronome.beatsPerMeasure) { oldValue, newValue in
                         metronome.updateBeatsPerMeasure(newValue)
                     }
