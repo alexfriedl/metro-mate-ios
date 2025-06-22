@@ -591,6 +591,32 @@ class MetronomeManager: ObservableObject {
     }
     
     func randomizeBeat() {
+        // Randomize note value
+        let allNoteValues = NoteValue.allCases
+        let randomNoteValue = allNoteValues.randomElement()!
+        
+        // Randomize BPM based on note value
+        let bpmRange: ClosedRange<Double>
+        switch randomNoteValue {
+        case .quarter, .quarterTriplet:
+            bpmRange = 80...160
+        case .eighth, .eighthTriplet:
+            bpmRange = 40...120
+        case .sixteenth, .sixteenthTriplet:
+            bpmRange = 20...80
+        }
+        let randomBPM = Double.random(in: bpmRange).rounded()
+        
+        // Randomize display mode
+        let randomDisplayMode = GridDisplayMode.allCases.randomElement()!
+        
+        // Apply randomized settings
+        let oldNoteValue = noteValue
+        noteValue = randomNoteValue
+        bpm = randomBPM
+        beatsPerMeasure = randomNoteValue.beatsPerMeasure
+        gridDisplayMode = randomDisplayMode
+        
         // Clear current pattern
         for i in 0..<gridPattern.count {
             for j in 0..<gridPattern[i].count {
@@ -604,7 +630,9 @@ class MetronomeManager: ObservableObject {
         }
         
         // Generate random beat pattern
-        let activeBeats = Int.random(in: 2...min(beatsPerMeasure, 8)) // At least 2, max 8 beats
+        let maxActiveBeats = min(beatsPerMeasure, 12) // Cap at 12 for complex patterns
+        let minActiveBeats = max(2, beatsPerMeasure / 4) // At least 25% of beats
+        let activeBeats = Int.random(in: minActiveBeats...maxActiveBeats)
         var selectedBeats: Set<Int> = []
         
         // Always include first beat
@@ -618,10 +646,19 @@ class MetronomeManager: ObservableObject {
             if selectedBeats.insert(randomBeat).inserted {
                 gridPattern[0][randomBeat] = true
                 
-                // Random chance for accent (20% for non-first beats)
-                if Int.random(in: 1...5) == 1 {
+                // Random chance for accent (25% for non-first beats)
+                if Int.random(in: 1...4) == 1 {
                     accentPattern[randomBeat] = true
                 }
+            }
+        }
+        
+        // Update timer if playing
+        if isPlaying {
+            timer?.invalidate()
+            let interval = (60.0 / bpm) / noteValue.multiplier
+            timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+                self.tick()
             }
         }
         
