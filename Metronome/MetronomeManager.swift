@@ -257,15 +257,42 @@ class MetronomeManager: ObservableObject {
             gridPattern[0][i] = true
         }
         
-        // Set accents on first beat of each row/group
-        if noteValue.isTriplet {
-            // Triplet pattern: accent on beats 0, 3, 6, 9 (every 3rd beat)
-            for i in stride(from: 0, to: beatsPerMeasure, by: 3) {
+        // Set accents on beats 1,2,3,4 for all default patterns
+        switch noteValue {
+        case .quarter:
+            // Quarter: accent on beats 0,1,2,3 (positions 1,2,3,4)
+            for i in 0..<min(4, beatsPerMeasure) {
                 accentPattern[i] = true
             }
-        } else {
-            // Regular pattern: accent on beats 0, 4, 8, 12 (every 4th beat)
-            for i in stride(from: 0, to: beatsPerMeasure, by: 4) {
+        case .eighth:
+            // Eighth: accent on beats 0,2,4,6 (positions 1,2,3,4)
+            let accentPositions = [0, 2, 4, 6] // beats 1,2,3,4
+            for position in accentPositions {
+                if position < beatsPerMeasure {
+                    accentPattern[position] = true
+                }
+            }
+        case .sixteenth:
+            // Sixteenth: accent on beats 0,4,8,12 (positions 1,2,3,4)
+            let accentPositions = [0, 4, 8, 12] // beats 1,2,3,4
+            for position in accentPositions {
+                if position < beatsPerMeasure {
+                    accentPattern[position] = true
+                }
+            }
+        case .quarterTriplet:
+            // Quarter triplet: accent on beats 0,1,2 (positions 1,2,3)
+            for i in 0..<min(3, beatsPerMeasure) {
+                accentPattern[i] = true
+            }
+        case .eighthTriplet:
+            // Eighth triplet: accent on beats 0,3 (positions 1,2)
+            for i in stride(from: 0, to: min(6, beatsPerMeasure), by: 3) {
+                accentPattern[i] = true
+            }
+        case .sixteenthTriplet:
+            // Sixteenth triplet: accent on beats 0,3,6,9 (positions 1,2,3,4)
+            for i in stride(from: 0, to: min(12, beatsPerMeasure), by: 3) {
                 accentPattern[i] = true
             }
         }

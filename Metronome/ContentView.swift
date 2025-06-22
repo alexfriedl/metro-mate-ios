@@ -441,6 +441,30 @@ struct BeatPresetsView: View {
                     .listRowBackground(Color(hex: "#303030"))
                 }
                 
+                Section("Presets") {
+                    ForEach(defaultPresets(), id: \.noteValue) { preset in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(preset.name)
+                                    .font(.headline)
+                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                Text("\(preset.noteValue.displayName) • \(Int(preset.bpm)) BPM • \(preset.beatsPerMeasure) beats")
+                                    .font(.caption)
+                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                            }
+                            
+                            Spacer()
+                            
+                            Button("Load") {
+                                metronome.loadBeatPreset(preset)
+                                dismiss()
+                            }
+                            .foregroundColor(Color(hex: "#F54206"))
+                        }
+                        .listRowBackground(Color(hex: "#303030"))
+                    }
+                }
+                
                 Section("Saved Beats") {
                     ForEach(metronome.savedBeats) { preset in
                         HStack {
@@ -506,6 +530,87 @@ struct BeatPresetsView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Enter a name for this beat configuration")
+        }
+    }
+    
+    func defaultPresets() -> [BeatPreset] {
+        let presets: [(NoteValue, String)] = [
+            (.quarter, "Default Beat"),
+            (.eighth, "Eighth Beat"),
+            (.sixteenth, "Sixteenth Beat"),
+            (.quarterTriplet, "Quarter Triplet Beat"),
+            (.eighthTriplet, "Eighth Triplet Beat"),
+            (.sixteenthTriplet, "Sixteenth Triplet Beat")
+        ]
+        
+        return presets.map { noteValue, name in
+            let beatsPerMeasure = noteValue.beatsPerMeasure
+            var gridPattern = Array(repeating: false, count: 16)
+            var accentPattern = Array(repeating: false, count: 16)
+            
+            // Set all beats active for current beatsPerMeasure
+            for i in 0..<beatsPerMeasure {
+                gridPattern[i] = true
+            }
+            
+            // Set accents on beats 1,2,3,4 for all preset beats
+            switch noteValue {
+            case .quarter:
+                // Quarter: accent on beats 0,1,2,3 (positions 1,2,3,4)
+                for i in 0..<min(4, beatsPerMeasure) {
+                    accentPattern[i] = true
+                }
+            case .eighth:
+                // Eighth: accent on beats 0,2,4,6 (positions 1,2,3,4)
+                let accentPositions = [0, 2, 4, 6] // beats 1,2,3,4
+                for position in accentPositions {
+                    if position < beatsPerMeasure {
+                        accentPattern[position] = true
+                    }
+                }
+            case .sixteenth:
+                // Sixteenth: accent on beats 0,4,8,12 (positions 1,2,3,4)
+                let accentPositions = [0, 4, 8, 12] // beats 1,2,3,4
+                for position in accentPositions {
+                    if position < beatsPerMeasure {
+                        accentPattern[position] = true
+                    }
+                }
+            case .quarterTriplet:
+                // Quarter triplet: accent on beats 0,1,2 (positions 1,2,3)
+                for i in 0..<min(3, beatsPerMeasure) {
+                    accentPattern[i] = true
+                }
+            case .eighthTriplet:
+                // Eighth triplet: accent on beats 0,3 (positions 1,2)
+                for i in stride(from: 0, to: min(6, beatsPerMeasure), by: 3) {
+                    accentPattern[i] = true
+                }
+            case .sixteenthTriplet:
+                // Sixteenth triplet: accent on beats 0,3,6,9 (positions 1,2,3,4)
+                for i in stride(from: 0, to: min(12, beatsPerMeasure), by: 3) {
+                    accentPattern[i] = true
+                }
+            }
+            
+            let displayMode: GridDisplayMode = {
+                switch noteValue {
+                case .sixteenth, .sixteenthTriplet:
+                    return .subdivisionCounting
+                default:
+                    return .andCounting
+                }
+            }()
+            
+            return BeatPreset(
+                name: name,
+                noteValue: noteValue,
+                bpm: 80,
+                beatsPerMeasure: beatsPerMeasure,
+                gridPattern: gridPattern,
+                accentPattern: accentPattern,
+                gridDisplayMode: displayMode
+            )
         }
     }
 }
