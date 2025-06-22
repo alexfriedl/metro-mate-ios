@@ -589,4 +589,42 @@ class MetronomeManager: ObservableObject {
             currentBeatName = "Basic Beat"
         }
     }
+    
+    func randomizeBeat() {
+        // Clear current pattern
+        for i in 0..<gridPattern.count {
+            for j in 0..<gridPattern[i].count {
+                gridPattern[i][j] = false
+            }
+        }
+        
+        // Clear accent pattern
+        for i in 0..<accentPattern.count {
+            accentPattern[i] = false
+        }
+        
+        // Generate random beat pattern
+        let activeBeats = Int.random(in: 2...min(beatsPerMeasure, 8)) // At least 2, max 8 beats
+        var selectedBeats: Set<Int> = []
+        
+        // Always include first beat
+        selectedBeats.insert(0)
+        gridPattern[0][0] = true
+        accentPattern[0] = true // First beat always has accent
+        
+        // Add random beats
+        while selectedBeats.count < activeBeats {
+            let randomBeat = Int.random(in: 1..<beatsPerMeasure)
+            if selectedBeats.insert(randomBeat).inserted {
+                gridPattern[0][randomBeat] = true
+                
+                // Random chance for accent (20% for non-first beats)
+                if Int.random(in: 1...5) == 1 {
+                    accentPattern[randomBeat] = true
+                }
+            }
+        }
+        
+        currentBeatName = "Random Beat"
+    }
 }

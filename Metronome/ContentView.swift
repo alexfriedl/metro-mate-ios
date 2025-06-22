@@ -147,6 +147,21 @@ struct ContentView: View {
                                 .foregroundColor(Color(hex: "#DDDDDD"))
                         }
                     }
+                    
+                    // Randomize Beat Button
+                    Button(action: {
+                        metronome.randomizeBeat()
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(hex: "#303030"))
+                                .frame(width: 80, height: 80)
+                            
+                            Image(systemName: "shuffle")
+                                .font(.system(size: 24))
+                                .foregroundColor(Color(hex: "#DDDDDD"))
+                        }
+                    }
                 }
                 
                 Spacer()
