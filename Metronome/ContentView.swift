@@ -74,16 +74,22 @@ struct ContentView: View {
                         }
                     }
                     
-                    HStack {
+                    HStack(spacing: 12) {
                         Text("BPM")
                             .font(.title2)
                             .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
                         
                         Button(action: { showQuickNoteValuePicker = true }) {
-                            Text("(\(metronome.noteValue.displayName))")
-                                .font(.caption)
-                                .foregroundColor(Color(hex: "#F54206"))
-                                .underline()
+                            ZStack {
+                                Circle()
+                                    .fill(Color(hex: "#303030"))
+                                    .frame(width: 40, height: 40)
+                                
+                                Text(metronome.noteValue.displayName)
+                                    .font(.title3)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                            }
                         }
                     }
                 }
@@ -189,6 +195,7 @@ struct ContentView: View {
         .alert("Enter BPM", isPresented: $showBPMInput) {
             TextField("BPM", text: $bpmInputText)
                 .keyboardType(.numberPad)
+                .foregroundColor(.black)
             Button("Set") {
                 if let newBPM = Double(bpmInputText) {
                     metronome.bpm = min(max(newBPM, 40), 200)
@@ -287,7 +294,7 @@ struct GridView: View {
         } else if isActiveBeat(beat) {
             return Color(hex: "#303030") // Aktive Beats
         } else {
-            return Color(hex: "#575554") // Inaktive Beats
+            return Color.clear // Inaktive Beats transparent
         }
     }
     
@@ -470,6 +477,14 @@ struct BeatPresetsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Reset") {
+                        metronome.resetToBasicBeat()
+                        dismiss()
+                    }
+                    .foregroundColor(Color(hex: "#DDDDDD"))
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()
@@ -482,6 +497,7 @@ struct BeatPresetsView: View {
         .preferredColorScheme(.dark)
         .alert("Save Beat Preset", isPresented: $showSaveDialog) {
             TextField("Beat Name", text: $newBeatName)
+                .foregroundColor(.black)
             Button("Save") {
                 if !newBeatName.isEmpty {
                     metronome.saveBeatPreset(name: newBeatName)

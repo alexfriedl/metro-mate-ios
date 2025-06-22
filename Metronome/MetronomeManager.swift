@@ -22,12 +22,12 @@ enum NoteValue: String, CaseIterable, Codable {
     
     var displayName: String {
         switch self {
-        case .quarter: return "Quarter"
-        case .eighth: return "Eighth"
-        case .sixteenth: return "Sixteenth"
-        case .quarterTriplet: return "Quarter Triplets"
-        case .eighthTriplet: return "Eighth Triplets"
-        case .sixteenthTriplet: return "Sixteenth Triplets"
+        case .quarter: return "♩"
+        case .eighth: return "♪"
+        case .sixteenth: return "♬"
+        case .quarterTriplet: return "♩₃"
+        case .eighthTriplet: return "♪₃"
+        case .sixteenthTriplet: return "♬₃"
         }
     }
     
@@ -147,7 +147,7 @@ struct BeatPreset: Identifiable, Codable {
 
 class MetronomeManager: ObservableObject {
     @Published var isPlaying = false
-    @Published var bpm: Double = 120
+    @Published var bpm: Double = 80
     @Published var beatsPerMeasure = 4
     @Published var currentBeat = -1
     @Published var shouldBlink = false
@@ -156,7 +156,7 @@ class MetronomeManager: ObservableObject {
     @Published var gridSize = 4
     @Published var noteValue: NoteValue = .quarter
     @Published var gridDisplayMode: GridDisplayMode = .andCounting
-    @Published var currentBeatName: String = "Basic Beat"
+    @Published var currentBeatName: String = "Default Beat"
     @Published var savedBeats: [BeatPreset] = []
     
     private var tapTimes: [Date] = []
@@ -252,20 +252,22 @@ class MetronomeManager: ObservableObject {
             accentPattern[i] = false
         }
         
+        // Set all beats active for current beatsPerMeasure
+        for i in 0..<beatsPerMeasure {
+            gridPattern[0][i] = true
+        }
+        
+        // Set accents on first beat of each row/group
         if noteValue.isTriplet {
-            // Triplet pattern: 6 beats (2 groups of 3)
-            for i in 0..<6 {
-                gridPattern[0][i] = true
+            // Triplet pattern: accent on beats 0, 3, 6, 9 (every 3rd beat)
+            for i in stride(from: 0, to: beatsPerMeasure, by: 3) {
+                accentPattern[i] = true
             }
-            // Default accent on first beat
-            accentPattern[0] = true
         } else {
-            // Regular pattern: 4 beats
-            for i in 0..<4 {
-                gridPattern[0][i] = true
+            // Regular pattern: accent on beats 0, 4, 8, 12 (every 4th beat)
+            for i in stride(from: 0, to: beatsPerMeasure, by: 4) {
+                accentPattern[i] = true
             }
-            // Default accent on first beat
-            accentPattern[0] = true
         }
     }
     
@@ -282,7 +284,9 @@ class MetronomeManager: ObservableObject {
         currentBeat = -1  // Start at -1 so first increment makes it 0 (beat 1)
         
         // Immediate first tick for beat 1
-        tick()
+        DispatchQueue.main.async {
+            self.tick()
+        }
         
         let interval = (60.0 / bpm) / noteValue.multiplier
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
@@ -352,73 +356,31 @@ class MetronomeManager: ObservableObject {
     }
     
     func updateNoteValue(_ newNoteValue: NoteValue) {
-        let oldNoteValue = noteValue
         noteValue = newNoteValue
+        beatsPerMeasure = newNoteValue.beatsPerMeasure
         
-        // Auto-adjust BPM based on note value change
-        if oldNoteValue != newNoteValue {
-            switch (oldNoteValue, newNoteValue) {
-            case (.quarter, .eighth):
-                bpm = bpm / 2 // 120 -> 60
-                beatsPerMeasure = 8
-                gridDisplayMode = .andCounting
-            case (.quarter, .sixteenth):
-                bpm = bpm / 4 // 120 -> 30
-                beatsPerMeasure = 16
-                gridDisplayMode = .subdivisionCounting
-            case (.eighth, .quarter):
-                bpm = bpm * 2 // 60 -> 120
-                beatsPerMeasure = 4
-                gridDisplayMode = .andCounting
-            case (.eighth, .sixteenth):
-                bpm = bpm / 2 // 60 -> 30
-                beatsPerMeasure = 16
-                gridDisplayMode = .subdivisionCounting
-            case (.sixteenth, .quarter):
-                bpm = bpm * 4 // 30 -> 120
-                beatsPerMeasure = 4
-                gridDisplayMode = .andCounting
-            case (.sixteenth, .eighth):
-                bpm = bpm * 2 // 30 -> 60
-                beatsPerMeasure = 8
-                gridDisplayMode = .andCounting
-            
-            // Triplet conversions
-            case (.quarter, .quarterTriplet):
-                bpm = bpm / 1.5 // 120 -> 80
-                beatsPerMeasure = 3
-                gridDisplayMode = .subdivisionCounting
-            case (.eighth, .eighthTriplet):
-                bpm = bpm / 1.5 // 60 -> 40
-                beatsPerMeasure = 6
-                gridDisplayMode = .subdivisionCounting
-            case (.sixteenth, .sixteenthTriplet):
-                bpm = bpm / 1.5 // 30 -> 20
-                beatsPerMeasure = 12
-                gridDisplayMode = .subdivisionCounting
-            
-            case (.quarterTriplet, .quarter):
-                bpm = bpm * 1.5 // 80 -> 120
-                beatsPerMeasure = 4
-                gridDisplayMode = .andCounting
-            case (.eighthTriplet, .eighth):
-                bpm = bpm * 1.5 // 40 -> 60
-                beatsPerMeasure = 8
-                gridDisplayMode = .andCounting
-            case (.sixteenthTriplet, .sixteenth):
-                bpm = bpm * 1.5 // 20 -> 30
-                beatsPerMeasure = 16
-                gridDisplayMode = .subdivisionCounting
-            
-            default:
-                // Keep current setup for other cases
-                beatsPerMeasure = newNoteValue.beatsPerMeasure
+        // Set appropriate display mode based on note value
+        switch newNoteValue {
+        case .quarter, .quarterTriplet:
+            gridDisplayMode = .andCounting
+        case .eighth, .eighthTriplet:
+            gridDisplayMode = .andCounting
+        case .sixteenth, .sixteenthTriplet:
+            gridDisplayMode = .subdivisionCounting
+        }
+        
+        // Set beat name based on note value (only if not custom/random)
+        if currentBeatName != "Custom Beat" && currentBeatName != "Random Beat" {
+            switch newNoteValue {
+            case .quarter:
+                currentBeatName = "Default Beat"
+            case .eighth:
+                currentBeatName = "Eighth Beat"
+            case .sixteenth:
+                currentBeatName = "Sixteenth Beat"
+            case .quarterTriplet, .eighthTriplet, .sixteenthTriplet:
+                currentBeatName = "Triplet Beat"
             }
-            
-            // Clamp BPM to reasonable range
-            bpm = min(max(bpm, 40), 200)
-        } else {
-            beatsPerMeasure = newNoteValue.beatsPerMeasure
         }
         
         currentBeat = -1
@@ -464,10 +426,18 @@ class MetronomeManager: ObservableObject {
     
     func toggleGridCell(row: Int, col: Int) {
         gridPattern[row][col].toggle()
+        // Set to custom beat when user modifies pattern
+        if currentBeatName != "Random Beat" {
+            currentBeatName = "Custom Beat"
+        }
     }
     
     func toggleAccentCell(col: Int) {
         accentPattern[col].toggle()
+        // Set to custom beat when user modifies accent pattern
+        if currentBeatName != "Random Beat" {
+            currentBeatName = "Custom Beat"
+        }
     }
     
     func updateGridSize(_ size: Int) {
@@ -586,7 +556,7 @@ class MetronomeManager: ObservableObject {
     func deleteBeatPreset(_ preset: BeatPreset) {
         savedBeats.removeAll { $0.id == preset.id }
         if currentBeatName == preset.name {
-            currentBeatName = "Basic Beat"
+            currentBeatName = "Default Beat"
         }
     }
     
@@ -595,25 +565,11 @@ class MetronomeManager: ObservableObject {
         let allNoteValues = NoteValue.allCases
         let randomNoteValue = allNoteValues.randomElement()!
         
-        // Randomize BPM based on note value
-        let bpmRange: ClosedRange<Double>
-        switch randomNoteValue {
-        case .quarter, .quarterTriplet:
-            bpmRange = 80...160
-        case .eighth, .eighthTriplet:
-            bpmRange = 40...120
-        case .sixteenth, .sixteenthTriplet:
-            bpmRange = 20...80
-        }
-        let randomBPM = Double.random(in: bpmRange).rounded()
-        
         // Randomize display mode
         let randomDisplayMode = GridDisplayMode.allCases.randomElement()!
         
-        // Apply randomized settings
-        let oldNoteValue = noteValue
+        // Apply randomized settings (keep BPM unchanged)
         noteValue = randomNoteValue
-        bpm = randomBPM
         beatsPerMeasure = randomNoteValue.beatsPerMeasure
         gridDisplayMode = randomDisplayMode
         
@@ -663,5 +619,44 @@ class MetronomeManager: ObservableObject {
         }
         
         currentBeatName = "Random Beat"
+    }
+    
+    func resetToBasicBeat() {
+        noteValue = .quarter
+        bpm = 80
+        beatsPerMeasure = 4
+        gridDisplayMode = .andCounting
+        
+        // Reset current beat properly
+        if isPlaying {
+            currentBeat = -1 // Will become 0 on next tick
+        } else {
+            currentBeat = -1 // Stopped state
+        }
+        
+        // Clear all patterns
+        for i in 0..<gridPattern.count {
+            for j in 0..<gridPattern[i].count {
+                gridPattern[i][j] = false
+            }
+        }
+        
+        for i in 0..<accentPattern.count {
+            accentPattern[i] = false
+        }
+        
+        // Set up basic 4/4 pattern
+        setupDefaultPattern()
+        
+        // Update timer if playing
+        if isPlaying {
+            timer?.invalidate()
+            let interval = (60.0 / bpm) / noteValue.multiplier
+            timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+                self.tick()
+            }
+        }
+        
+        currentBeatName = "Default Beat"
     }
 }
