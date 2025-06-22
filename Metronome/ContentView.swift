@@ -11,7 +11,9 @@ struct ContentView: View {
     @StateObject private var metronome = MetronomeManager()
     @State private var showSettings = false
     @State private var showQuickNoteValuePicker = false
-    @State private var showGridDisplayPicker = false
+    @State private var showGridSettings = false
+    @State private var showBPMInput = false
+    @State private var bpmInputText = ""
     
     var body: some View {
         GeometryReader { geometry in
@@ -25,12 +27,6 @@ struct ContentView: View {
                     
                     Spacer()
                     
-                    Button(action: { showGridDisplayPicker = true }) {
-                        Text(metronome.gridDisplayMode.displayName)
-                            .font(.caption)
-                            .foregroundColor(Color(hex: "#F54206"))
-                            .underline()
-                    }
                     
                     Button(action: { showSettings.toggle() }) {
                         Image(systemName: "gear")
@@ -44,9 +40,14 @@ struct ContentView: View {
                 
                 // BPM Display
                 VStack {
-                    Text("\(Int(metronome.bpm))")
-                        .font(.system(size: 60, weight: .light, design: .monospaced))
-                        .foregroundColor(Color(hex: "#DDDDDD"))
+                    Button(action: { 
+                        bpmInputText = String(Int(metronome.bpm))
+                        showBPMInput = true 
+                    }) {
+                        Text("\(Int(metronome.bpm))")
+                            .font(.system(size: 60, weight: .light, design: .monospaced))
+                            .foregroundColor(Color(hex: "#DDDDDD"))
+                    }
                     HStack {
                         Text("BPM")
                             .font(.title2)
@@ -129,6 +130,9 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(metronome: metronome)
         }
+        .sheet(isPresented: $showGridSettings) {
+            GridSettingsView(metronome: metronome)
+        }
         .confirmationDialog("Choose Note Value", isPresented: $showQuickNoteValuePicker) {
             ForEach(NoteValue.allCases, id: \.self) { noteValue in
                 Button(noteValue.displayName) {
@@ -137,13 +141,18 @@ struct ContentView: View {
             }
             Button("Cancel", role: .cancel) { }
         }
-        .confirmationDialog("Choose Counting Style", isPresented: $showGridDisplayPicker) {
-            ForEach(GridDisplayMode.allCases, id: \.self) { displayMode in
-                Button(displayMode.displayName) {
-                    metronome.gridDisplayMode = displayMode
+        .alert("Enter BPM", isPresented: $showBPMInput) {
+            TextField("BPM", text: $bpmInputText)
+                .keyboardType(.numberPad)
+            Button("Set") {
+                if let newBPM = Double(bpmInputText) {
+                    metronome.bpm = min(max(newBPM, 40), 200)
+                    metronome.updateBPM(metronome.bpm)
                 }
             }
             Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Enter a BPM value between 40 and 200")
         }
     }
 }
@@ -168,9 +177,20 @@ struct GridView: View {
                                     .cornerRadius(6)
                                     .opacity(getGridOpacity(for: beat))
                                     .overlay(
-                                        getGridContent(for: beat)
+                                        Group {
+                                            if isActiveBeat(beat) {
+                                                Text(metronome.gridDisplayMode.getLabel(for: beat, noteValue: metronome.noteValue))
+                                                    .font(.title2)
+                                                    .fontWeight(.bold)
+                                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                            } else {
+                                                Image(systemName: "minus")
+                                                    .font(.title2)
+                                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                            }
+                                        }
+                                        .id("\(beat)-\(metronome.gridDisplayMode.rawValue)-\(metronome.noteValue.rawValue)")
                                     )
-                                    .id("\(beat)-\(metronome.gridDisplayMode.rawValue)")
                             }
                         }
                     }
@@ -230,29 +250,13 @@ struct GridView: View {
         return isActiveBeat(beat) ? 1.0 : 0.5
     }
     
-    private func getGridContent(for beat: Int) -> some View {
-        if isActiveBeat(beat) {
-            return AnyView(
-                Text(metronome.gridDisplayMode.getLabel(for: beat, noteValue: metronome.noteValue))
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(Color(hex: "#DDDDDD"))
-            )
-        } else {
-            return AnyView(
-                Image(systemName: "minus")
-                    .font(.title2)
-                    .foregroundColor(Color(hex: "#DDDDDD"))
-            )
-        }
-    }
     
     private func getAccentColor(for beat: Int) -> Color {
         if beat < metronome.accentPattern.count && metronome.accentPattern[beat] {
             if beat == metronome.currentBeat && metronome.isPlaying {
                 return Color(hex: "#F54206") // Orange when playing accent
             } else {
-                return Color(hex: "#575554") // Same as inactive beat tiles
+                return Color(hex: "#303030") // Gray accent dots
             }
         } else {
             return Color.clear
@@ -263,7 +267,6 @@ struct GridView: View {
 struct SettingsView: View {
     @ObservedObject var metronome: MetronomeManager
     @Environment(\.dismiss) var dismiss
-    @State private var showNoteValuePicker = false
     
     var body: some View {
         NavigationView {
@@ -277,43 +280,13 @@ struct SettingsView: View {
                     }
                     .foregroundColor(Color(hex: "#DDDDDD"))
                     .accentColor(Color(hex: "#F54206"))
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Note Values")
-                            .foregroundColor(Color(hex: "#DDDDDD"))
-                        
-                        Button(action: { 
-                            showNoteValuePicker = true 
-                        }) {
-                            HStack {
-                                Text(metronome.noteValue.displayName)
-                                    .foregroundColor(Color(hex: "#DDDDDD"))
-                                Spacer()
-                                Image(systemName: "chevron.down")
-                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                            }
-                            .padding()
-                            .background(Color(hex: "#303030"))
-                            .cornerRadius(8)
-                        }
-                    }
-                }
-                
-                Section("Grid Configuration") {
-                    Stepper("Grid Size: \(metronome.gridSize)x\(metronome.gridSize)", 
-                           value: $metronome.gridSize, 
-                           in: 2...8)
-                    .onChange(of: metronome.gridSize) { oldValue, newValue in
-                        metronome.updateGridSize(newValue)
-                    }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
-                    .accentColor(Color(hex: "#F54206"))
                 }
             }
             .background(Color(hex: "#242424"))
             .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -324,14 +297,60 @@ struct SettingsView: View {
             }
         }
         .background(Color(hex: "#242424"))
-        .confirmationDialog("Choose Note Value", isPresented: $showNoteValuePicker) {
-            ForEach(NoteValue.allCases, id: \.self) { noteValue in
-                Button(noteValue.displayName) {
-                    metronome.updateNoteValue(noteValue)
+    }
+}
+
+struct GridSettingsView: View {
+    @ObservedObject var metronome: MetronomeManager
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section("Grid Configuration") {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Number of Beats: \(metronome.beatsPerMeasure)")
+                            .foregroundColor(Color(hex: "#DDDDDD"))
+                        
+                        let maxBeats = metronome.noteValue.isTriplet ? 12 : 16
+                        Slider(value: Binding(
+                            get: { Double(metronome.beatsPerMeasure) },
+                            set: { metronome.updateGridBeats(Int($0)) }
+                        ), in: 1...Double(maxBeats), step: 1)
+                        .accentColor(Color(hex: "#F54206"))
+                        
+                        HStack {
+                            Text("1")
+                                .font(.caption)
+                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                            Spacer()
+                            Text("\(maxBeats)")
+                                .font(.caption)
+                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                        }
+                        
+                        Text("Note: Triplets are limited to 6 beats max")
+                            .font(.caption)
+                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                    }
+                    .padding(.vertical, 8)
                 }
             }
-            Button("Cancel", role: .cancel) { }
+            .background(Color(hex: "#242424"))
+            .scrollContentBackground(.hidden)
+            .navigationTitle("Grid Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .foregroundColor(Color(hex: "#DDDDDD"))
+                }
+            }
         }
+        .background(Color(hex: "#242424"))
     }
 }
 

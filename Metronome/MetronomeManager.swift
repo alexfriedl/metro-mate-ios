@@ -41,12 +41,18 @@ enum NoteValue: String, CaseIterable {
     }
     
     var beatsPerMeasure: Int {
-        return isTriplet ? 6 : 4
+        switch self {
+        case .quarter: return 4
+        case .eighth: return 8
+        case .sixteenth: return 16
+        case .quarterTriplet: return 3
+        case .eighthTriplet: return 6
+        case .sixteenthTriplet: return 12
+        }
     }
 }
 
 enum GridDisplayMode: String, CaseIterable {
-    case numbers = "Numbers"
     case andCounting = "1&2&"
     case subdivisionCounting = "1e&a"
     
@@ -56,8 +62,6 @@ enum GridDisplayMode: String, CaseIterable {
     
     func getLabel(for position: Int, noteValue: NoteValue) -> String {
         switch self {
-        case .numbers:
-            return "\(position + 1)"
         case .andCounting:
             return getAndCountingLabel(for: position, noteValue: noteValue)
         case .subdivisionCounting:
@@ -139,7 +143,7 @@ class MetronomeManager: ObservableObject {
     @Published var accentPattern: [Bool] = Array(repeating: false, count: 16)
     @Published var gridSize = 4
     @Published var noteValue: NoteValue = .quarter
-    @Published var gridDisplayMode: GridDisplayMode = .numbers
+    @Published var gridDisplayMode: GridDisplayMode = .andCounting
     
     private var tapTimes: [Date] = []
     private let maxTapCount = 4
@@ -334,21 +338,87 @@ class MetronomeManager: ObservableObject {
     }
     
     func updateNoteValue(_ newNoteValue: NoteValue) {
+        let oldNoteValue = noteValue
         noteValue = newNoteValue
-        beatsPerMeasure = newNoteValue.beatsPerMeasure
+        
+        // Auto-adjust BPM based on note value change
+        if oldNoteValue != newNoteValue {
+            switch (oldNoteValue, newNoteValue) {
+            case (.quarter, .eighth):
+                bpm = bpm / 2 // 120 -> 60
+                beatsPerMeasure = 8
+                gridDisplayMode = .andCounting
+            case (.quarter, .sixteenth):
+                bpm = bpm / 4 // 120 -> 30
+                beatsPerMeasure = 16
+                gridDisplayMode = .subdivisionCounting
+            case (.eighth, .quarter):
+                bpm = bpm * 2 // 60 -> 120
+                beatsPerMeasure = 4
+                gridDisplayMode = .andCounting
+            case (.eighth, .sixteenth):
+                bpm = bpm / 2 // 60 -> 30
+                beatsPerMeasure = 16
+                gridDisplayMode = .subdivisionCounting
+            case (.sixteenth, .quarter):
+                bpm = bpm * 4 // 30 -> 120
+                beatsPerMeasure = 4
+                gridDisplayMode = .andCounting
+            case (.sixteenth, .eighth):
+                bpm = bpm * 2 // 30 -> 60
+                beatsPerMeasure = 8
+                gridDisplayMode = .andCounting
+            
+            // Triplet conversions
+            case (.quarter, .quarterTriplet):
+                bpm = bpm / 1.5 // 120 -> 80
+                beatsPerMeasure = 3
+                gridDisplayMode = .subdivisionCounting
+            case (.eighth, .eighthTriplet):
+                bpm = bpm / 1.5 // 60 -> 40
+                beatsPerMeasure = 6
+                gridDisplayMode = .subdivisionCounting
+            case (.sixteenth, .sixteenthTriplet):
+                bpm = bpm / 1.5 // 30 -> 20
+                beatsPerMeasure = 12
+                gridDisplayMode = .subdivisionCounting
+            
+            case (.quarterTriplet, .quarter):
+                bpm = bpm * 1.5 // 80 -> 120
+                beatsPerMeasure = 4
+                gridDisplayMode = .andCounting
+            case (.eighthTriplet, .eighth):
+                bpm = bpm * 1.5 // 40 -> 60
+                beatsPerMeasure = 8
+                gridDisplayMode = .andCounting
+            case (.sixteenthTriplet, .sixteenth):
+                bpm = bpm * 1.5 // 20 -> 30
+                beatsPerMeasure = 16
+                gridDisplayMode = .subdivisionCounting
+            
+            default:
+                // Keep current setup for other cases
+                beatsPerMeasure = newNoteValue.beatsPerMeasure
+            }
+            
+            // Clamp BPM to reasonable range
+            bpm = min(max(bpm, 40), 200)
+        } else {
+            beatsPerMeasure = newNoteValue.beatsPerMeasure
+        }
+        
         currentBeat = -1
         
         // Reset grid pattern for new beat count
-        if gridPattern.count > 0 && gridPattern[0].count < beatsPerMeasure {
-            for i in 0..<gridPattern.count {
-                while gridPattern[i].count < beatsPerMeasure {
-                    gridPattern[i].append(false)
-                }
+        let maxBeats = max(16, beatsPerMeasure)
+        for i in 0..<gridPattern.count {
+            while gridPattern[i].count < maxBeats {
+                gridPattern[i].append(false)
             }
         }
         
         // Reset accent pattern for new beat count
-        while accentPattern.count < beatsPerMeasure {
+        while accentPattern.count < maxBeats {
             accentPattern.append(false)
         }
         
@@ -417,5 +487,32 @@ class MetronomeManager: ObservableObject {
                 updateBPM(bpm)
             }
         }
+    }
+    
+    func updateGridBeats(_ beats: Int) {
+        let maxBeats = max(16, beats)
+        
+        // Update beatsPerMeasure based on note value
+        if noteValue.isTriplet {
+            beatsPerMeasure = min(beats, 12) // Max 12 for triplets
+        } else {
+            beatsPerMeasure = min(beats, 16) // Max 16 for regular notes
+        }
+        
+        currentBeat = -1
+        
+        // Ensure grid pattern accommodates new beat count
+        for i in 0..<gridPattern.count {
+            while gridPattern[i].count < maxBeats {
+                gridPattern[i].append(false)
+            }
+        }
+        
+        // Reset accent pattern for new beat count
+        while accentPattern.count < maxBeats {
+            accentPattern.append(false)
+        }
+        
+        setupDefaultPattern()
     }
 }
