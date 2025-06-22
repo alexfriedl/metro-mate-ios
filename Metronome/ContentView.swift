@@ -230,7 +230,11 @@ struct GridView: View {
     
     private func getAccentColor(for beat: Int) -> Color {
         if beat < metronome.accentPattern.count && metronome.accentPattern[beat] {
-            return Color(hex: "#575554") // Same as inactive beat tiles
+            if beat == metronome.currentBeat && metronome.isPlaying {
+                return Color(hex: "#F54206") // Orange when playing accent
+            } else {
+                return Color(hex: "#575554") // Same as inactive beat tiles
+            }
         } else {
             return Color.clear
         }
