@@ -86,20 +86,38 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                // Central Play Button
-                Button(action: {
-                    metronome.togglePlayback()
-                }) {
-                    ZStack {
-                        Circle()
-                            .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#303030"))
-                            .frame(width: 120, height: 120)
-                            .scaleEffect(metronome.shouldBlink ? 1.1 : 1.0)
-                            .animation(.easeInOut(duration: 0.1), value: metronome.shouldBlink)
-                        
-                        Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 40))
-                            .foregroundColor(Color(hex: "#DDDDDD"))
+                // Play and Tap Tempo Buttons
+                HStack(spacing: 20) {
+                    // Tap Tempo Button
+                    Button(action: {
+                        metronome.tapTempo()
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(hex: "#303030"))
+                                .frame(width: 80, height: 80)
+                            
+                            Text("TAP")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(Color(hex: "#DDDDDD"))
+                        }
+                    }
+                    
+                    // Central Play Button
+                    Button(action: {
+                        metronome.togglePlayback()
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#303030"))
+                                .frame(width: 120, height: 120)
+                                .scaleEffect(metronome.shouldBlink ? 1.1 : 1.0)
+                                .animation(.easeInOut(duration: 0.1), value: metronome.shouldBlink)
+                            
+                            Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(Color(hex: "#DDDDDD"))
+                        }
                     }
                 }
                 
@@ -111,21 +129,21 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(metronome: metronome)
         }
-        .confirmationDialog("Notenwert wählen", isPresented: $showQuickNoteValuePicker) {
+        .confirmationDialog("Choose Note Value", isPresented: $showQuickNoteValuePicker) {
             ForEach(NoteValue.allCases, id: \.self) { noteValue in
                 Button(noteValue.displayName) {
                     metronome.updateNoteValue(noteValue)
                 }
             }
-            Button("Abbrechen", role: .cancel) { }
+            Button("Cancel", role: .cancel) { }
         }
-        .confirmationDialog("Zählweise wählen", isPresented: $showGridDisplayPicker) {
+        .confirmationDialog("Choose Counting Style", isPresented: $showGridDisplayPicker) {
             ForEach(GridDisplayMode.allCases, id: \.self) { displayMode in
                 Button(displayMode.displayName) {
                     metronome.gridDisplayMode = displayMode
                 }
             }
-            Button("Abbrechen", role: .cancel) { }
+            Button("Cancel", role: .cancel) { }
         }
     }
 }
@@ -152,6 +170,7 @@ struct GridView: View {
                                     .overlay(
                                         getGridContent(for: beat)
                                     )
+                                    .id("\(beat)-\(metronome.gridDisplayMode.rawValue)")
                             }
                         }
                     }
@@ -260,7 +279,7 @@ struct SettingsView: View {
                     .accentColor(Color(hex: "#F54206"))
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Notenwerte")
+                        Text("Note Values")
                             .foregroundColor(Color(hex: "#DDDDDD"))
                         
                         Button(action: { 
@@ -305,13 +324,13 @@ struct SettingsView: View {
             }
         }
         .background(Color(hex: "#242424"))
-        .confirmationDialog("Notenwert wählen", isPresented: $showNoteValuePicker) {
+        .confirmationDialog("Choose Note Value", isPresented: $showNoteValuePicker) {
             ForEach(NoteValue.allCases, id: \.self) { noteValue in
                 Button(noteValue.displayName) {
                     metronome.updateNoteValue(noteValue)
                 }
             }
-            Button("Abbrechen", role: .cancel) { }
+            Button("Cancel", role: .cancel) { }
         }
     }
 }

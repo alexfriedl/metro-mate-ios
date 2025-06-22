@@ -22,12 +22,12 @@ enum NoteValue: String, CaseIterable {
     
     var displayName: String {
         switch self {
-        case .quarter: return "Viertel"
-        case .eighth: return "Achtel"
-        case .sixteenth: return "Sechzehntel"
-        case .quarterTriplet: return "Viertel-Triolen"
-        case .eighthTriplet: return "Achtel-Triolen"
-        case .sixteenthTriplet: return "Sechzehntel-Triolen"
+        case .quarter: return "Quarter"
+        case .eighth: return "Eighth"
+        case .sixteenth: return "Sixteenth"
+        case .quarterTriplet: return "Quarter Triplets"
+        case .eighthTriplet: return "Eighth Triplets"
+        case .sixteenthTriplet: return "Sixteenth Triplets"
         }
     }
     
@@ -46,7 +46,7 @@ enum NoteValue: String, CaseIterable {
 }
 
 enum GridDisplayMode: String, CaseIterable {
-    case numbers = "Zahlen"
+    case numbers = "Numbers"
     case andCounting = "1&2&"
     case subdivisionCounting = "1e&a"
     
@@ -140,6 +140,9 @@ class MetronomeManager: ObservableObject {
     @Published var gridSize = 4
     @Published var noteValue: NoteValue = .quarter
     @Published var gridDisplayMode: GridDisplayMode = .numbers
+    
+    private var tapTimes: [Date] = []
+    private let maxTapCount = 4
     
     private var audioEngine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
@@ -387,5 +390,32 @@ class MetronomeManager: ObservableObject {
         gridSize = size
         gridPattern = Array(repeating: Array(repeating: false, count: max(16, beatsPerMeasure)), count: size)
         setupDefaultPattern()
+    }
+    
+    func tapTempo() {
+        let now = Date()
+        tapTimes.append(now)
+        
+        // Remove taps older than 3 seconds
+        tapTimes = tapTimes.filter { now.timeIntervalSince($0) < 3.0 }
+        
+        // Keep only the most recent taps
+        if tapTimes.count > maxTapCount {
+            tapTimes.removeFirst(tapTimes.count - maxTapCount)
+        }
+        
+        // Calculate BPM if we have at least 2 taps
+        if tapTimes.count >= 2 {
+            let intervals = zip(tapTimes.dropFirst(), tapTimes).map { $0.timeIntervalSince($1) }
+            let averageInterval = intervals.reduce(0, +) / Double(intervals.count)
+            let newBPM = 60.0 / averageInterval
+            
+            // Clamp BPM to reasonable range
+            bpm = min(max(newBPM, 40), 200)
+            
+            if isPlaying {
+                updateBPM(bpm)
+            }
+        }
     }
 }
