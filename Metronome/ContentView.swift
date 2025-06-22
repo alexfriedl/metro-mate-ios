@@ -11,6 +11,7 @@ struct ContentView: View {
     @StateObject private var metronome = MetronomeManager()
     @State private var showSettings = false
     @State private var showQuickNoteValuePicker = false
+    @State private var showGridDisplayPicker = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -23,6 +24,13 @@ struct ContentView: View {
                         .foregroundColor(Color(hex: "#DDDDDD"))
                     
                     Spacer()
+                    
+                    Button(action: { showGridDisplayPicker = true }) {
+                        Text(metronome.gridDisplayMode.displayName)
+                            .font(.caption)
+                            .foregroundColor(Color(hex: "#F54206"))
+                            .underline()
+                    }
                     
                     Button(action: { showSettings.toggle() }) {
                         Image(systemName: "gear")
@@ -111,6 +119,14 @@ struct ContentView: View {
             }
             Button("Abbrechen", role: .cancel) { }
         }
+        .confirmationDialog("Zählweise wählen", isPresented: $showGridDisplayPicker) {
+            ForEach(GridDisplayMode.allCases, id: \.self) { displayMode in
+                Button(displayMode.displayName) {
+                    metronome.gridDisplayMode = displayMode
+                }
+            }
+            Button("Abbrechen", role: .cancel) { }
+        }
     }
 }
 
@@ -119,21 +135,39 @@ struct GridView: View {
     
     var body: some View {
         VStack(spacing: 8) {
+            // Main grid tiles
             ForEach(0..<numberOfRows(), id: \.self) { row in
-                HStack(spacing: 8) {
-                    ForEach(0..<tilesInRow(row), id: \.self) { col in
-                        let beat = row * 4 + col
-                        Button(action: {
-                            metronome.toggleGridCell(row: 0, col: beat)
-                        }) {
-                            Rectangle()
-                                .fill(getGridColor(for: beat))
-                                .frame(width: 50, height: 50)
-                                .cornerRadius(6)
-                                .opacity(getGridOpacity(for: beat))
-                                .overlay(
-                                    getGridContent(for: beat)
-                                )
+                VStack(spacing: 4) {
+                    HStack(spacing: 8) {
+                        ForEach(0..<tilesInRow(row), id: \.self) { col in
+                            let beat = row * tilesPerRow() + col
+                            Button(action: {
+                                metronome.toggleGridCell(row: 0, col: beat)
+                            }) {
+                                Rectangle()
+                                    .fill(getGridColor(for: beat))
+                                    .frame(width: 50, height: 50)
+                                    .cornerRadius(6)
+                                    .opacity(getGridOpacity(for: beat))
+                                    .overlay(
+                                        getGridContent(for: beat)
+                                    )
+                            }
+                        }
+                    }
+                    
+                    // Accent dots row
+                    HStack(spacing: 8) {
+                        ForEach(0..<tilesInRow(row), id: \.self) { col in
+                            let beat = row * tilesPerRow() + col
+                            Button(action: {
+                                metronome.toggleAccentCell(col: beat)
+                            }) {
+                                Circle()
+                                    .fill(getAccentColor(for: beat))
+                                    .frame(width: 12, height: 12)
+                                    .frame(width: 50, height: 20) // Same width as tiles
+                            }
                         }
                     }
                 }
@@ -142,12 +176,17 @@ struct GridView: View {
     }
     
     private func numberOfRows() -> Int {
-        return (metronome.beatsPerMeasure + 3) / 4
+        let tilesPerRow = self.tilesPerRow()
+        return (metronome.beatsPerMeasure + tilesPerRow - 1) / tilesPerRow
     }
     
     private func tilesInRow(_ row: Int) -> Int {
-        let remainingBeats = metronome.beatsPerMeasure - (row * 4)
-        return min(4, remainingBeats)
+        let remainingBeats = metronome.beatsPerMeasure - (row * tilesPerRow())
+        return min(tilesPerRow(), remainingBeats)
+    }
+    
+    private func tilesPerRow() -> Int {
+        return metronome.noteValue.isTriplet ? 3 : 4
     }
     
     private func isActiveBeat(_ beat: Int) -> Bool {
@@ -175,7 +214,7 @@ struct GridView: View {
     private func getGridContent(for beat: Int) -> some View {
         if isActiveBeat(beat) {
             return AnyView(
-                Text("\(beat + 1)")
+                Text(metronome.gridDisplayMode.getLabel(for: beat, noteValue: metronome.noteValue))
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(Color(hex: "#DDDDDD"))
@@ -186,6 +225,14 @@ struct GridView: View {
                     .font(.title2)
                     .foregroundColor(Color(hex: "#DDDDDD"))
             )
+        }
+    }
+    
+    private func getAccentColor(for beat: Int) -> Color {
+        if beat < metronome.accentPattern.count && metronome.accentPattern[beat] {
+            return Color(hex: "#575554") // Same as inactive beat tiles
+        } else {
+            return Color.clear
         }
     }
 }

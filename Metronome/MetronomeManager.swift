@@ -45,6 +45,90 @@ enum NoteValue: String, CaseIterable {
     }
 }
 
+enum GridDisplayMode: String, CaseIterable {
+    case numbers = "Zahlen"
+    case andCounting = "1&2&"
+    case subdivisionCounting = "1e&a"
+    
+    var displayName: String {
+        return self.rawValue
+    }
+    
+    func getLabel(for position: Int, noteValue: NoteValue) -> String {
+        switch self {
+        case .numbers:
+            return "\(position + 1)"
+        case .andCounting:
+            return getAndCountingLabel(for: position, noteValue: noteValue)
+        case .subdivisionCounting:
+            return getSubdivisionLabel(for: position, noteValue: noteValue)
+        }
+    }
+    
+    private func getAndCountingLabel(for position: Int, noteValue: NoteValue) -> String {
+        if noteValue.isTriplet {
+            // Triplet counting: 1 2 3 4 5 6
+            return "\(position + 1)"
+        } else {
+            switch noteValue {
+            case .quarter:
+                return "\(position + 1)"
+            case .eighth:
+                let beat = (position / 2) + 1
+                let subdivision = position % 2
+                return subdivision == 0 ? "\(beat)" : "&"
+            case .sixteenth:
+                let beat = (position / 4) + 1
+                let subdivision = position % 4
+                switch subdivision {
+                case 0: return "\(beat)"
+                case 1: return "e"
+                case 2: return "&"
+                case 3: return "a"
+                default: return "\(position + 1)"
+                }
+            default:
+                return "\(position + 1)"
+            }
+        }
+    }
+    
+    private func getSubdivisionLabel(for position: Int, noteValue: NoteValue) -> String {
+        if noteValue.isTriplet {
+            // Triplet counting: 1 trip let 2 trip let
+            let tripletGroup = (position / 3) + 1
+            let tripletPosition = position % 3
+            switch tripletPosition {
+            case 0: return "\(tripletGroup)"
+            case 1: return "trip"
+            case 2: return "let"
+            default: return "\(position + 1)"
+            }
+        } else {
+            switch noteValue {
+            case .quarter:
+                return "\(position + 1)"
+            case .eighth:
+                let beat = (position / 2) + 1
+                let subdivision = position % 2
+                return subdivision == 0 ? "\(beat)" : "&"
+            case .sixteenth:
+                let beat = (position / 4) + 1
+                let subdivision = position % 4
+                switch subdivision {
+                case 0: return "\(beat)"
+                case 1: return "e"
+                case 2: return "&"
+                case 3: return "a"
+                default: return "\(position + 1)"
+                }
+            default:
+                return "\(position + 1)"
+            }
+        }
+    }
+}
+
 class MetronomeManager: ObservableObject {
     @Published var isPlaying = false
     @Published var bpm: Double = 120
@@ -52,8 +136,10 @@ class MetronomeManager: ObservableObject {
     @Published var currentBeat = -1
     @Published var shouldBlink = false
     @Published var gridPattern: [[Bool]] = Array(repeating: Array(repeating: false, count: 16), count: 4)
+    @Published var accentPattern: [Bool] = Array(repeating: false, count: 16)
     @Published var gridSize = 4
     @Published var noteValue: NoteValue = .quarter
+    @Published var gridDisplayMode: GridDisplayMode = .numbers
     
     private var audioEngine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
@@ -119,12 +205,7 @@ class MetronomeManager: ObservableObject {
         
         audioBuffer.frameLength = frameCount
         
-        let shouldAccent: Bool
-        if noteValue.isTriplet {
-            shouldAccent = (currentBeat == 0 || currentBeat == 3)
-        } else {
-            shouldAccent = (currentBeat == 0)
-        }
+        let shouldAccent = currentBeat < accentPattern.count && accentPattern[currentBeat]
         let frequency: Float = shouldAccent ? 800 : 400
         
         guard let channelData = audioBuffer.floatChannelData?[0] else { return nil }
@@ -145,16 +226,25 @@ class MetronomeManager: ObservableObject {
             }
         }
         
+        // Clear accent pattern
+        for i in 0..<accentPattern.count {
+            accentPattern[i] = false
+        }
+        
         if noteValue.isTriplet {
             // Triplet pattern: 6 beats (2 groups of 3)
             for i in 0..<6 {
                 gridPattern[0][i] = true
             }
+            // Default accent on first beat
+            accentPattern[0] = true
         } else {
             // Regular pattern: 4 beats
             for i in 0..<4 {
                 gridPattern[0][i] = true
             }
+            // Default accent on first beat
+            accentPattern[0] = true
         }
     }
     
@@ -207,15 +297,7 @@ class MetronomeManager: ObservableObject {
     private func playClick() {
         guard let playerNode = playerNode else { return }
         
-        let shouldAccent: Bool
-        if noteValue.isTriplet {
-            // Triplet accent pattern: beats 0, 3 are accented (1st beat of each triplet group)
-            shouldAccent = (currentBeat == 0 || currentBeat == 3)
-        } else {
-            // Regular pattern: only first beat is accented
-            shouldAccent = (currentBeat == 0)
-        }
-        
+        let shouldAccent = currentBeat < accentPattern.count && accentPattern[currentBeat]
         let audioFile = shouldAccent ? accentClickFile : normalClickFile
         
         if let audioFile = audioFile {
@@ -261,6 +343,12 @@ class MetronomeManager: ObservableObject {
                 }
             }
         }
+        
+        // Reset accent pattern for new beat count
+        while accentPattern.count < beatsPerMeasure {
+            accentPattern.append(false)
+        }
+        
         setupDefaultPattern()
         
         if isPlaying {
@@ -289,6 +377,10 @@ class MetronomeManager: ObservableObject {
     
     func toggleGridCell(row: Int, col: Int) {
         gridPattern[row][col].toggle()
+    }
+    
+    func toggleAccentCell(col: Int) {
+        accentPattern[col].toggle()
     }
     
     func updateGridSize(_ size: Int) {
