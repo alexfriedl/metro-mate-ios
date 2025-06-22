@@ -1,7 +1,7 @@
 import Foundation
 import AVFoundation
 
-enum NoteValue: String, CaseIterable {
+enum NoteValue: String, CaseIterable, Codable {
     case quarter = "1/4"
     case eighth = "1/8"
     case sixteenth = "1/16"
@@ -52,7 +52,7 @@ enum NoteValue: String, CaseIterable {
     }
 }
 
-enum GridDisplayMode: String, CaseIterable {
+enum GridDisplayMode: String, CaseIterable, Codable {
     case andCounting = "1&2&"
     case subdivisionCounting = "1e&a"
     
@@ -131,6 +131,18 @@ enum GridDisplayMode: String, CaseIterable {
             }
         }
     }
+    
+}
+
+struct BeatPreset: Identifiable, Codable {
+    let id = UUID()
+    let name: String
+    let noteValue: NoteValue
+    let bpm: Double
+    let beatsPerMeasure: Int
+    let gridPattern: [Bool]
+    let accentPattern: [Bool]
+    let gridDisplayMode: GridDisplayMode
 }
 
 class MetronomeManager: ObservableObject {
@@ -144,6 +156,8 @@ class MetronomeManager: ObservableObject {
     @Published var gridSize = 4
     @Published var noteValue: NoteValue = .quarter
     @Published var gridDisplayMode: GridDisplayMode = .andCounting
+    @Published var currentBeatName: String = "Basic Beat"
+    @Published var savedBeats: [BeatPreset] = []
     
     private var tapTimes: [Date] = []
     private let maxTapCount = 4
@@ -514,5 +528,65 @@ class MetronomeManager: ObservableObject {
         }
         
         setupDefaultPattern()
+    }
+    
+    func saveBeatPreset(name: String) {
+        let preset = BeatPreset(
+            name: name,
+            noteValue: noteValue,
+            bpm: bpm,
+            beatsPerMeasure: beatsPerMeasure,
+            gridPattern: gridPattern[0],
+            accentPattern: accentPattern,
+            gridDisplayMode: gridDisplayMode
+        )
+        
+        // Remove existing preset with same name
+        savedBeats.removeAll { $0.name == name }
+        savedBeats.append(preset)
+        currentBeatName = name
+    }
+    
+    func loadBeatPreset(_ preset: BeatPreset) {
+        noteValue = preset.noteValue
+        bpm = preset.bpm
+        beatsPerMeasure = preset.beatsPerMeasure
+        gridDisplayMode = preset.gridDisplayMode
+        currentBeatName = preset.name
+        
+        // Update grid patterns
+        for i in 0..<gridPattern.count {
+            for j in 0..<gridPattern[i].count {
+                if j < preset.gridPattern.count {
+                    gridPattern[i][j] = preset.gridPattern[j]
+                } else {
+                    gridPattern[i][j] = false
+                }
+            }
+        }
+        
+        // Update accent pattern
+        for i in 0..<accentPattern.count {
+            if i < preset.accentPattern.count {
+                accentPattern[i] = preset.accentPattern[i]
+            } else {
+                accentPattern[i] = false
+            }
+        }
+        
+        if isPlaying {
+            timer?.invalidate()
+            let interval = (60.0 / bpm) / noteValue.multiplier
+            timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+                self.tick()
+            }
+        }
+    }
+    
+    func deleteBeatPreset(_ preset: BeatPreset) {
+        savedBeats.removeAll { $0.id == preset.id }
+        if currentBeatName == preset.name {
+            currentBeatName = "Basic Beat"
+        }
     }
 }
