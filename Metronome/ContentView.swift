@@ -12,8 +12,6 @@ struct ContentView: View {
     @State private var showSettings = false
     @State private var showQuickNoteValuePicker = false
     @State private var showGridSettings = false
-    @State private var showBPMInput = false
-    @State private var bpmInputText = ""
     @State private var showBeatPresets = false
     
     var body: some View {
@@ -54,14 +52,24 @@ struct ContentView: View {
                                 .foregroundColor(Color(hex: "#DDDDDD"))
                         }
                         
-                        Button(action: { 
-                            bpmInputText = String(Int(metronome.bpm))
-                            showBPMInput = true 
-                        }) {
-                            Text("\(Int(metronome.bpm))")
-                                .font(.system(size: 60, weight: .light, design: .monospaced))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                        Picker("BPM", selection: Binding(
+                            get: { Int(metronome.bpm) },
+                            set: { newValue in
+                                metronome.bpm = Double(newValue)
+                                metronome.updateBPM(Double(newValue))
+                            }
+                        )) {
+                            ForEach(40...200, id: \.self) { bpm in
+                                Text("\(bpm)")
+                                    .font(.system(size: 24, weight: .light, design: .monospaced))
+                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                    .tag(bpm)
+                            }
                         }
+                        .pickerStyle(.wheel)
+                        .frame(width: 100, height: 140)
+                        .scaleEffect(2.0)
+                        .clipped()
                         
                         Button(action: { 
                             let newBPM = min(metronome.bpm + 1, 200)
@@ -73,46 +81,29 @@ struct ContentView: View {
                                 .foregroundColor(Color(hex: "#DDDDDD"))
                         }
                     }
-                    
-                    HStack(spacing: 12) {
-                        Text("BPM")
-                            .font(.title2)
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                        
-                        Button(action: { showQuickNoteValuePicker = true }) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color(hex: "#242424"))
-                                    .frame(width: 40, height: 40)
-                                
-                                Text(metronome.noteValue.displayName)
-                                    .font(.title3)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(Color(hex: "#DDDDDD"))
-                            }
-                        }
-                    }
                 }
                 
-                // BPM Slider
-                VStack {
-                    Slider(value: $metronome.bpm, in: 40...200, step: 1)
-                        .accentColor(Color(hex: "#F54206"))
-                        .onChange(of: metronome.bpm) { oldValue, newValue in
-                            metronome.updateBPM(newValue)
-                        }
+                Spacer()
+                    .frame(height: 20)
+                
+                HStack(spacing: 12) {
+                    Text("BPM")
+                        .font(.title2)
+                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
                     
-                    HStack {
-                        Text("40")
-                            .font(.caption)
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                        Spacer()
-                        Text("200")
-                            .font(.caption)
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                    Button(action: { showQuickNoteValuePicker = true }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(hex: "#242424"))
+                                .frame(width: 40, height: 40)
+                            
+                            Text(metronome.noteValue.displayName)
+                                .font(.title3)
+                                .fontWeight(.medium)
+                                .foregroundColor(Color(hex: "#DDDDDD"))
+                        }
                     }
                 }
-                .padding(.horizontal)
                 
                 // Beat Pattern Grid
                 GridView(metronome: metronome)
@@ -191,20 +182,6 @@ struct ContentView: View {
                 }
             }
             Button("Cancel", role: .cancel) { }
-        }
-        .alert("Enter BPM", isPresented: $showBPMInput) {
-            TextField("BPM", text: $bpmInputText)
-                .keyboardType(.numberPad)
-                .foregroundColor(.black)
-            Button("Set") {
-                if let newBPM = Double(bpmInputText) {
-                    metronome.bpm = min(max(newBPM, 40), 200)
-                    metronome.updateBPM(metronome.bpm)
-                }
-            }
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("Enter a BPM value between 40 and 200")
         }
     }
 }
