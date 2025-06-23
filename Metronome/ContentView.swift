@@ -62,7 +62,7 @@ struct ContentView: View {
                             ForEach(40...200, id: \.self) { bpm in
                                 Text("\(bpm)")
                                     .font(.system(size: 24, weight: .light, design: .monospaced))
-                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(bpm == Int(metronome.bpm) ? 1.0 : 0.4))
                                     .tag(bpm)
                             }
                         }
