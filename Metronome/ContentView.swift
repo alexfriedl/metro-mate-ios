@@ -82,7 +82,7 @@ struct ContentView: View {
                         Button(action: { showQuickNoteValuePicker = true }) {
                             ZStack {
                                 Circle()
-                                    .fill(Color(hex: "#303030"))
+                                    .fill(Color(hex: "#242424"))
                                     .frame(width: 40, height: 40)
                                 
                                 Text(metronome.noteValue.displayName)
@@ -128,7 +128,7 @@ struct ContentView: View {
                     }) {
                         ZStack {
                             Circle()
-                                .fill(Color(hex: "#303030"))
+                                .fill(Color(hex: "#242424"))
                                 .frame(width: 80, height: 80)
                             
                             Text("TAP")
@@ -143,7 +143,7 @@ struct ContentView: View {
                     }) {
                         ZStack {
                             Circle()
-                                .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#303030"))
+                                .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
                                 .frame(width: 120, height: 120)
                                 .scaleEffect(metronome.shouldBlink ? 1.1 : 1.0)
                                 .animation(.easeInOut(duration: 0.1), value: metronome.shouldBlink)
@@ -160,7 +160,7 @@ struct ContentView: View {
                     }) {
                         ZStack {
                             Circle()
-                                .fill(Color(hex: "#303030"))
+                                .fill(Color(hex: "#242424"))
                                 .frame(width: 80, height: 80)
                             
                             Image(systemName: "shuffle")
@@ -174,7 +174,7 @@ struct ContentView: View {
             }
             .padding()
         }
-        .background(Color(hex: "#242424"))
+        .background(Color(hex: "#1C1C1B"))
         .sheet(isPresented: $showSettings) {
             SettingsView(metronome: metronome)
         }
@@ -334,7 +334,7 @@ struct SettingsView: View {
                     .accentColor(Color(hex: "#F54206"))
                 }
             }
-            .background(Color(hex: "#242424"))
+            .background(Color(hex: "#1C1C1B"))
             .scrollContentBackground(.hidden)
             .foregroundColor(Color(hex: "#DDDDDD"))
             .navigationTitle("Settings")
@@ -349,7 +349,7 @@ struct SettingsView: View {
                 }
             }
         }
-        .background(Color(hex: "#242424"))
+        .background(Color(hex: "#1C1C1B"))
         .preferredColorScheme(.dark)
     }
 }
@@ -390,7 +390,7 @@ struct GridSettingsView: View {
                     .padding(.vertical, 8)
                 }
             }
-            .background(Color(hex: "#242424"))
+            .background(Color(hex: "#1C1C1B"))
             .scrollContentBackground(.hidden)
             .foregroundColor(Color(hex: "#DDDDDD"))
             .navigationTitle("Grid Settings")
@@ -405,7 +405,7 @@ struct GridSettingsView: View {
                 }
             }
         }
-        .background(Color(hex: "#242424"))
+        .background(Color(hex: "#1C1C1B"))
         .preferredColorScheme(.dark)
     }
 }
@@ -494,7 +494,7 @@ struct BeatPresetsView: View {
                     }
                 }
             }
-            .background(Color(hex: "#242424"))
+            .background(Color(hex: "#1C1C1B"))
             .scrollContentBackground(.hidden)
             .foregroundColor(Color(hex: "#DDDDDD"))
             .navigationTitle("Beat Presets")
@@ -517,7 +517,7 @@ struct BeatPresetsView: View {
                 }
             }
         }
-        .background(Color(hex: "#242424"))
+        .background(Color(hex: "#1C1C1B"))
         .preferredColorScheme(.dark)
         .alert("Save Beat Preset", isPresented: $showSaveDialog) {
             TextField("Beat Name", text: $newBeatName)
@@ -535,12 +535,12 @@ struct BeatPresetsView: View {
     
     func defaultPresets() -> [BeatPreset] {
         let presets: [(NoteValue, String)] = [
-            (.quarter, "Default Beat"),
-            (.eighth, "Eighth Beat"),
-            (.sixteenth, "Sixteenth Beat"),
-            (.quarterTriplet, "Quarter Triplet Beat"),
-            (.eighthTriplet, "Eighth Triplet Beat"),
-            (.sixteenthTriplet, "Sixteenth Triplet Beat")
+            (.quarter, "Default"),
+            (.eighth, "Eighth"),
+            (.sixteenth, "Sixteenth"),
+            (.quarterTriplet, "Triplet (quarter)"),
+            (.eighthTriplet, "Triplet (eight)"),
+            (.sixteenthTriplet, "Triplet (sixteenth)")
         ]
         
         return presets.map { noteValue, name in
