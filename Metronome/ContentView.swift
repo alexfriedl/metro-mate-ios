@@ -13,10 +13,34 @@ struct ContentView: View {
     @State private var showQuickNoteValuePicker = false
     @State private var showGridSettings = false
     @State private var showBeatPresets = false
+    @State private var repeatTimer: Timer?
     
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 25) {
+            content
+        }
+        .background(Color(hex: "#1C1C1B"))
+        .sheet(isPresented: $showSettings) {
+            SettingsView(metronome: metronome)
+        }
+        .sheet(isPresented: $showGridSettings) {
+            GridSettingsView(metronome: metronome)
+        }
+        .sheet(isPresented: $showBeatPresets) {
+            BeatPresetsView(metronome: metronome)
+        }
+        .confirmationDialog("Choose Note Value", isPresented: $showQuickNoteValuePicker) {
+            ForEach(NoteValue.allCases, id: \.self) { noteValue in
+                Button(noteValue.displayName) {
+                    metronome.updateNoteValue(noteValue)
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        }
+    }
+    
+    private var content: some View {
+        VStack(spacing: 12) {
                 // Header with settings
                 HStack {
                     Button(action: { showBeatPresets = true }) {
@@ -51,25 +75,69 @@ struct ContentView: View {
                                 .font(.title2)
                                 .foregroundColor(Color(hex: "#DDDDDD"))
                         }
-                        
-                        Picker("BPM", selection: Binding(
-                            get: { Int(metronome.bpm) },
-                            set: { newValue in
-                                metronome.bpm = Double(newValue)
-                                metronome.updateBPM(Double(newValue))
-                            }
-                        )) {
-                            ForEach(40...200, id: \.self) { bpm in
-                                Text("\(bpm)")
-                                    .font(.system(size: 24, weight: .light, design: .monospaced))
-                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(bpm == Int(metronome.bpm) ? 1.0 : 0.4))
-                                    .tag(bpm)
+                        .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 50) {
+                            // Long press action
+                        } onPressingChanged: { pressing in
+                            if pressing {
+                                startRepeatingDecrease()
+                            } else {
+                                stopRepeating()
                             }
                         }
-                        .pickerStyle(.wheel)
-                        .frame(width: 100, height: 140)
-                        .scaleEffect(2.0)
-                        .clipped()
+                        
+                        // Custom BPM Picker
+                        VStack(spacing: 0) {
+                            // Upper value (only show if not at minimum)
+                            if Int(metronome.bpm) > 40 {
+                                Text("\(Int(metronome.bpm) - 1)")
+                                    .font(.system(size: 48, weight: .light, design: .monospaced))
+                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.2))
+                                    .frame(height: 60)
+                            } else {
+                                Spacer()
+                                    .frame(height: 60)
+                            }
+                            
+                            // Current value with background
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(hex: "#303030"))
+                                    .frame(width: 120, height: 60)
+                                
+                                Text("\(Int(metronome.bpm))")
+                                    .font(.system(size: 48, weight: .light, design: .monospaced))
+                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                            }
+                            .frame(height: 60)
+                            
+                            // Lower value (only show if not at maximum)
+                            if Int(metronome.bpm) < 200 {
+                                Text("\(Int(metronome.bpm) + 1)")
+                                    .font(.system(size: 48, weight: .light, design: .monospaced))
+                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.2))
+                                    .frame(height: 60)
+                            } else {
+                                Spacer()
+                                    .frame(height: 60)
+                            }
+                        }
+                        .gesture(
+                            DragGesture()
+                                .onChanged { gesture in
+                                    let sensitivity: Double = 0.02
+                                    let change = -Double(gesture.translation.height) * sensitivity
+                                    let newBPM = max(40, min(200, metronome.bpm + change))
+                                    
+                                    // Haptic feedback on BPM change
+                                    if Int(newBPM) != Int(metronome.bpm) {
+                                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                        impactFeedback.impactOccurred()
+                                    }
+                                    
+                                    metronome.bpm = newBPM
+                                    metronome.updateBPM(newBPM)
+                                }
+                        )
                         
                         Button(action: { 
                             let newBPM = min(metronome.bpm + 1, 200)
@@ -79,6 +147,15 @@ struct ContentView: View {
                             Image(systemName: "plus")
                                 .font(.title2)
                                 .foregroundColor(Color(hex: "#DDDDDD"))
+                        }
+                        .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 50) {
+                            // Long press action
+                        } onPressingChanged: { pressing in
+                            if pressing {
+                                startRepeatingIncrease()
+                            } else {
+                                stopRepeating()
+                            }
                         }
                     }
                 }
@@ -120,10 +197,10 @@ struct ContentView: View {
                         ZStack {
                             Circle()
                                 .fill(Color(hex: "#242424"))
-                                .frame(width: 80, height: 80)
+                                .frame(width: 64, height: 64)
                             
                             Text("TAP")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(Color(hex: "#DDDDDD"))
                         }
                     }
@@ -135,12 +212,12 @@ struct ContentView: View {
                         ZStack {
                             Circle()
                                 .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
-                                .frame(width: 120, height: 120)
+                                .frame(width: 96, height: 96)
                                 .scaleEffect(metronome.shouldBlink ? 1.1 : 1.0)
                                 .animation(.easeInOut(duration: 0.1), value: metronome.shouldBlink)
                             
                             Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 40))
+                                .font(.system(size: 32))
                                 .foregroundColor(Color(hex: "#DDDDDD"))
                         }
                     }
@@ -152,10 +229,10 @@ struct ContentView: View {
                         ZStack {
                             Circle()
                                 .fill(Color(hex: "#242424"))
-                                .frame(width: 80, height: 80)
+                                .frame(width: 64, height: 64)
                             
                             Image(systemName: "shuffle")
-                                .font(.system(size: 24))
+                                .font(.system(size: 19))
                                 .foregroundColor(Color(hex: "#DDDDDD"))
                         }
                     }
@@ -164,25 +241,33 @@ struct ContentView: View {
                 Spacer()
             }
             .padding()
+    }
+    
+    private func startRepeatingIncrease() {
+        repeatTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            let newBPM = min(metronome.bpm + 1, 200)
+            metronome.bpm = newBPM
+            metronome.updateBPM(newBPM)
+            
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
         }
-        .background(Color(hex: "#1C1C1B"))
-        .sheet(isPresented: $showSettings) {
-            SettingsView(metronome: metronome)
+    }
+    
+    private func startRepeatingDecrease() {
+        repeatTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            let newBPM = max(metronome.bpm - 1, 40)
+            metronome.bpm = newBPM
+            metronome.updateBPM(newBPM)
+            
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
         }
-        .sheet(isPresented: $showGridSettings) {
-            GridSettingsView(metronome: metronome)
-        }
-        .sheet(isPresented: $showBeatPresets) {
-            BeatPresetsView(metronome: metronome)
-        }
-        .confirmationDialog("Choose Note Value", isPresented: $showQuickNoteValuePicker) {
-            ForEach(NoteValue.allCases, id: \.self) { noteValue in
-                Button(noteValue.displayName) {
-                    metronome.updateNoteValue(noteValue)
-                }
-            }
-            Button("Cancel", role: .cancel) { }
-        }
+    }
+    
+    private func stopRepeating() {
+        repeatTimer?.invalidate()
+        repeatTimer = nil
     }
 }
 
