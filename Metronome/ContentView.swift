@@ -164,7 +164,7 @@ struct ContentView: View {
                     .frame(height: 20)
                 
                 HStack(spacing: 12) {
-                    Text("BPM")
+                    Text("Grid")
                         .font(.title2)
                         .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
                     
