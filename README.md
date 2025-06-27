@@ -1,20 +1,20 @@
 # Metronome
 
-Ein einfaches Metronom für iOS, entwickelt in SwiftUI.
+A simple metronome app for iOS, built with SwiftUI.
 
 ## Features
 
-- BPM-Einstellung von 40 bis 200
-- Verschiedene Notenwerte (Viertel, Achtel, Sechzehntel, Triolen)
-- Grid-basierte Beat-Patterns
-- Tap Tempo
-- Beat-Presets und -Speicherung
-- Accent-Pattern
-- Haptic Feedback
+- BPM settings from 40 to 200
+- Various note values (quarter, eighth, sixteenth, triplets)
+- Grid-based beat patterns
+- Tap tempo
+- Beat presets and saving
+- Accent patterns
+- Haptic feedback
 
-## Entwicklung
+## Development
 
-### Voraussetzungen
+### Requirements
 
 - Xcode 15+
 - iOS 16+
@@ -23,42 +23,42 @@ Ein einfaches Metronom für iOS, entwickelt in SwiftUI.
 ### Setup
 
 ```bash
-git clone https://github.com/[username]/Metronome.git
-cd Metronome
+git clone https://github.com/alexfriedl/metro-mate-ios.git
+cd metro-mate-ios
 open Metronome.xcodeproj
 ```
 
-### Projekt-Struktur
+### Project Structure
 
-- `MetronomeApp.swift` - App Entry Point
-- `ContentView.swift` - Haupt-UI und Beat-Grid
-- `MetronomeManager.swift` - Core Logic und Audio
-- `ColorExtension.swift` - UI Utilities
+- `MetronomeApp.swift` - App entry point
+- `ContentView.swift` - Main UI and beat grid
+- `MetronomeManager.swift` - Core logic and audio
+- `ColorExtension.swift` - UI utilities
 
-## Beitragen
+## Contributing
 
-Contributions sind willkommen! Bitte:
+Contributions are welcome! Please:
 
-1. Fork das Repository
-2. Erstelle einen Feature Branch (`git checkout -b feature/neue-funktion`)
-3. Committe deine Änderungen (`git commit -m 'Neue Funktion hinzugefügt'`)
-4. Push zum Branch (`git push origin feature/neue-funktion`)
-5. Öffne eine Pull Request
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'Add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
 
 ### Code Style
 
-- Swift Standard Conventions
+- Swift standard conventions
 - SwiftUI best practices
-- Aussagekräftige Commit Messages
+- Meaningful commit messages
 
-## Lizenz
+## License
 
-GPL v3 mit zusätzlichen Bedingungen - siehe [LICENSE](LICENSE)
+GPL v3 with additional terms - see [LICENSE](LICENSE)
 
-**Wichtig:** Dieses Projekt ist ausschließlich für Open Source Nutzung, Lernen und Inspiration gedacht. Kommerzielle Nutzung ist nicht gestattet.
+**Important:** This project is intended for open source use, learning, and inspiration only. Commercial use is not permitted.
 
 ## Audio
 
-Das Projekt verwendet Standard-Click-Sounds:
-- `normal_click.wav` - Standard Beat
-- `accent_click.wav` - Akzentuierter Beat
+The project uses standard click sounds:
+- `normal_click.wav` - Standard beat
+- `accent_click.wav` - Accented beat
