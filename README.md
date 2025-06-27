@@ -56,9 +56,7 @@ Contributions are welcome! Please:
 
 ## License
 
-GPL v3 with additional terms - see [LICENSE](LICENSE)
-
-**Important:** This project is intended for open source use, learning, and inspiration only. Commercial use is not permitted.
+GPL-3.0 license
 
 ## Audio
 
