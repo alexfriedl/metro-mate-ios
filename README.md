@@ -2,6 +2,9 @@
 
 A simple metronome app for iOS, built with SwiftUI.
 
+![iphone](https://github.com/user-attachments/assets/8299c602-f101-4803-8370-584af814efa8)
+
+
 ## Features
 
 - BPM settings from 40 to 200
