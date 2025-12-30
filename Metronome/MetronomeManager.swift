@@ -154,8 +154,9 @@ struct BeatPreset: Identifiable, Codable {
 }
 
 class MetronomeManager: ObservableObject {
+    static let shared = MetronomeManager()
     @Published var isPlaying = false
-    @Published var bpm: Double = 80
+    @Published var bpm: Double = 60
     @Published var beatsPerMeasure = 8
     @Published var currentBeat = -1
     @Published var shouldBlink = false

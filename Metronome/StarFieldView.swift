@@ -45,12 +45,12 @@ struct StarFieldView: View {
                 setupDots(size: geometry.size)
                 startAnimation()
             }
-            .onChange(of: geometry.size) { _, newSize in
+            .onChange(of: geometry.size) { newSize in
                 setupDots(size: newSize)
             }
         }
         .ignoresSafeArea() // Cover entire screen including safe areas
-        .onChange(of: metronome.shouldBlink) { _, newValue in
+        .onChange(of: metronome.shouldBlink) { newValue in
             if newValue {
                 triggerPulse()
             }

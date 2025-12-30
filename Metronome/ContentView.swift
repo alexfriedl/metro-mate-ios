@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var metronome = MetronomeManager()
+    @StateObject private var metronome = MetronomeManager.shared
     @State private var showSettings = false
     @State private var showQuickNoteValuePicker = false
     @State private var showGridSettings = false
@@ -445,7 +445,7 @@ struct SettingsView: View {
                     Stepper("Beats per Measure: \(metronome.beatsPerMeasure)", 
                            value: $metronome.beatsPerMeasure, 
                            in: 1...16)
-                    .onChange(of: metronome.beatsPerMeasure) { oldValue, newValue in
+                    .onChange(of: metronome.beatsPerMeasure) { newValue in
                         metronome.updateBeatsPerMeasure(newValue)
                     }
                     .foregroundColor(Color(hex: "#DDDDDD"))
