@@ -32,6 +32,8 @@ struct ContentView: View {
         .confirmationDialog("Choose Note Value", isPresented: $showQuickNoteValuePicker) {
             ForEach(NoteValue.allCases, id: \.self) { noteValue in
                 Button(noteValue.displayName) {
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                    impactFeedback.impactOccurred()
                     metronome.updateNoteValue(noteValue)
                 }
             }
@@ -43,7 +45,11 @@ struct ContentView: View {
         VStack(spacing: 12) {
                 // Header with settings
                 HStack {
-                    Button(action: { showBeatPresets = true }) {
+                    Button(action: { 
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                        showBeatPresets = true 
+                    }) {
                         Text(metronome.currentBeatName)
                             .font(.title2)
                             .fontWeight(.bold)
@@ -53,7 +59,11 @@ struct ContentView: View {
                     
                     Spacer()
                     
-                    Button(action: { showSettings.toggle() }) {
+                    Button(action: { 
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                        showSettings.toggle() 
+                    }) {
                         Image(systemName: "gear")
                             .font(.title2)
                             .foregroundColor(Color(hex: "#DDDDDD"))
@@ -67,6 +77,8 @@ struct ContentView: View {
                 VStack {
                     HStack(spacing: 20) {
                         Button(action: { 
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                            impactFeedback.impactOccurred()
                             let newBPM = max(metronome.bpm - 1, 40)
                             metronome.bpm = newBPM
                             metronome.updateBPM(newBPM)
@@ -140,6 +152,8 @@ struct ContentView: View {
                         )
                         
                         Button(action: { 
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                            impactFeedback.impactOccurred()
                             let newBPM = min(metronome.bpm + 1, 200)
                             metronome.bpm = newBPM
                             metronome.updateBPM(newBPM)
@@ -168,7 +182,11 @@ struct ContentView: View {
                         .font(.title2)
                         .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
                     
-                    Button(action: { showQuickNoteValuePicker = true }) {
+                    Button(action: { 
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                        showQuickNoteValuePicker = true 
+                    }) {
                         ZStack {
                             Circle()
                                 .fill(Color(hex: "#242424"))
@@ -192,6 +210,8 @@ struct ContentView: View {
                 HStack(spacing: 20) {
                     // Tap Tempo Button
                     Button(action: {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
                         metronome.tapTempo()
                     }) {
                         ZStack {
@@ -207,6 +227,8 @@ struct ContentView: View {
                     
                     // Central Play Button
                     Button(action: {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
                         metronome.togglePlayback()
                     }) {
                         ZStack {
@@ -224,6 +246,8 @@ struct ContentView: View {
                     
                     // Randomize Beat Button
                     Button(action: {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
                         metronome.randomizeBeat()
                     }) {
                         ZStack {
@@ -283,6 +307,8 @@ struct GridView: View {
                         ForEach(0..<tilesInRow(row), id: \.self) { col in
                             let beat = row * tilesPerRow() + col
                             Button(action: {
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                impactFeedback.impactOccurred()
                                 metronome.toggleGridCell(row: 0, col: beat)
                             }) {
                                 Rectangle()
@@ -314,6 +340,8 @@ struct GridView: View {
                         ForEach(0..<tilesInRow(row), id: \.self) { col in
                             let beat = row * tilesPerRow() + col
                             Button(action: {
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                impactFeedback.impactOccurred()
                                 metronome.toggleAccentCell(col: beat)
                             }) {
                                 Circle()
@@ -405,6 +433,8 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
                         dismiss()
                     }
                     .foregroundColor(Color(hex: "#DDDDDD"))
@@ -461,6 +491,8 @@ struct GridSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
                         dismiss()
                     }
                     .foregroundColor(Color(hex: "#DDDDDD"))
@@ -495,6 +527,8 @@ struct BeatPresetsView: View {
                         Spacer()
                         
                         Button("Save As...") {
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                            impactFeedback.impactOccurred()
                             newBeatName = metronome.currentBeatName
                             showSaveDialog = true
                         }
@@ -518,6 +552,8 @@ struct BeatPresetsView: View {
                             Spacer()
                             
                             Button("Load") {
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                impactFeedback.impactOccurred()
                                 metronome.loadBeatPreset(preset)
                                 dismiss()
                             }
@@ -542,6 +578,8 @@ struct BeatPresetsView: View {
                             Spacer()
                             
                             Button("Load") {
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                impactFeedback.impactOccurred()
                                 metronome.loadBeatPreset(preset)
                                 dismiss()
                             }
@@ -565,6 +603,8 @@ struct BeatPresetsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Reset") {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
                         metronome.resetToBasicBeat()
                         dismiss()
                     }
@@ -573,6 +613,8 @@ struct BeatPresetsView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
                         dismiss()
                     }
                     .foregroundColor(Color(hex: "#DDDDDD"))
@@ -585,6 +627,8 @@ struct BeatPresetsView: View {
             TextField("Beat Name", text: $newBeatName)
                 .foregroundColor(.black)
             Button("Save") {
+                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                impactFeedback.impactOccurred()
                 if !newBeatName.isEmpty {
                     metronome.saveBeatPreset(name: newBeatName)
                 }
