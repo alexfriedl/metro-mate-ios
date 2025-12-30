@@ -227,8 +227,8 @@ struct ContentView: View {
                                 .stroke(Color(hex: "#F54206"), lineWidth: 2)
                                 .frame(width: 64 * tapPoint.scale, height: 64 * tapPoint.scale)
                                 .opacity(tapPoint.opacity)
-                                .animation(.linear(duration: 0.05), value: tapPoint.opacity)
-                                .animation(.linear(duration: 0.05), value: tapPoint.scale)
+                                .animation(.linear(duration: 0.02), value: tapPoint.opacity)
+                                .animation(.linear(duration: 0.02), value: tapPoint.scale)
                                 .allowsHitTesting(false)
                         }
                         

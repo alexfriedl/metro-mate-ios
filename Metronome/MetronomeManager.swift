@@ -600,7 +600,7 @@ class MetronomeManager: ObservableObject {
         tapPointTimer?.invalidate()
         
         // Start new animation timer
-        tapPointTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+        tapPointTimer = Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             
             let now = Date()
@@ -610,15 +610,15 @@ class MetronomeManager: ObservableObject {
             for i in self.tapPoints.indices {
                 let age = now.timeIntervalSince(self.tapPoints[i].timestamp)
                 
-                if age < 2.0 { // Fade out over 2 seconds
+                if age < 1.0 { // Fade out over 1 second (faster)
                     hasActiveTaps = true
-                    self.tapPoints[i].opacity = max(0, 1.0 - (age / 2.0))
-                    self.tapPoints[i].scale = 1.0 + (age * 0.5) // Grow from 1.0 to 2.0
+                    self.tapPoints[i].opacity = max(0, 1.0 - age)
+                    self.tapPoints[i].scale = 1.0 + (age * 1.0) // Grow faster
                 }
             }
             
             // Remove old tap points
-            self.tapPoints.removeAll { now.timeIntervalSince($0.timestamp) >= 2.0 }
+            self.tapPoints.removeAll { now.timeIntervalSince($0.timestamp) >= 1.0 }
             
             // Stop timer if no active taps
             if !hasActiveTaps {
