@@ -1,5 +1,13 @@
 import Foundation
 import AVFoundation
+import SwiftUI
+
+struct TapPoint: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    var opacity: Double = 1.0
+    var scale: Double = 1.0
+}
 
 enum NoteValue: String, CaseIterable, Codable {
     case quarter = "1/4"
@@ -158,9 +166,11 @@ class MetronomeManager: ObservableObject {
     @Published var gridDisplayMode: GridDisplayMode = .andCounting
     @Published var currentBeatName: String = "Default Beat"
     @Published var savedBeats: [BeatPreset] = []
+    @Published var tapPoints: [TapPoint] = []
     
     private var tapTimes: [Date] = []
-    private let maxTapCount = 4
+    private let maxTapCount = 8
+    private var tapPointTimer: Timer?
     
     private var audioEngine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
@@ -171,6 +181,10 @@ class MetronomeManager: ObservableObject {
     init() {
         setupAudio()
         setupDefaultPattern()
+    }
+    
+    deinit {
+        tapPointTimer?.invalidate()
     }
     
     private func setupAudio() {
@@ -522,6 +536,13 @@ class MetronomeManager: ObservableObject {
         let now = Date()
         tapTimes.append(now)
         
+        // Add visual tap point
+        let newTapPoint = TapPoint(timestamp: now)
+        tapPoints.append(newTapPoint)
+        
+        // Start or reset the animation timer
+        startTapPointAnimation()
+        
         // Remove taps older than 3 seconds
         tapTimes = tapTimes.filter { now.timeIntervalSince($0) < 3.0 }
         
@@ -541,6 +562,39 @@ class MetronomeManager: ObservableObject {
             
             if isPlaying {
                 updateBPM(bpm)
+            }
+        }
+    }
+    
+    private func startTapPointAnimation() {
+        // Clear old timer
+        tapPointTimer?.invalidate()
+        
+        // Start new animation timer
+        tapPointTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            
+            let now = Date()
+            var hasActiveTaps = false
+            
+            // Update opacity and scale for each tap point
+            for i in self.tapPoints.indices {
+                let age = now.timeIntervalSince(self.tapPoints[i].timestamp)
+                
+                if age < 2.0 { // Fade out over 2 seconds
+                    hasActiveTaps = true
+                    self.tapPoints[i].opacity = max(0, 1.0 - (age / 2.0))
+                    self.tapPoints[i].scale = 1.0 + (age * 0.5) // Grow from 1.0 to 2.0
+                }
+            }
+            
+            // Remove old tap points
+            self.tapPoints.removeAll { now.timeIntervalSince($0.timestamp) >= 2.0 }
+            
+            // Stop timer if no active taps
+            if !hasActiveTaps {
+                self.tapPointTimer?.invalidate()
+                self.tapPointTimer = nil
             }
         }
     }

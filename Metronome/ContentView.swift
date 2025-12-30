@@ -219,9 +219,29 @@ struct ContentView: View {
                                 .fill(Color(hex: "#242424"))
                                 .frame(width: 64, height: 64)
                             
-                            Text("TAP")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                            // Tap visualization
+                            ForEach(metronome.tapPoints) { tapPoint in
+                                Circle()
+                                    .stroke(Color(hex: "#F54206"), lineWidth: 2)
+                                    .frame(width: 64 * tapPoint.scale, height: 64 * tapPoint.scale)
+                                    .opacity(tapPoint.opacity)
+                                    .animation(.linear(duration: 0.05), value: tapPoint.opacity)
+                                    .animation(.linear(duration: 0.05), value: tapPoint.scale)
+                            }
+                            
+                            VStack(spacing: 2) {
+                                Text("TAP")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                
+                                // Show tap count when active
+                                if !metronome.tapPoints.isEmpty {
+                                    Text("\(metronome.tapPoints.count)")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .foregroundColor(Color(hex: "#F54206"))
+                                        .transition(.opacity)
+                                }
+                            }
                         }
                     }
                     
