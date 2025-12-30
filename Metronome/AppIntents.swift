@@ -101,9 +101,8 @@ struct MetronomeShortcuts: AppShortcutsProvider {
             phrases: [
                 "Start \(.applicationName) at \(\.$bpm) BPM",
                 "Start \(.applicationName) with \(\.$bpm) BPM",
-                "Set \(.applicationName) to \(\.$bpm) BPM",
-                "Starte \(.applicationName) mit \(\.$bpm) BPM",
-                "Stelle \(.applicationName) auf \(\.$bpm) BPM",
+                "Open \(.applicationName) with \(\.$bpm) BPM",
+                "Öffne \(.applicationName) mit \(\.$bpm) BPM",
                 "\(.applicationName) auf \(\.$bpm) BPM",
                 "\(.applicationName) \(\.$bpm) BPM"
             ],
