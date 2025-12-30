@@ -111,35 +111,25 @@ struct StarFieldView: View {
             return 1.0
         }
         
+        // Check if current beat is accented
+        let isAccented = metronome.currentBeat >= 0 && 
+                        metronome.currentBeat < metronome.accentPattern.count && 
+                        metronome.accentPattern[metronome.currentBeat]
+        
+        // Base intensity: full for accented, half for non-accented
+        let baseIntensity: CGFloat = isAccented ? 1.0 : 0.5
+        
         // BPM-based intensity scaling
         let bpmFactor: CGFloat = {
-            if metronome.bpm <= 80 {
+            if metronome.bpm <= 100 {
                 return 1.0  // Full intensity at slow speeds
-            } else if metronome.bpm >= 160 {
+            } else if metronome.bpm >= 180 {
                 return 0.3  // Minimal intensity at high speeds
             } else {
-                // Linear interpolation between 80-160 BPM
-                return 1.0 - ((metronome.bpm - 80) / 80) * 0.7
+                // Linear interpolation between 100-180 BPM
+                return 1.0 - ((metronome.bpm - 100) / 80) * 0.7
             }
         }()
-        
-        let baseIntensity: CGFloat
-        switch metronome.noteValue {
-        case .quarter, .quarterTriplet:
-            baseIntensity = 1.0
-        case .eighth, .eighthTriplet:
-            // Full pulse on quarter positions (0,2,4,6), half on eighths (1,3,5,7)
-            baseIntensity = metronome.currentBeat % 2 == 0 ? 1.0 : 0.5
-        case .sixteenth, .sixteenthTriplet:
-            // Full pulse on quarter positions (0,4,8,12), half on eighths (2,6,10,14), none on 16ths
-            if metronome.currentBeat % 4 == 0 {
-                baseIntensity = 1.0  // Quarter note positions
-            } else if metronome.currentBeat % 2 == 0 {
-                baseIntensity = 0.5  // Eighth note positions
-            } else {
-                baseIntensity = 0    // Sixteenth note positions
-            }
-        }
         
         return baseIntensity * bpmFactor
     }

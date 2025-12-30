@@ -156,19 +156,21 @@ struct BeatPreset: Identifiable, Codable {
 class MetronomeManager: ObservableObject {
     @Published var isPlaying = false
     @Published var bpm: Double = 80
-    @Published var beatsPerMeasure = 4
+    @Published var beatsPerMeasure = 8
     @Published var currentBeat = -1
     @Published var shouldBlink = false
     @Published var gridPattern: [[Bool]] = Array(repeating: Array(repeating: false, count: 16), count: 4)
     @Published var accentPattern: [Bool] = Array(repeating: false, count: 16)
     @Published var gridSize = 4
-    @Published var noteValue: NoteValue = .quarter
+    @Published var noteValue: NoteValue = .eighth
     @Published var gridDisplayMode: GridDisplayMode = .andCounting
-    @Published var currentBeatName: String = "Default Beat"
+    @Published var currentBeatName: String = "Eighth"
     @Published var savedBeats: [BeatPreset] = []
     @Published var tapPoints: [TapPoint] = []
     @Published var tapTimes: [Date] = []
+    @Published var tapCount: Int = 0
     private let maxTapCount = 8
+    private var tapClearTimer: Timer?
     private var tapPointTimer: Timer?
     
     private var audioEngine: AVAudioEngine?
@@ -478,13 +480,17 @@ class MetronomeManager: ObservableObject {
         if currentBeatName != "Custom Beat" && currentBeatName != "Random Beat" {
             switch newNoteValue {
             case .quarter:
-                currentBeatName = "Default Beat"
+                currentBeatName = "Quarter"
             case .eighth:
-                currentBeatName = "Eighth Beat"
+                currentBeatName = "Eighth"
             case .sixteenth:
-                currentBeatName = "Sixteenth Beat"
-            case .quarterTriplet, .eighthTriplet, .sixteenthTriplet:
-                currentBeatName = "Triplet Beat"
+                currentBeatName = "Sixteenth"
+            case .quarterTriplet:
+                currentBeatName = "Quarter Triplet"
+            case .eighthTriplet:
+                currentBeatName = "Eighth Triplet"
+            case .sixteenthTriplet:
+                currentBeatName = "Sixteenth Triplet"
             }
         }
         
@@ -560,6 +566,11 @@ class MetronomeManager: ObservableObject {
     
     func tapTempo() {
         let now = Date()
+        
+        // Increment tap count (never resets, just keeps counting)
+        tapCount += 1
+        
+        // Add to tap times for BPM calculation
         tapTimes.append(now)
         
         // Play tap sound
@@ -571,10 +582,10 @@ class MetronomeManager: ObservableObject {
             self.shouldBlink = false
         }
         
-        // Remove taps older than 3 seconds
+        // Only keep recent taps for BPM calculation (but don't affect count)
         tapTimes = tapTimes.filter { now.timeIntervalSince($0) < 3.0 }
         
-        // Keep only the most recent taps
+        // Keep only the most recent taps for calculation
         if tapTimes.count > maxTapCount {
             tapTimes.removeFirst(tapTimes.count - maxTapCount)
         }
@@ -591,6 +602,13 @@ class MetronomeManager: ObservableObject {
             if isPlaying {
                 updateBPM(bpm)
             }
+        }
+        
+        // Clear tap count after 3 seconds of no tapping
+        tapClearTimer?.invalidate()
+        tapClearTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { [weak self] _ in
+            self?.tapCount = 0
+            // Don't clear BPM - it stays
         }
     }
     
@@ -717,7 +735,7 @@ class MetronomeManager: ObservableObject {
     func deleteBeatPreset(_ preset: BeatPreset) {
         savedBeats.removeAll { $0.id == preset.id }
         if currentBeatName == preset.name {
-            currentBeatName = "Default Beat"
+            currentBeatName = "Eighth"
         }
     }
     
@@ -790,9 +808,9 @@ class MetronomeManager: ObservableObject {
     }
     
     func resetToBasicBeat() {
-        noteValue = .quarter
+        noteValue = .eighth
         bpm = 80
-        beatsPerMeasure = 4
+        beatsPerMeasure = 8
         gridDisplayMode = .andCounting
         
         // Reset current beat properly
@@ -832,6 +850,6 @@ class MetronomeManager: ObservableObject {
             timer?.resume()
         }
         
-        currentBeatName = "Default Beat"
+        currentBeatName = "Eighth"
     }
 }

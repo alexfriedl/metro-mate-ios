@@ -235,9 +235,9 @@ struct ContentView: View {
                                     .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(Color(hex: "#DDDDDD"))
                                 
-                                // Show tap count when active
-                                if metronome.tapTimes.count > 0 {
-                                    Text("\(metronome.tapTimes.count)")
+                                // Show tap count
+                                if metronome.tapCount > 0 {
+                                    Text("\(metronome.tapCount)")
                                         .font(.system(size: 10, weight: .medium))
                                         .foregroundColor(Color(hex: "#F54206"))
                                         .transition(.opacity)
@@ -586,6 +586,8 @@ struct BeatPresetsView: View {
                                 dismiss()
                             }
                             .foregroundColor(Color(hex: "#F54206"))
+                            .disabled(preset.name == metronome.currentBeatName)
+                            .opacity(preset.name == metronome.currentBeatName ? 0.5 : 1.0)
                         }
                         .listRowBackground(Color(hex: "#303030"))
                     }
@@ -612,6 +614,8 @@ struct BeatPresetsView: View {
                                 dismiss()
                             }
                             .foregroundColor(Color(hex: "#F54206"))
+                            .disabled(preset.name == metronome.currentBeatName)
+                            .opacity(preset.name == metronome.currentBeatName ? 0.5 : 1.0)
                         }
                         .listRowBackground(Color(hex: "#303030"))
                     }
@@ -669,12 +673,12 @@ struct BeatPresetsView: View {
     
     func defaultPresets() -> [BeatPreset] {
         let presets: [(NoteValue, String)] = [
-            (.quarter, "Default"),
+            (.quarter, "Quarter"),
             (.eighth, "Eighth"),
             (.sixteenth, "Sixteenth"),
-            (.quarterTriplet, "Triplet (quarter)"),
-            (.eighthTriplet, "Triplet (eight)"),
-            (.sixteenthTriplet, "Triplet (sixteenth)")
+            (.quarterTriplet, "Quarter Triplet"),
+            (.eighthTriplet, "Eighth Triplet"),
+            (.sixteenthTriplet, "Sixteenth Triplet")
         ]
         
         return presets.map { noteValue, name in
