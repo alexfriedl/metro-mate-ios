@@ -14,12 +14,23 @@ struct ContentView: View {
     @State private var showGridSettings = false
     @State private var showBeatPresets = false
     @State private var repeatTimer: Timer?
+    @State private var isPlayButtonPressed = false
     
     var body: some View {
-        GeometryReader { geometry in
-            content
+        ZStack {
+            // Background with animated stars
+            Color(hex: "#1C1C1B")
+                .ignoresSafeArea()
+            
+            StarFieldView(metronome: metronome)
+                .ignoresSafeArea()
+                .allowsHitTesting(false) // Don't block UI interactions
+            
+            // Main content
+            GeometryReader { geometry in
+                content
+            }
         }
-        .background(Color(hex: "#1C1C1B"))
         .sheet(isPresented: $showSettings) {
             SettingsView(metronome: metronome)
         }
@@ -178,8 +189,8 @@ struct ContentView: View {
                     .frame(height: 20)
                 
                 HStack(spacing: 12) {
-                    Text("Grid")
-                        .font(.title2)
+                    Text("GRID")
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
                     
                     Button(action: { 
@@ -209,63 +220,56 @@ struct ContentView: View {
                 // Play and Tap Tempo Buttons
                 HStack(spacing: 20) {
                     // Tap Tempo Button
-                    ZStack {
-                        // Tap visualization overlay (doesn't affect layout)
-                        ForEach(metronome.tapPoints) { tapPoint in
+                    Button(action: {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                        metronome.tapTempo()
+                    }) {
+                        ZStack {
                             Circle()
-                                .stroke(Color(hex: "#F54206"), lineWidth: 2)
-                                .frame(width: 64 * tapPoint.scale, height: 64 * tapPoint.scale)
-                                .opacity(tapPoint.opacity)
-                                .animation(.linear(duration: 0.05), value: tapPoint.opacity)
-                                .animation(.linear(duration: 0.05), value: tapPoint.scale)
-                                .allowsHitTesting(false)
-                        }
-                        
-                        Button(action: {
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                            impactFeedback.impactOccurred()
-                            metronome.tapTempo()
-                        }) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color(hex: "#242424"))
-                                    .frame(width: 64, height: 64)
+                                .fill(Color(hex: "#242424"))
+                                .frame(width: 64, height: 64)
+                            
+                            VStack(spacing: 2) {
+                                Text("TAP")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(Color(hex: "#DDDDDD"))
                                 
-                                VStack(spacing: 2) {
-                                    Text("TAP")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundColor(Color(hex: "#DDDDDD"))
-                                    
-                                    // Show tap count when active
-                                    if !metronome.tapPoints.isEmpty {
-                                        Text("\(metronome.tapPoints.count)")
-                                            .font(.system(size: 10, weight: .medium))
-                                            .foregroundColor(Color(hex: "#F54206"))
-                                            .transition(.opacity)
-                                    }
+                                // Show tap count
+                                if metronome.tapCount > 0 {
+                                    Text("\(metronome.tapCount)")
+                                        .font(.system(size: 10, weight: .medium))
+                                        .foregroundColor(Color(hex: "#F54206"))
+                                        .transition(.opacity)
                                 }
                             }
                         }
                     }
-                    .frame(width: 64, height: 64) // Fixed frame to prevent layout shifts
                     
                     // Central Play Button
-                    Button(action: {
+                    ZStack {
+                        Circle()
+                            .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
+                            .frame(width: 96, height: 96)
+                            .scaleEffect(isPlayButtonPressed ? 0.95 : (metronome.shouldBlink ? 1.1 : 1.0))
+                            .animation(.easeInOut(duration: 0.1), value: metronome.shouldBlink)
+                            .animation(.easeInOut(duration: 0.1), value: isPlayButtonPressed)
+                        
+                        Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(Color(hex: "#DDDDDD"))
+                            .scaleEffect(isPlayButtonPressed ? 0.95 : 1.0)
+                            .animation(.easeInOut(duration: 0.1), value: isPlayButtonPressed)
+                    }
+                    .onTapGesture {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                         impactFeedback.impactOccurred()
                         metronome.togglePlayback()
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
-                                .frame(width: 96, height: 96)
-                                .scaleEffect(metronome.shouldBlink ? 1.1 : 1.0)
-                                .animation(.easeInOut(duration: 0.1), value: metronome.shouldBlink)
-                            
-                            Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 32))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
-                        }
+                    }
+                    .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity) {
+                        // Never triggers
+                    } onPressingChanged: { pressing in
+                        isPlayButtonPressed = pressing
                     }
                     
                     // Randomize Beat Button
@@ -582,6 +586,8 @@ struct BeatPresetsView: View {
                                 dismiss()
                             }
                             .foregroundColor(Color(hex: "#F54206"))
+                            .disabled(preset.name == metronome.currentBeatName)
+                            .opacity(preset.name == metronome.currentBeatName ? 0.5 : 1.0)
                         }
                         .listRowBackground(Color(hex: "#303030"))
                     }
@@ -608,6 +614,8 @@ struct BeatPresetsView: View {
                                 dismiss()
                             }
                             .foregroundColor(Color(hex: "#F54206"))
+                            .disabled(preset.name == metronome.currentBeatName)
+                            .opacity(preset.name == metronome.currentBeatName ? 0.5 : 1.0)
                         }
                         .listRowBackground(Color(hex: "#303030"))
                     }
@@ -665,12 +673,12 @@ struct BeatPresetsView: View {
     
     func defaultPresets() -> [BeatPreset] {
         let presets: [(NoteValue, String)] = [
-            (.quarter, "Default"),
+            (.quarter, "Quarter"),
             (.eighth, "Eighth"),
             (.sixteenth, "Sixteenth"),
-            (.quarterTriplet, "Triplet (quarter)"),
-            (.eighthTriplet, "Triplet (eight)"),
-            (.sixteenthTriplet, "Triplet (sixteenth)")
+            (.quarterTriplet, "Quarter Triplet"),
+            (.eighthTriplet, "Eighth Triplet"),
+            (.sixteenthTriplet, "Sixteenth Triplet")
         ]
         
         return presets.map { noteValue, name in

@@ -156,20 +156,21 @@ struct BeatPreset: Identifiable, Codable {
 class MetronomeManager: ObservableObject {
     @Published var isPlaying = false
     @Published var bpm: Double = 80
-    @Published var beatsPerMeasure = 4
+    @Published var beatsPerMeasure = 8
     @Published var currentBeat = -1
     @Published var shouldBlink = false
     @Published var gridPattern: [[Bool]] = Array(repeating: Array(repeating: false, count: 16), count: 4)
     @Published var accentPattern: [Bool] = Array(repeating: false, count: 16)
     @Published var gridSize = 4
-    @Published var noteValue: NoteValue = .quarter
+    @Published var noteValue: NoteValue = .eighth
     @Published var gridDisplayMode: GridDisplayMode = .andCounting
-    @Published var currentBeatName: String = "Default Beat"
+    @Published var currentBeatName: String = "Eighth"
     @Published var savedBeats: [BeatPreset] = []
     @Published var tapPoints: [TapPoint] = []
-    
-    private var tapTimes: [Date] = []
+    @Published var tapTimes: [Date] = []
+    @Published var tapCount: Int = 0
     private let maxTapCount = 8
+    private var tapClearTimer: Timer?
     private var tapPointTimer: Timer?
     
     private var audioEngine: AVAudioEngine?
@@ -402,8 +403,35 @@ class MetronomeManager: ObservableObject {
         }
     }
     
+    private func playTapSound() {
+        guard let playerNode = playerNode else { return }
+        
+        // Ensure audio engine is running
+        if let audioEngine = audioEngine, !audioEngine.isRunning {
+            do {
+                try audioEngine.start()
+            } catch {
+                print("Failed to start audio engine for tap: \(error)")
+                return
+            }
+        }
+        
+        // Use normal click sound for tap
+        if let audioFile = normalClickFile {
+            playerNode.scheduleFile(audioFile, at: nil)
+        } else {
+            guard let audioBuffer = createClickBuffer(accent: false) else { return }
+            playerNode.scheduleBuffer(audioBuffer, at: nil, options: [], completionHandler: nil)
+        }
+        
+        if !playerNode.isPlaying {
+            playerNode.play()
+        }
+    }
+    
     
     private func triggerVisualBlink() {
+        // Always trigger blink but with different intensities
         shouldBlink = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.shouldBlink = false
@@ -452,13 +480,17 @@ class MetronomeManager: ObservableObject {
         if currentBeatName != "Custom Beat" && currentBeatName != "Random Beat" {
             switch newNoteValue {
             case .quarter:
-                currentBeatName = "Default Beat"
+                currentBeatName = "Quarter"
             case .eighth:
-                currentBeatName = "Eighth Beat"
+                currentBeatName = "Eighth"
             case .sixteenth:
-                currentBeatName = "Sixteenth Beat"
-            case .quarterTriplet, .eighthTriplet, .sixteenthTriplet:
-                currentBeatName = "Triplet Beat"
+                currentBeatName = "Sixteenth"
+            case .quarterTriplet:
+                currentBeatName = "Quarter Triplet"
+            case .eighthTriplet:
+                currentBeatName = "Eighth Triplet"
+            case .sixteenthTriplet:
+                currentBeatName = "Sixteenth Triplet"
             }
         }
         
@@ -534,19 +566,26 @@ class MetronomeManager: ObservableObject {
     
     func tapTempo() {
         let now = Date()
+        
+        // Increment tap count (never resets, just keeps counting)
+        tapCount += 1
+        
+        // Add to tap times for BPM calculation
         tapTimes.append(now)
         
-        // Add visual tap point
-        let newTapPoint = TapPoint(timestamp: now)
-        tapPoints.append(newTapPoint)
+        // Play tap sound
+        playTapSound()
         
-        // Start or reset the animation timer
-        startTapPointAnimation()
+        // Always trigger background pulse effect (even when not playing)
+        shouldBlink = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.shouldBlink = false
+        }
         
-        // Remove taps older than 3 seconds
+        // Only keep recent taps for BPM calculation (but don't affect count)
         tapTimes = tapTimes.filter { now.timeIntervalSince($0) < 3.0 }
         
-        // Keep only the most recent taps
+        // Keep only the most recent taps for calculation
         if tapTimes.count > maxTapCount {
             tapTimes.removeFirst(tapTimes.count - maxTapCount)
         }
@@ -564,6 +603,13 @@ class MetronomeManager: ObservableObject {
                 updateBPM(bpm)
             }
         }
+        
+        // Clear tap count after 3 seconds of no tapping
+        tapClearTimer?.invalidate()
+        tapClearTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { [weak self] _ in
+            self?.tapCount = 0
+            // Don't clear BPM - it stays
+        }
     }
     
     private func startTapPointAnimation() {
@@ -571,7 +617,7 @@ class MetronomeManager: ObservableObject {
         tapPointTimer?.invalidate()
         
         // Start new animation timer
-        tapPointTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+        tapPointTimer = Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             
             let now = Date()
@@ -581,15 +627,15 @@ class MetronomeManager: ObservableObject {
             for i in self.tapPoints.indices {
                 let age = now.timeIntervalSince(self.tapPoints[i].timestamp)
                 
-                if age < 2.0 { // Fade out over 2 seconds
+                if age < 1.0 { // Fade out over 1 second (faster)
                     hasActiveTaps = true
-                    self.tapPoints[i].opacity = max(0, 1.0 - (age / 2.0))
-                    self.tapPoints[i].scale = 1.0 + (age * 0.5) // Grow from 1.0 to 2.0
+                    self.tapPoints[i].opacity = max(0, 1.0 - age)
+                    self.tapPoints[i].scale = 1.0 + (age * 1.0) // Grow faster
                 }
             }
             
             // Remove old tap points
-            self.tapPoints.removeAll { now.timeIntervalSince($0.timestamp) >= 2.0 }
+            self.tapPoints.removeAll { now.timeIntervalSince($0.timestamp) >= 1.0 }
             
             // Stop timer if no active taps
             if !hasActiveTaps {
@@ -689,7 +735,7 @@ class MetronomeManager: ObservableObject {
     func deleteBeatPreset(_ preset: BeatPreset) {
         savedBeats.removeAll { $0.id == preset.id }
         if currentBeatName == preset.name {
-            currentBeatName = "Default Beat"
+            currentBeatName = "Eighth"
         }
     }
     
@@ -762,9 +808,9 @@ class MetronomeManager: ObservableObject {
     }
     
     func resetToBasicBeat() {
-        noteValue = .quarter
+        noteValue = .eighth
         bpm = 80
-        beatsPerMeasure = 4
+        beatsPerMeasure = 8
         gridDisplayMode = .andCounting
         
         // Reset current beat properly
@@ -804,6 +850,6 @@ class MetronomeManager: ObservableObject {
             timer?.resume()
         }
         
-        currentBeatName = "Default Beat"
+        currentBeatName = "Eighth"
     }
 }
