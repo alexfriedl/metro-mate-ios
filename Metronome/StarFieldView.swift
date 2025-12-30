@@ -51,7 +51,7 @@ struct StarFieldView: View {
         }
         .ignoresSafeArea() // Cover entire screen including safe areas
         .onChange(of: metronome.shouldBlink) { _, newValue in
-            if newValue && metronome.isPlaying {
+            if newValue {
                 triggerPulse()
             }
         }
@@ -98,7 +98,50 @@ struct StarFieldView: View {
     }
     
     private func triggerPulse() {
-        pulseTime = 0
+        // Adjust pulse intensity based on note value
+        let intensity = getPulseIntensity()
+        if intensity > 0 {
+            pulseTime = 0
+        }
+    }
+    
+    private func getPulseIntensity() -> CGFloat {
+        // If not playing (tap tempo), always use full intensity
+        if !metronome.isPlaying {
+            return 1.0
+        }
+        
+        // BPM-based intensity scaling
+        let bpmFactor: CGFloat = {
+            if metronome.bpm <= 80 {
+                return 1.0  // Full intensity at slow speeds
+            } else if metronome.bpm >= 160 {
+                return 0.3  // Minimal intensity at high speeds
+            } else {
+                // Linear interpolation between 80-160 BPM
+                return 1.0 - ((metronome.bpm - 80) / 80) * 0.7
+            }
+        }()
+        
+        let baseIntensity: CGFloat
+        switch metronome.noteValue {
+        case .quarter, .quarterTriplet:
+            baseIntensity = 1.0
+        case .eighth, .eighthTriplet:
+            // Full pulse on quarter positions (0,2,4,6), half on eighths (1,3,5,7)
+            baseIntensity = metronome.currentBeat % 2 == 0 ? 1.0 : 0.5
+        case .sixteenth, .sixteenthTriplet:
+            // Full pulse on quarter positions (0,4,8,12), half on eighths (2,6,10,14), none on 16ths
+            if metronome.currentBeat % 4 == 0 {
+                baseIntensity = 1.0  // Quarter note positions
+            } else if metronome.currentBeat % 2 == 0 {
+                baseIntensity = 0.5  // Eighth note positions
+            } else {
+                baseIntensity = 0    // Sixteenth note positions
+            }
+        }
+        
+        return baseIntensity * bpmFactor
     }
     
     private func startAnimation() {
@@ -108,7 +151,9 @@ struct StarFieldView: View {
     }
     
     private func updateDots() {
-        wavePhase += 0.03
+        // Slower wave movement at higher BPMs
+        let speedScale = max(0.5, 1.0 - (metronome.bpm - 80) / 160)
+        wavePhase += 0.03 * speedScale
         
         // Pulse wave
         if pulseTime < 1.0 {
@@ -132,12 +177,13 @@ struct StarFieldView: View {
                 var displacement: CGFloat = 0
                 var sizeMultiplier: CGFloat = 1.0
                 
-                // Sharp, fast wave effect
-                if waveDistance < 80 && pulseTime < 1.0 {
+                // Sharp, fast wave effect with intensity based on note value
+                let intensity = getPulseIntensity()
+                if waveDistance < 80 && pulseTime < 1.0 && intensity > 0 {
                     let waveStrength = 1.0 - waveDistance / 80
                     let fadeOut = 1.0 - pulseTime
-                    displacement = Darwin.sin(waveDistance * 0.1) * 20 * waveStrength * fadeOut
-                    sizeMultiplier = 1.0 + waveStrength * fadeOut * 1.0
+                    displacement = Darwin.sin(waveDistance * 0.1) * 20 * waveStrength * fadeOut * intensity
+                    sizeMultiplier = 1.0 + waveStrength * fadeOut * intensity
                 }
                 
                 // Apply displacement radially
@@ -145,8 +191,9 @@ struct StarFieldView: View {
                 let displacementX = Darwin.cos(angle) * displacement
                 let displacementY = Darwin.sin(angle) * displacement
                 
-                // Subtle ambient wave motion
-                let ambientWave = Darwin.sin(wavePhase + dot.distanceFromCenter * 0.008) * 2
+                // Subtle ambient wave motion (also scaled by BPM)
+                let bpmScale = max(0.3, 1.0 - (metronome.bpm - 80) / 120)
+                let ambientWave = Darwin.sin(wavePhase + dot.distanceFromCenter * 0.008) * 2 * bpmScale
                 
                 // Update position
                 dot.x = dot.baseX + displacementX + Darwin.cos(wavePhase * 0.5 + CGFloat(row) * 0.05) * ambientWave

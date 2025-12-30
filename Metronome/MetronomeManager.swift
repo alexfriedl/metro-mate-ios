@@ -167,8 +167,7 @@ class MetronomeManager: ObservableObject {
     @Published var currentBeatName: String = "Default Beat"
     @Published var savedBeats: [BeatPreset] = []
     @Published var tapPoints: [TapPoint] = []
-    
-    private var tapTimes: [Date] = []
+    @Published var tapTimes: [Date] = []
     private let maxTapCount = 8
     private var tapPointTimer: Timer?
     
@@ -430,6 +429,7 @@ class MetronomeManager: ObservableObject {
     
     
     private func triggerVisualBlink() {
+        // Always trigger blink but with different intensities
         shouldBlink = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.shouldBlink = false
@@ -565,12 +565,11 @@ class MetronomeManager: ObservableObject {
         // Play tap sound
         playTapSound()
         
-        // Add visual tap point
-        let newTapPoint = TapPoint(timestamp: now)
-        tapPoints.append(newTapPoint)
-        
-        // Start or reset the animation timer
-        startTapPointAnimation()
+        // Always trigger background pulse effect (even when not playing)
+        shouldBlink = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.shouldBlink = false
+        }
         
         // Remove taps older than 3 seconds
         tapTimes = tapTimes.filter { now.timeIntervalSince($0) < 3.0 }
