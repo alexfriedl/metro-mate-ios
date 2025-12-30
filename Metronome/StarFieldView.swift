@@ -15,39 +15,41 @@ struct StarFieldView: View {
     @State private var wavePhase: CGFloat = 0
     @State private var pulseTime: CGFloat = 1.0
     
-    let gridSize = 30 // Balanced grid size
-    let dotSpacing: CGFloat = 12
+    let dotSpacing: CGFloat = 10 // Tighter spacing between dots
     
     var body: some View {
-        Canvas { context, size in
-            let centerX = size.width / 2
-            let centerY = size.height / 2
-            
-            // Draw all dots
-            for row in dots {
-                for dot in row {
-                    let rect = CGRect(
-                        x: dot.x - dot.size/2,
-                        y: dot.y - dot.size/2,
-                        width: dot.size,
-                        height: dot.size
-                    )
-                    
-                    // Subtle monochrome colors
-                    let normalizedDistance = min(dot.distanceFromCenter / 250, 1.0)
-                    let opacity = 0.4 - normalizedDistance * 0.3
-                    
-                    context.fill(
-                        Circle().path(in: rect),
-                        with: .color(Color(hex: "#DDDDDD").opacity(opacity))
-                    )
+        GeometryReader { geometry in
+            Canvas { context, size in
+                // Draw all dots
+                for row in dots {
+                    for dot in row {
+                        let rect = CGRect(
+                            x: dot.x - dot.size/2,
+                            y: dot.y - dot.size/2,
+                            width: dot.size,
+                            height: dot.size
+                        )
+                        
+                        // Subtle monochrome colors
+                        let normalizedDistance = min(dot.distanceFromCenter / (size.width * 0.7), 1.0)
+                        let opacity = 0.4 - normalizedDistance * 0.3
+                        
+                        context.fill(
+                            Circle().path(in: rect),
+                            with: .color(Color(hex: "#DDDDDD").opacity(opacity))
+                        )
+                    }
                 }
             }
+            .onAppear {
+                setupDots(size: geometry.size)
+                startAnimation()
+            }
+            .onChange(of: geometry.size) { _, newSize in
+                setupDots(size: newSize)
+            }
         }
-        .onAppear {
-            setupDots()
-            startAnimation()
-        }
+        .ignoresSafeArea() // Cover entire screen including safe areas
         .onChange(of: metronome.shouldBlink) { _, newValue in
             if newValue && metronome.isPlaying {
                 triggerPulse()
@@ -55,22 +57,24 @@ struct StarFieldView: View {
         }
     }
     
-    private func setupDots() {
-        let screenWidth = UIScreen.main.bounds.width
-        let screenHeight = UIScreen.main.bounds.height
-        let centerX = screenWidth / 2
-        let centerY = screenHeight / 2
-        
+    private func setupDots(size: CGSize) {
         dots = []
         
-        // Create grid
-        let startX = centerX - CGFloat(gridSize / 2) * dotSpacing
-        let startY = centerY - CGFloat(gridSize / 2) * dotSpacing
+        let centerX = size.width / 2
+        let centerY = size.height / 2
         
-        for row in 0..<gridSize {
+        // Calculate how many dots we need to cover the screen
+        let cols = Int(size.width / dotSpacing) + 6 // Extra dots to ensure full coverage
+        let rows = Int(size.height / dotSpacing) + 6
+        
+        // Start from beyond the edges to ensure full coverage
+        let startX = -dotSpacing * 2
+        let startY = -dotSpacing * 2
+        
+        for row in 0..<rows {
             var dotRow: [Dot] = []
             
-            for col in 0..<gridSize {
+            for col in 0..<cols {
                 let baseX = startX + CGFloat(col) * dotSpacing
                 let baseY = startY + CGFloat(row) * dotSpacing
                 
@@ -83,7 +87,7 @@ struct StarFieldView: View {
                     baseY: baseY,
                     x: baseX,
                     y: baseY,
-                    size: 2.5,
+                    size: 1.5, // Smaller dots
                     distanceFromCenter: distance
                 )
                 
@@ -111,10 +115,10 @@ struct StarFieldView: View {
             pulseTime += 1.0/30.0 // Faster pulse
         }
         
-        let screenWidth = UIScreen.main.bounds.width
-        let screenHeight = UIScreen.main.bounds.height
-        let centerX = screenWidth / 2
-        let centerY = screenHeight / 2
+        guard !dots.isEmpty else { return }
+        
+        let centerX = UIScreen.main.bounds.width / 2
+        let centerY = UIScreen.main.bounds.height / 2
         
         // Update each dot
         for row in 0..<dots.count {
@@ -122,18 +126,18 @@ struct StarFieldView: View {
                 var dot = dots[row][col]
                 
                 // Calculate wave displacement
-                let waveRadius = pulseTime * 500
+                let waveRadius = pulseTime * 600
                 let waveDistance = abs(dot.distanceFromCenter - waveRadius)
                 
                 var displacement: CGFloat = 0
                 var sizeMultiplier: CGFloat = 1.0
                 
                 // Sharp, fast wave effect
-                if waveDistance < 60 && pulseTime < 1.0 {
-                    let waveStrength = 1.0 - waveDistance / 60
+                if waveDistance < 80 && pulseTime < 1.0 {
+                    let waveStrength = 1.0 - waveDistance / 80
                     let fadeOut = 1.0 - pulseTime
-                    displacement = Darwin.sin(waveDistance * 0.1) * 15 * waveStrength * fadeOut
-                    sizeMultiplier = 1.0 + waveStrength * fadeOut * 0.8
+                    displacement = Darwin.sin(waveDistance * 0.1) * 20 * waveStrength * fadeOut
+                    sizeMultiplier = 1.0 + waveStrength * fadeOut * 1.0
                 }
                 
                 // Apply displacement radially
@@ -142,12 +146,12 @@ struct StarFieldView: View {
                 let displacementY = Darwin.sin(angle) * displacement
                 
                 // Subtle ambient wave motion
-                let ambientWave = Darwin.sin(wavePhase + dot.distanceFromCenter * 0.008) * 1.5
+                let ambientWave = Darwin.sin(wavePhase + dot.distanceFromCenter * 0.008) * 2
                 
                 // Update position
                 dot.x = dot.baseX + displacementX + Darwin.cos(wavePhase * 0.5 + CGFloat(row) * 0.05) * ambientWave
                 dot.y = dot.baseY + displacementY + Darwin.sin(wavePhase * 0.5 + CGFloat(col) * 0.05) * ambientWave
-                dot.size = 2.5 * sizeMultiplier
+                dot.size = 1.5 * sizeMultiplier
                 
                 dots[row][col] = dot
             }

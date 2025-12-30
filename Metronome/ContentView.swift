@@ -23,6 +23,7 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             StarFieldView(metronome: metronome)
+                .ignoresSafeArea()
                 .allowsHitTesting(false) // Don't block UI interactions
             
             // Main content
