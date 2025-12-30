@@ -16,10 +16,20 @@ struct ContentView: View {
     @State private var repeatTimer: Timer?
     
     var body: some View {
-        GeometryReader { geometry in
-            content
+        ZStack {
+            // Background with animated stars
+            Color(hex: "#1C1C1B")
+                .ignoresSafeArea()
+            
+            StarFieldView(metronome: metronome)
+                .ignoresSafeArea()
+                .opacity(0.7)
+            
+            // Main content
+            GeometryReader { geometry in
+                content
+            }
         }
-        .background(Color(hex: "#1C1C1B"))
         .sheet(isPresented: $showSettings) {
             SettingsView(metronome: metronome)
         }
