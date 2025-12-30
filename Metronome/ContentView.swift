@@ -209,21 +209,45 @@ struct ContentView: View {
                 // Play and Tap Tempo Buttons
                 HStack(spacing: 20) {
                     // Tap Tempo Button
-                    Button(action: {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
-                        metronome.tapTempo()
-                    }) {
-                        ZStack {
+                    ZStack {
+                        // Tap visualization overlay (doesn't affect layout)
+                        ForEach(metronome.tapPoints) { tapPoint in
                             Circle()
-                                .fill(Color(hex: "#242424"))
-                                .frame(width: 64, height: 64)
-                            
-                            Text("TAP")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                .stroke(Color(hex: "#F54206"), lineWidth: 2)
+                                .frame(width: 64 * tapPoint.scale, height: 64 * tapPoint.scale)
+                                .opacity(tapPoint.opacity)
+                                .animation(.linear(duration: 0.05), value: tapPoint.opacity)
+                                .animation(.linear(duration: 0.05), value: tapPoint.scale)
+                                .allowsHitTesting(false)
+                        }
+                        
+                        Button(action: {
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                            impactFeedback.impactOccurred()
+                            metronome.tapTempo()
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color(hex: "#242424"))
+                                    .frame(width: 64, height: 64)
+                                
+                                VStack(spacing: 2) {
+                                    Text("TAP")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundColor(Color(hex: "#DDDDDD"))
+                                    
+                                    // Show tap count when active
+                                    if !metronome.tapPoints.isEmpty {
+                                        Text("\(metronome.tapPoints.count)")
+                                            .font(.system(size: 10, weight: .medium))
+                                            .foregroundColor(Color(hex: "#F54206"))
+                                            .transition(.opacity)
+                                    }
+                                }
+                            }
                         }
                     }
+                    .frame(width: 64, height: 64) // Fixed frame to prevent layout shifts
                     
                     // Central Play Button
                     Button(action: {
