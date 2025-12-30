@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var metronome = MetronomeManager()
+    @StateObject private var metronome = MetronomeManager.shared
     @State private var showSettings = false
     @State private var showQuickNoteValuePicker = false
     @State private var showGridSettings = false
@@ -40,15 +40,8 @@ struct ContentView: View {
         .sheet(isPresented: $showBeatPresets) {
             BeatPresetsView(metronome: metronome)
         }
-        .confirmationDialog("Choose Note Value", isPresented: $showQuickNoteValuePicker) {
-            ForEach(NoteValue.allCases, id: \.self) { noteValue in
-                Button(noteValue.displayName) {
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                    impactFeedback.impactOccurred()
-                    metronome.updateNoteValue(noteValue)
-                }
-            }
-            Button("Cancel", role: .cancel) { }
+        .sheet(isPresented: $showQuickNoteValuePicker) {
+            NoteValuePicker(metronome: metronome, isPresented: $showQuickNoteValuePicker)
         }
     }
     
@@ -61,11 +54,15 @@ struct ContentView: View {
                         impactFeedback.impactOccurred()
                         showBeatPresets = true 
                     }) {
-                        Text(metronome.currentBeatName)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color(hex: "#DDDDDD"))
-                            .underline()
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("PRESET")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                            
+                            Text(metronome.currentBeatName.uppercased())
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(Color(hex: "#DDDDDD"))
+                        }
                     }
                     
                     Spacer()
@@ -75,9 +72,19 @@ struct ContentView: View {
                         impactFeedback.impactOccurred()
                         showSettings.toggle() 
                     }) {
-                        Image(systemName: "gear")
-                            .font(.title2)
-                            .foregroundColor(Color(hex: "#DDDDDD"))
+                        ZStack {
+                            Circle()
+                                .fill(Color(hex: "#242424").opacity(0.8))
+                                .frame(width: 44, height: 44)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color(hex: "#303030"), lineWidth: 1)
+                                )
+                            
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(Color(hex: "#DDDDDD"))
+                        }
                     }
                 }
                 .padding(.horizontal)
@@ -188,27 +195,28 @@ struct ContentView: View {
                 Spacer()
                     .frame(height: 20)
                 
-                HStack(spacing: 12) {
-                    Text("GRID")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                    
-                    Button(action: { 
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                        showQuickNoteValuePicker = true 
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(hex: "#242424"))
-                                .frame(width: 40, height: 40)
-                            
-                            Text(metronome.noteValue.displayName)
-                                .font(.title3)
-                                .fontWeight(.medium)
-                                .foregroundColor(Color(hex: "#DDDDDD"))
-                        }
+                Button(action: {
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                    impactFeedback.impactOccurred()
+                    showQuickNoteValuePicker = true
+                }) {
+                    HStack(spacing: 8) {
+                        Text("PATTERN")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                        
+                        Text(metronome.noteValue.displayName)
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(Color(hex: "#F54206"))
+                        
+                        Image(systemName: "chevron.down.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.4))
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color(hex: "#242424"))
+                    .cornerRadius(20)
                 }
                 
                 // Beat Pattern Grid
@@ -334,32 +342,12 @@ struct GridView: View {
                     HStack(spacing: 6) {
                         ForEach(0..<tilesInRow(row), id: \.self) { col in
                             let beat = row * tilesPerRow() + col
-                            Button(action: {
-                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                impactFeedback.impactOccurred()
-                                metronome.toggleGridCell(row: 0, col: beat)
-                            }) {
-                                Rectangle()
-                                    .fill(getGridColor(for: beat))
-                                    .frame(width: 40, height: 40)
-                                    .cornerRadius(4)
-                                    .opacity(getGridOpacity(for: beat))
-                                    .overlay(
-                                        Group {
-                                            if isActiveBeat(beat) {
-                                                Text(metronome.gridDisplayMode.getLabel(for: beat, noteValue: metronome.noteValue))
-                                                    .font(.caption)
-                                                    .fontWeight(.bold)
-                                                    .foregroundColor(Color(hex: "#DDDDDD"))
-                                            } else {
-                                                Image(systemName: "minus")
-                                                    .font(.caption)
-                                                    .foregroundColor(Color(hex: "#DDDDDD"))
-                                            }
-                                        }
-                                        .id("\(beat)-\(metronome.gridDisplayMode.rawValue)-\(metronome.noteValue.rawValue)")
-                                    )
-                            }
+                            BeatTile(
+                                beat: beat,
+                                metronome: metronome,
+                                isActive: beat < metronome.gridPattern[0].count && metronome.gridPattern[0][beat],
+                                isCurrent: beat == metronome.currentBeat && metronome.isPlaying
+                            )
                         }
                     }
                     
@@ -398,27 +386,6 @@ struct GridView: View {
         return metronome.noteValue.isTriplet ? 3 : 4
     }
     
-    private func isActiveBeat(_ beat: Int) -> Bool {
-        return beat < metronome.gridPattern[0].count && metronome.gridPattern[0][beat]
-    }
-    
-    private func isCurrentBeat(_ beat: Int) -> Bool {
-        return beat == metronome.currentBeat && metronome.isPlaying
-    }
-    
-    private func getGridColor(for beat: Int) -> Color {
-        if isCurrentBeat(beat) {
-            return Color(hex: "#F54206") // Orange für aktuellen Beat
-        } else if isActiveBeat(beat) {
-            return Color(hex: "#303030") // Aktive Beats
-        } else {
-            return Color.clear // Inaktive Beats transparent
-        }
-    }
-    
-    private func getGridOpacity(for beat: Int) -> Double {
-        return isActiveBeat(beat) ? 1.0 : 0.5
-    }
     
     
     private func getAccentColor(for beat: Int) -> Color {
@@ -445,7 +412,7 @@ struct SettingsView: View {
                     Stepper("Beats per Measure: \(metronome.beatsPerMeasure)", 
                            value: $metronome.beatsPerMeasure, 
                            in: 1...16)
-                    .onChange(of: metronome.beatsPerMeasure) { oldValue, newValue in
+                    .onChange(of: metronome.beatsPerMeasure) { newValue in
                         metronome.updateBeatsPerMeasure(newValue)
                     }
                     .foregroundColor(Color(hex: "#DDDDDD"))

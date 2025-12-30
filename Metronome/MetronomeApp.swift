@@ -6,9 +6,15 @@
 //
 
 import SwiftUI
+import AppIntents
 
 @main
 struct MetronomeApp: App {
+    init() {
+        // Register shortcuts
+        MetronomeShortcuts.updateAppShortcutParameters()
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
