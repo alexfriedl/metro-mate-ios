@@ -1,237 +1,155 @@
 import SwiftUI
 
-struct Star: Identifiable {
-    let id = UUID()
-    var position: CGPoint
-    var velocity: CGPoint = .zero
+struct Dot {
+    var baseX: CGFloat
+    var baseY: CGFloat
+    var x: CGFloat
+    var y: CGFloat
     var size: CGFloat
-    var opacity: Double
-    var baseOpacity: Double
-    var brightness: Double = 1.0
     var distanceFromCenter: CGFloat
-}
-
-struct PulseRing {
-    var radius: CGFloat = 0
-    var opacity: Double = 1.0
-    var age: TimeInterval = 0
-    var speed: CGFloat
 }
 
 struct StarFieldView: View {
     @ObservedObject var metronome: MetronomeManager
-    @State private var stars: [Star] = []
-    @State private var pulseRings: [PulseRing] = []
-    @State private var animationTimer: Timer?
-    @State private var lastUpdateTime = Date()
+    @State private var dots: [[Dot]] = []
+    @State private var wavePhase: CGFloat = 0
+    @State private var pulseTime: CGFloat = 1.0
     
-    let baseStarCount = 500
+    let gridSize = 30 // Balanced grid size
+    let dotSpacing: CGFloat = 12
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Golden pulse rings (visible)
-                ForEach(0..<pulseRings.count, id: \.self) { index in
-                    if index < pulseRings.count {
-                        Circle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color(hex: "#FFD700").opacity(pulseRings[index].opacity * 0.6),
-                                        Color(hex: "#FFA500").opacity(pulseRings[index].opacity * 0.3),
-                                        Color.clear
-                                    ],
-                                    startPoint: .center,
-                                    endPoint: .trailing
-                                ),
-                                lineWidth: 3
-                            )
-                            .frame(width: pulseRings[index].radius * 2, height: pulseRings[index].radius * 2)
-                            .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
-                            .blur(radius: pulseRings[index].opacity < 0.3 ? 2 : 0)
-                    }
-                }
-                
-                // Stars
-                ForEach(stars) { star in
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    Color(hex: "#FFD700").opacity(star.opacity * star.brightness),
-                                    Color(hex: "#FFA500").opacity(star.opacity * star.brightness * 0.5),
-                                    Color.clear
-                                ],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: star.size
-                            )
-                        )
-                        .frame(width: star.size * 2, height: star.size * 2)
-                        .position(star.position)
-                        .blur(radius: star.size < 1 ? 0.3 : 0)
+        Canvas { context, size in
+            let centerX = size.width / 2
+            let centerY = size.height / 2
+            
+            // Draw all dots
+            for row in dots {
+                for dot in row {
+                    let rect = CGRect(
+                        x: dot.x - dot.size/2,
+                        y: dot.y - dot.size/2,
+                        width: dot.size,
+                        height: dot.size
+                    )
+                    
+                    // Subtle monochrome colors
+                    let normalizedDistance = min(dot.distanceFromCenter / 250, 1.0)
+                    let opacity = 0.4 - normalizedDistance * 0.3
+                    
+                    context.fill(
+                        Circle().path(in: rect),
+                        with: .color(Color(hex: "#DDDDDD").opacity(opacity))
+                    )
                 }
             }
-            .onAppear {
-                generateStars(in: geometry.size)
-                startAnimation()
-            }
-            .onDisappear {
-                animationTimer?.invalidate()
-            }
-            .onChange(of: metronome.shouldBlink) { _, newValue in
-                if newValue && metronome.isPlaying {
-                    triggerPulse(in: geometry.size)
-                }
+        }
+        .onAppear {
+            setupDots()
+            startAnimation()
+        }
+        .onChange(of: metronome.shouldBlink) { _, newValue in
+            if newValue && metronome.isPlaying {
+                triggerPulse()
             }
         }
     }
     
-    private func generateStars(in size: CGSize) {
-        stars = []
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        let maxRadius = min(size.width, size.height) * 0.4
+    private func setupDots() {
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        let centerX = screenWidth / 2
+        let centerY = screenHeight / 2
         
-        // Create stars in concentric circles
-        for ring in 0..<8 {
-            let ringRadius = maxRadius * CGFloat(ring + 1) / 8.0
-            let starsInRing = 20 + ring * 10
+        dots = []
+        
+        // Create grid
+        let startX = centerX - CGFloat(gridSize / 2) * dotSpacing
+        let startY = centerY - CGFloat(gridSize / 2) * dotSpacing
+        
+        for row in 0..<gridSize {
+            var dotRow: [Dot] = []
             
-            for i in 0..<starsInRing {
-                let angle = (360.0 / Double(starsInRing)) * Double(i) + Double.random(in: -10...10)
-                let radian = angle * .pi / 180
+            for col in 0..<gridSize {
+                let baseX = startX + CGFloat(col) * dotSpacing
+                let baseY = startY + CGFloat(row) * dotSpacing
                 
-                let radiusVariation = CGFloat.random(in: 0.8...1.2)
-                let actualRadius = ringRadius * radiusVariation
+                let dx = baseX - centerX
+                let dy = baseY - centerY
+                let distance = sqrt(dx * dx + dy * dy)
                 
-                let x = center.x + Darwin.cos(radian) * actualRadius
-                let y = center.y + Darwin.sin(radian) * actualRadius
-                
-                let star = Star(
-                    position: CGPoint(x: x, y: y),
-                    size: CGFloat.random(in: 0.5...2.0),
-                    opacity: Double.random(in: 0.3...0.8),
-                    baseOpacity: Double.random(in: 0.3...0.8),
-                    distanceFromCenter: actualRadius
+                let dot = Dot(
+                    baseX: baseX,
+                    baseY: baseY,
+                    x: baseX,
+                    y: baseY,
+                    size: 2.5,
+                    distanceFromCenter: distance
                 )
                 
-                stars.append(star)
+                dotRow.append(dot)
             }
+            dots.append(dotRow)
         }
     }
     
-    private func triggerPulse(in size: CGSize) {
-        let isAccent = metronome.currentBeat < metronome.accentPattern.count && 
-                      metronome.accentPattern[metronome.currentBeat]
-        
-        // Create a single strong pulse
-        let pulse = PulseRing(
-            radius: 10,
-            opacity: 1.0,
-            age: 0,
-            speed: isAccent ? 250 : 200
-        )
-        pulseRings.append(pulse)
-        
-        // Keep only recent rings
-        if pulseRings.count > 5 {
-            pulseRings.removeFirst()
-        }
-    }
-    
-    private func updateStars(deltaTime: TimeInterval, in size: CGSize) {
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        
-        for i in stars.indices {
-            var star = stars[i]
-            
-            // Apply velocity with damping
-            star.position.x += star.velocity.x * deltaTime
-            star.position.y += star.velocity.y * deltaTime
-            star.velocity.x *= pow(0.9, deltaTime * 60)
-            star.velocity.y *= pow(0.9, deltaTime * 60)
-            
-            // Check pulse ring interactions
-            for ring in pulseRings {
-                let ringRadius = ring.radius
-                let starDist = star.distanceFromCenter
-                
-                // When ring passes through star
-                if abs(starDist - ringRadius) < 20 {
-                    let intensity = (1.0 - abs(starDist - ringRadius) / 20) * ring.opacity
-                    
-                    // Boost brightness
-                    star.brightness = min(2.5, star.brightness + intensity * 1.5)
-                    
-                    // Small outward push
-                    let dx = star.position.x - center.x
-                    let dy = star.position.y - center.y
-                    let dist = sqrt(dx * dx + dy * dy)
-                    if dist > 0 {
-                        let pushAngle = atan2(dy, dx)
-                        let pushForce = intensity * 15
-                        star.velocity.x += Darwin.cos(pushAngle) * pushForce
-                        star.velocity.y += Darwin.sin(pushAngle) * pushForce
-                    }
-                }
-            }
-            
-            // Update distance from center
-            let dx = star.position.x - center.x
-            let dy = star.position.y - center.y
-            star.distanceFromCenter = sqrt(dx * dx + dy * dy)
-            
-            // Brightness decay
-            star.brightness = max(1.0, star.brightness - deltaTime * 2)
-            
-            // Gentle drift back
-            if star.distanceFromCenter > 20 {
-                let pullAngle = atan2(center.y - star.position.y, center.x - star.position.x)
-                let pullForce = min(10, star.distanceFromCenter / 50) * deltaTime
-                star.velocity.x += Darwin.cos(pullAngle) * pullForce
-                star.velocity.y += Darwin.sin(pullAngle) * pullForce
-            }
-            
-            // Base opacity modulation
-            if metronome.isPlaying {
-                let time = Date().timeIntervalSinceReferenceDate
-                let breathe = Darwin.sin(time * 1.5 + Double(i) * 0.1) * 0.2 + 0.8
-                star.opacity = star.baseOpacity * breathe
-            } else {
-                star.opacity = star.baseOpacity * 0.4
-            }
-            
-            stars[i] = star
-        }
-        
-        // Update rings
-        for i in pulseRings.indices.reversed() {
-            pulseRings[i].age += deltaTime
-            pulseRings[i].radius += pulseRings[i].speed * deltaTime
-            
-            // Fade out
-            let maxAge: TimeInterval = 1.5
-            pulseRings[i].opacity = max(0, 1.0 - pulseRings[i].age / maxAge)
-            
-            if pulseRings[i].age > maxAge {
-                pulseRings.remove(at: i)
-            }
-        }
+    private func triggerPulse() {
+        pulseTime = 0
     }
     
     private func startAnimation() {
-        lastUpdateTime = Date()
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 1.0/60.0, repeats: true) { _ in
-            DispatchQueue.main.async { [self] in
-                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let window = windowScene.windows.first {
-                    let now = Date()
-                    let deltaTime = now.timeIntervalSince(self.lastUpdateTime)
-                    self.lastUpdateTime = now
-                    
-                    let size = window.bounds.size
-                    self.updateStars(deltaTime: deltaTime, in: size)
+        Timer.scheduledTimer(withTimeInterval: 1.0/60.0, repeats: true) { _ in
+            updateDots()
+        }
+    }
+    
+    private func updateDots() {
+        wavePhase += 0.03
+        
+        // Pulse wave
+        if pulseTime < 1.0 {
+            pulseTime += 1.0/30.0 // Faster pulse
+        }
+        
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        let centerX = screenWidth / 2
+        let centerY = screenHeight / 2
+        
+        // Update each dot
+        for row in 0..<dots.count {
+            for col in 0..<dots[row].count {
+                var dot = dots[row][col]
+                
+                // Calculate wave displacement
+                let waveRadius = pulseTime * 500
+                let waveDistance = abs(dot.distanceFromCenter - waveRadius)
+                
+                var displacement: CGFloat = 0
+                var sizeMultiplier: CGFloat = 1.0
+                
+                // Sharp, fast wave effect
+                if waveDistance < 60 && pulseTime < 1.0 {
+                    let waveStrength = 1.0 - waveDistance / 60
+                    let fadeOut = 1.0 - pulseTime
+                    displacement = Darwin.sin(waveDistance * 0.1) * 15 * waveStrength * fadeOut
+                    sizeMultiplier = 1.0 + waveStrength * fadeOut * 0.8
                 }
+                
+                // Apply displacement radially
+                let angle = Darwin.atan2(dot.baseY - centerY, dot.baseX - centerX)
+                let displacementX = Darwin.cos(angle) * displacement
+                let displacementY = Darwin.sin(angle) * displacement
+                
+                // Subtle ambient wave motion
+                let ambientWave = Darwin.sin(wavePhase + dot.distanceFromCenter * 0.008) * 1.5
+                
+                // Update position
+                dot.x = dot.baseX + displacementX + Darwin.cos(wavePhase * 0.5 + CGFloat(row) * 0.05) * ambientWave
+                dot.y = dot.baseY + displacementY + Darwin.sin(wavePhase * 0.5 + CGFloat(col) * 0.05) * ambientWave
+                dot.size = 2.5 * sizeMultiplier
+                
+                dots[row][col] = dot
             }
         }
     }

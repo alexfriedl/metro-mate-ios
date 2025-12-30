@@ -23,8 +23,7 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             StarFieldView(metronome: metronome)
-                .ignoresSafeArea()
-                .opacity(0.6)
+                .allowsHitTesting(false) // Don't block UI interactions
             
             // Main content
             GeometryReader { geometry in
