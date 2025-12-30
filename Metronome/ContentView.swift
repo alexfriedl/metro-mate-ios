@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var showGridSettings = false
     @State private var showBeatPresets = false
     @State private var repeatTimer: Timer?
+    @State private var isPlayButtonPressed = false
     
     var body: some View {
         ZStack {
@@ -23,7 +24,7 @@ struct ContentView: View {
             
             StarFieldView(metronome: metronome)
                 .ignoresSafeArea()
-                .opacity(0.7)
+                .opacity(0.6)
             
             // Main content
             GeometryReader { geometry in
@@ -188,8 +189,8 @@ struct ContentView: View {
                     .frame(height: 20)
                 
                 HStack(spacing: 12) {
-                    Text("Grid")
-                        .font(.title2)
+                    Text("GRID")
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
                     
                     Button(action: { 
@@ -260,22 +261,29 @@ struct ContentView: View {
                     .frame(width: 64, height: 64) // Fixed frame to prevent layout shifts
                     
                     // Central Play Button
-                    Button(action: {
+                    ZStack {
+                        Circle()
+                            .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
+                            .frame(width: 96, height: 96)
+                            .scaleEffect(isPlayButtonPressed ? 0.95 : (metronome.shouldBlink ? 1.1 : 1.0))
+                            .animation(.easeInOut(duration: 0.1), value: metronome.shouldBlink)
+                            .animation(.easeInOut(duration: 0.1), value: isPlayButtonPressed)
+                        
+                        Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(Color(hex: "#DDDDDD"))
+                            .scaleEffect(isPlayButtonPressed ? 0.95 : 1.0)
+                            .animation(.easeInOut(duration: 0.1), value: isPlayButtonPressed)
+                    }
+                    .onTapGesture {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                         impactFeedback.impactOccurred()
                         metronome.togglePlayback()
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
-                                .frame(width: 96, height: 96)
-                                .scaleEffect(metronome.shouldBlink ? 1.1 : 1.0)
-                                .animation(.easeInOut(duration: 0.1), value: metronome.shouldBlink)
-                            
-                            Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 32))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
-                        }
+                    }
+                    .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity) {
+                        // Never triggers
+                    } onPressingChanged: { pressing in
+                        isPlayButtonPressed = pressing
                     }
                     
                     // Randomize Beat Button

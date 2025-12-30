@@ -402,6 +402,32 @@ class MetronomeManager: ObservableObject {
         }
     }
     
+    private func playTapSound() {
+        guard let playerNode = playerNode else { return }
+        
+        // Ensure audio engine is running
+        if let audioEngine = audioEngine, !audioEngine.isRunning {
+            do {
+                try audioEngine.start()
+            } catch {
+                print("Failed to start audio engine for tap: \(error)")
+                return
+            }
+        }
+        
+        // Use normal click sound for tap
+        if let audioFile = normalClickFile {
+            playerNode.scheduleFile(audioFile, at: nil)
+        } else {
+            guard let audioBuffer = createClickBuffer(accent: false) else { return }
+            playerNode.scheduleBuffer(audioBuffer, at: nil, options: [], completionHandler: nil)
+        }
+        
+        if !playerNode.isPlaying {
+            playerNode.play()
+        }
+    }
+    
     
     private func triggerVisualBlink() {
         shouldBlink = true
@@ -535,6 +561,9 @@ class MetronomeManager: ObservableObject {
     func tapTempo() {
         let now = Date()
         tapTimes.append(now)
+        
+        // Play tap sound
+        playTapSound()
         
         // Add visual tap point
         let newTapPoint = TapPoint(timestamp: now)
