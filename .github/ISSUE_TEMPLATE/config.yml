@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Join the free beta
-    url: https://testflight.apple.com/join/XXXXXXXX
-    about: Metro Mate is on TestFlight — you'll need Apple's free TestFlight app and iOS 18+.
+  - name: Download Metro Mate
+    url: https://apps.apple.com/app/id6747667519
+    about: Free on the App Store. Requires iOS 18 or later.
   - name: I have a question, not a bug
     url: https://github.com/alexfriedl/metro-mate-ios/discussions
     about: Ask anything — how to use a feature, whether something is possible, or just say hello.

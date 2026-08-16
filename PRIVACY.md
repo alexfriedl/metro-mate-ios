@@ -35,21 +35,26 @@ BPM" works. Siri requests are handled by Apple under
 receives only the tempo number you said. It does not request microphone,
 contacts, location, photos, or notifications.
 
-## During the TestFlight beta
+## What Apple sees
 
-While Metro Mate is distributed through TestFlight, **Apple** — not this app —
-collects standard beta metrics such as installs, sessions, and crash logs, and
-shows them to me in aggregate. That is a function of TestFlight itself and
-applies to every beta app on the platform. See
-[Apple's TestFlight terms](https://www.apple.com/legal/internet-services/itunes/testflight/).
-If you send feedback through TestFlight, I see what you wrote, the screenshot
-you attached, and your device model and iOS version.
+Metro Mate is distributed through the App Store, and **Apple** — not this app —
+collects the standard platform metrics that apply to every app on iOS:
+downloads, and, *only if you switched on "Share With App Developers"* in
+Settings → Privacy & Security → Analytics & Improvements, aggregate usage and
+crash statistics. I see those as anonymised totals in App Store Connect; they
+are not linked to you and I could not identify you from them if I wanted to.
+
+That is a function of the App Store, not of anything in this app's code. See
+[Apple's privacy policy](https://www.apple.com/legal/privacy/).
+
+If you leave an App Store review, I see whatever name and text you chose to
+publish there.
 
 ## Children
 
-Metro Mate is safe for students of any age. It has no ads, no purchases, no
-chat, no user-generated content, no links out to the web, and no way to create
-an account.
+Metro Mate is safe for students of any age, and is rated 4+ on the App Store.
+It has no ads, no purchases, no chat, no user-generated content, no links out
+to the web, and no way to create an account.
 
 ## Verifying this
 

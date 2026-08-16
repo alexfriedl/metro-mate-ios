@@ -7,7 +7,7 @@
 No ads. No subscription. No account. No tracking.
 Free forever, and you can read every line of code that makes it tick.
 
-[**→ Join the free beta on TestFlight**](https://testflight.apple.com/join/XXXXXXXX)
+[**→ Download free on the App Store**](https://apps.apple.com/app/id6747667519)
 
 ![Metro Mate on iPhone](https://github.com/user-attachments/assets/8299c602-f101-4803-8370-584af814efa8)
 
@@ -62,17 +62,15 @@ and German.
 
 ## Get it
 
-Metro Mate is currently in **open beta on TestFlight**, which is Apple's
-official way of trying apps before they hit the App Store.
+[**→ Metro Mate on the App Store**](https://apps.apple.com/app/id6747667519) —
+free, no in-app purchases, no ads.
 
-[**→ Join the beta**](https://testflight.apple.com/join/XXXXXXXX)
+Requires an iPhone running **iOS 18 or later**.
 
-You'll need the free TestFlight app from Apple, and an iPhone running
-**iOS 18 or later**. Beta builds expire after 90 days — you'll get a nudge to
-update when a new one lands.
-
-Coming to the App Store once the beta has shaken the bugs out. It will be free
-there too.
+If Metro Mate is useful to you, **please leave a rating**. It's a free app with
+no marketing budget, and App Store ratings are essentially the only way other
+musicians will ever find it. Thirty seconds of your time does more than
+anything else you could do for this project.
 
 ## For teachers
 
@@ -98,9 +96,7 @@ Found something broken, or missing a feature you rely on?
 you don't need to be a programmer, and you don't need to know any technical
 terms. "The click drifts when I switch apps" is a perfect bug report.
 
-If GitHub isn't your thing, TestFlight has a built-in feedback button
-(screenshot inside the app, then tap Share → Feedback) and it reaches me just
-the same.
+If GitHub isn't your thing, an App Store review works too — I read all of them.
 
 ## Privacy
 
