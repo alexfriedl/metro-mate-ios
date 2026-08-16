@@ -179,10 +179,13 @@ class MetronomeManager: ObservableObject {
     private var timer: DispatchSourceTimer?
     private var accentClickFile: AVAudioFile?
     private var normalClickFile: AVAudioFile?
-    
+
+    private let savedBeatsKey = "savedBeatPresets"
+
     init() {
         setupAudio()
         setupDefaultPattern()
+        restorePresets()
     }
     
     deinit {
@@ -688,6 +691,34 @@ class MetronomeManager: ObservableObject {
         savedBeats.removeAll { $0.name == name }
         savedBeats.append(preset)
         currentBeatName = name
+        persistPresets()
+    }
+
+    // MARK: - Preset persistence
+
+    /// Presets are stored in UserDefaults so they survive quitting the app.
+    /// Nothing leaves the device - see PRIVACY.md.
+    private func persistPresets() {
+        do {
+            let data = try JSONEncoder().encode(savedBeats)
+            UserDefaults.standard.set(data, forKey: savedBeatsKey)
+        } catch {
+            print("Failed to save beat presets: \(error)")
+        }
+    }
+
+    private func restorePresets() {
+        guard let data = UserDefaults.standard.data(forKey: savedBeatsKey) else { return }
+
+        do {
+            savedBeats = try JSONDecoder().decode([BeatPreset].self, from: data)
+        } catch {
+            // Most likely a preset written by an older version whose shape has
+            // since changed. Drop them rather than trapping the user in a
+            // crash loop on every launch.
+            print("Failed to load beat presets: \(error)")
+            UserDefaults.standard.removeObject(forKey: savedBeatsKey)
+        }
     }
     
     func loadBeatPreset(_ preset: BeatPreset) {
@@ -738,6 +769,7 @@ class MetronomeManager: ObservableObject {
         if currentBeatName == preset.name {
             currentBeatName = "Eighth"
         }
+        persistPresets()
     }
     
     func randomizeBeat() {

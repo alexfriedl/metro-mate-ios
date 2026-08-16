@@ -50,10 +50,9 @@ internal pulse.
 sixteen steps — a click layer, a backbeat, a subdivision layer. Handy for
 practising a groove rather than a pulse.
 
-**Save your setups.** Store a beat as a named preset and switch between them
-while you work. No account, nothing uploaded. *(Heads up: presets currently
-last until you quit the app — saving them permanently is
-[on the list](https://github.com/alexfriedl/metro-mate-ios/issues).)*
+**Save your setups.** Store a beat as a named preset and pull it back up next
+lesson — presets persist between sessions. No account needed; they stay on
+your device and are never uploaded.
 
 **Hands-free with Siri.** "Start Metro Mate at 90 BPM" works from across the
 room — useful when your hands are already on the instrument. Works in English
@@ -81,8 +80,8 @@ If you teach, a few things here were built with you in mind:
 
 - The **counting display** matches how you say it out loud, so students connect
   the sound to the syllables.
-- **Presets** let you park a few setups side by side during a lesson and jump
-  between them, instead of dialling in numbers while a student waits.
+- **Presets** mean you can set up "student's tempo this week" once and recall it
+  next lesson, instead of dialling in numbers while they wait.
 - **Accent patterns** let you isolate a metric problem — put the click only on
   beat 2 and 4, or only on 1, and let the student hold the rest.
 - No ads means nothing inappropriate appears mid-lesson, and no login means
