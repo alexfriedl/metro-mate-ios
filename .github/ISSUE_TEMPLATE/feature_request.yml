@@ -1,0 +1,61 @@
+name: I need something it can't do
+description: A feature you'd use in practice, on stage, or in a lesson
+title: "[Idea] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Metro Mate was built around one person's practice habits, so it's
+        probably missing something obvious for your instrument. Tell me what.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: |
+        Describe the musical situation, not the feature. "I need to practise a
+        piece that speeds up gradually" tells me much more than "add a tempo
+        ramp" — sometimes there's a better solution than the one either of us
+        thought of first.
+      placeholder: When I practise / teach / perform, I need to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What do you do about it today?
+      description: Another app, a physical metronome, a piece of paper, giving up — all useful answers.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: What's your relationship to the instrument?
+      description: Helps me weigh which requests affect the most people.
+      options:
+        - I practise on my own
+        - I teach
+        - I perform live
+        - I'm a student
+        - Several of the above
+    validations:
+      required: false
+
+  - type: input
+    id: instrument
+    attributes:
+      label: Which instrument(s)?
+      placeholder: Drums, classical guitar, voice...
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: A sketch, a photo of another metronome doing it right, a link — all welcome.
+    validations:
+      required: false

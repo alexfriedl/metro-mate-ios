@@ -1,0 +1,84 @@
+name: Something isn't working
+description: The app did something wrong, stopped, or sounds off
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. **You don't need any technical knowledge to
+        fill this in** — describe it the way you'd describe it to another
+        musician. If you don't know the answer to a question, leave it blank.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: In your own words. "The click went silent when I switched to triplets" is perfect.
+      placeholder: When I...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+      placeholder: I expected it to...
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can I make it happen on my phone?
+      description: |
+        If you can, list what you tapped, in order. This is the single most
+        useful thing in the whole form — a problem I can reproduce is usually
+        a problem I can fix the same day.
+      placeholder: |
+        1. Set the tempo to 120
+        2. Tapped the note value and chose 1/8T
+        3. Pressed play
+        4. ...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does it happen?
+      options:
+        - Every single time
+        - Most of the time
+        - Now and then
+        - It happened once
+    validations:
+      required: false
+
+  - type: input
+    id: device
+    attributes:
+      label: Which iPhone?
+      description: "Settings → General → About. For example: iPhone 14 Pro, iOS 18.2"
+      placeholder: iPhone 14 Pro, iOS 18.2
+    validations:
+      required: false
+
+  - type: input
+    id: tempo
+    attributes:
+      label: Which settings were you using?
+      description: Tempo, note value, accents, grid — whatever you remember.
+      placeholder: "96 BPM, sixteenths, accent on 1 and 3"
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: |
+        A screenshot or a short video helps a lot, especially for timing
+        problems — you can drag files straight into this box.
+    validations:
+      required: false
