@@ -1,29 +1,126 @@
-# Metronome
+<div align="center">
 
-A simple metronome app for iOS, built with SwiftUI.
+# Metro Mate
 
-![iphone](https://github.com/user-attachments/assets/8299c602-f101-4803-8370-584af814efa8)
+**A metronome that doesn't sell you anything.**
 
+No ads. No subscription. No account. No tracking.
+Free forever, and you can read every line of code that makes it tick.
 
-## Features
+[**→ Join the free beta on TestFlight**](https://testflight.apple.com/join/XXXXXXXX)
 
-- BPM settings from 40 to 200
-- Various note values (quarter, eighth, sixteenth, triplets)
-- Grid-based beat patterns
-- Tap tempo
-- Beat presets and saving
-- Accent patterns
-- Haptic feedback
+![Metro Mate on iPhone](https://github.com/user-attachments/assets/8299c602-f101-4803-8370-584af814efa8)
 
-## Development
+</div>
 
-### Requirements
+---
 
-- Xcode 15+
-- iOS 16+
-- Swift 5.9+
+## Why another metronome?
 
-### Setup
+Open the App Store and search for "metronome". You'll find a wall of free apps
+that show you a video ad between practice sessions, or ask €6.99 a year for a
+click track — technology that was invented in 1815.
+
+Metro Mate is the metronome I wanted for my own practice: it starts instantly,
+it keeps perfect time, and it gets out of the way. It is open source, which
+means the "no tracking" promise above isn't something you have to take on
+faith. You can check.
+
+## What it does
+
+**Keeps time you can trust.** Audio is driven by a high-precision timer, not by
+the animation loop, so the click doesn't drift when your phone gets busy. It
+keeps clicking even when your ringer is on silent.
+
+**Tap tempo.** Don't know the BPM? Tap along with the track and Metro Mate
+works it out for you. Range is 40–200 BPM, adjustable by 1 BPM at a time.
+
+**Counts the way you count.** Switch the display between `1 & 2 &` and
+`1 e & a`, and it counts triplets as `1 trip let`. Useful when you're teaching
+subdivision and the student needs to *see* where "&" falls.
+
+**Subdivisions.** Quarters, eighths, sixteenths, and triplet versions of each
+(♩ ♪ ♬ ♩₃ ♪₃ ♬₃).
+
+**Accents where you want them.** Tap any beat to accent it. Practice a 7/8 with
+the accent on 1 and 5, or move the accent around a 4/4 to work on your
+internal pulse.
+
+**A beat grid, not just a click.** Build patterns across up to four rows and
+sixteen steps — a click layer, a backbeat, a subdivision layer. Handy for
+practising a groove rather than a pulse.
+
+**Save your setups.** Store a beat as a named preset and switch between them
+while you work. No account, nothing uploaded. *(Heads up: presets currently
+last until you quit the app — saving them permanently is
+[on the list](https://github.com/alexfriedl/metro-mate-ios/issues).)*
+
+**Hands-free with Siri.** "Start Metro Mate at 90 BPM" works from across the
+room — useful when your hands are already on the instrument. Works in English
+and German.
+
+**Haptics.** The phone taps along in your pocket or on the music stand.
+
+## Get it
+
+Metro Mate is currently in **open beta on TestFlight**, which is Apple's
+official way of trying apps before they hit the App Store.
+
+[**→ Join the beta**](https://testflight.apple.com/join/XXXXXXXX)
+
+You'll need the free TestFlight app from Apple, and an iPhone running
+**iOS 18 or later**. Beta builds expire after 90 days — you'll get a nudge to
+update when a new one lands.
+
+Coming to the App Store once the beta has shaken the bugs out. It will be free
+there too.
+
+## For teachers
+
+If you teach, a few things here were built with you in mind:
+
+- The **counting display** matches how you say it out loud, so students connect
+  the sound to the syllables.
+- **Presets** let you park a few setups side by side during a lesson and jump
+  between them, instead of dialling in numbers while a student waits.
+- **Accent patterns** let you isolate a metric problem — put the click only on
+  beat 2 and 4, or only on 1, and let the student hold the rest.
+- No ads means nothing inappropriate appears mid-lesson, and no login means
+  students under 13 can use it without a parent setting up an account.
+
+Free to recommend to your whole studio. If it's missing something you need for
+teaching, [tell me](https://github.com/alexfriedl/metro-mate-ios/issues/new/choose)
+— that feedback is the most useful thing I get.
+
+## Feedback and bugs
+
+Found something broken, or missing a feature you rely on?
+**[Open an issue](https://github.com/alexfriedl/metro-mate-ios/issues/new/choose)** —
+you don't need to be a programmer, and you don't need to know any technical
+terms. "The click drifts when I switch apps" is a perfect bug report.
+
+If GitHub isn't your thing, TestFlight has a built-in feedback button
+(screenshot inside the app, then tap Share → Feedback) and it reaches me just
+the same.
+
+## Privacy
+
+Metro Mate collects nothing. No analytics, no crash reporting, no advertising
+identifiers, no network requests at all. Your presets live on your device and
+nowhere else. See [PRIVACY.md](PRIVACY.md) for the long version — it's short.
+
+## Contributing
+
+Contributions are welcome, and **not just code**. Bug reports, feature ideas
+from real practice rooms, translations, and better click sounds are all
+genuinely useful. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Building from source
+
+<details>
+<summary>Developer instructions</summary>
+
+**Requirements:** Xcode 16+, iOS 18.0+ deployment target, Swift 5.9+
 
 ```bash
 git clone https://github.com/alexfriedl/metro-mate-ios.git
@@ -31,35 +128,31 @@ cd metro-mate-ios
 open Metronome.xcodeproj
 ```
 
-### Project Structure
+**Project structure**
 
-- `MetronomeApp.swift` - App entry point
-- `ContentView.swift` - Main UI and beat grid
-- `MetronomeManager.swift` - Core logic and audio
-- `ColorExtension.swift` - UI utilities
+| File | Purpose |
+| --- | --- |
+| `MetronomeApp.swift` | App entry point |
+| `ContentView.swift` | Main UI and beat grid |
+| `MetronomeManager.swift` | Timing engine and audio (`AVAudioEngine` + `DispatchSourceTimer`) |
+| `BeatTile.swift` | Individual grid cell |
+| `NoteValuePicker.swift` | Subdivision selector |
+| `AppIntents.swift` | Siri Shortcuts |
+| `StarFieldView.swift` | Background visual |
+| `ColorExtension.swift` | UI utilities |
 
-## Contributing
+Audio assets are `normal_click.wav` (standard beat) and `accent_click.wav`
+(accented beat), loaded into an `AVAudioPlayerNode`.
 
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/new-feature`)
-3. Commit your changes (`git commit -m 'Add new feature'`)
-4. Push to the branch (`git push origin feature/new-feature`)
-5. Open a Pull Request
-
-### Code Style
-
-- Swift standard conventions
-- SwiftUI best practices
-- Meaningful commit messages
+</details>
 
 ## License
 
-GPL-3.0 license
+[MIT](LICENSE) — use it, fork it, ship it, teach with it.
 
-## Audio
+---
 
-The project uses standard click sounds:
-- `normal_click.wav` - Standard beat
-- `accent_click.wav` - Accented beat
+<div align="center">
+Built by <a href="https://github.com/alexfriedl">Alexander Friedl</a>.
+If Metro Mate is useful to you, a ⭐ helps other musicians find it.
+</div>
