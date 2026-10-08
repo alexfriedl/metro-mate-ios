@@ -69,7 +69,7 @@ struct NoteValuePicker: View {
         .background(Color(hex: "#1C1C1B"))
         .presentationDetents([.fraction(0.6)])
         .presentationDragIndicator(.visible)
-        .presentationCornerRadius(20)
+        .sheetCornerRadius(20)
     }
 }
 
@@ -158,6 +158,18 @@ struct PresetButton: View {
             .frame(width: 80, height: 80)
             .background(Color(hex: "#242424"))
             .cornerRadius(12)
+        }
+    }
+}
+
+private extension View {
+    /// `presentationCornerRadius` needs iOS 16.4; older systems keep the default sheet radius.
+    @ViewBuilder
+    func sheetCornerRadius(_ radius: CGFloat) -> some View {
+        if #available(iOS 16.4, *) {
+            presentationCornerRadius(radius)
+        } else {
+            self
         }
     }
 }
