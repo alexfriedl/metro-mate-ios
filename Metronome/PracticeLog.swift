@@ -35,7 +35,15 @@ final class PracticeLog: ObservableObject {
         var bpm: Int
     }
 
-    private var running: Running?
+    // Published so the history can show what is playing right now
+    @Published private var running: Running?
+
+    // The session that is playing right now, its duration measured up to this moment
+    var live: PracticeSession? {
+        guard let running else { return nil }
+        return PracticeSession(kind: running.kind, title: running.title, detail: running.detail,
+                               start: running.start, duration: Date().timeIntervalSince(running.start), bpm: running.bpm)
+    }
     private let minimumDuration: TimeInterval = 3
     private let fileURL: URL = {
         let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -95,6 +103,14 @@ final class PracticeLog: ObservableObject {
         save()
     }
 
+    // Puts a deleted session back, newest first as before
+    func restore(_ session: PracticeSession) {
+        guard !stored.contains(where: { $0.id == session.id }) else { return }
+        stored.append(session)
+        stored.sort { $0.start > $1.start }
+        save()
+    }
+
     func sessions(in interval: DateInterval) -> [PracticeSession] {
         sessions.filter { interval.contains($0.start) }
     }
@@ -106,5 +122,62 @@ final class PracticeLog: ObservableObject {
     private func save() {
         guard let data = try? JSONEncoder().encode(stored) else { return }
         try? data.write(to: fileURL, options: .atomic)
+    }
+}
+
+// Numbers for the history screen, kept free of UI so they can be tested
+enum PracticeStats {
+    // Five steps from nothing to an hour or more, fixed so a day reads the same in every month
+    static func heatLevel(seconds: TimeInterval) -> Int {
+        switch seconds / 60 {
+        case ..<1: return 0
+        case ..<15: return 1
+        case ..<30: return 2
+        case ..<60: return 3
+        default: return 4
+        }
+    }
+
+    // Longest run of days in a row with practice
+    static func longestStreak(_ sessions: [PracticeSession], calendar: Calendar) -> Int {
+        let days = Set(sessions.map { calendar.startOfDay(for: $0.start) }).sorted()
+        var longest = 0
+        var current = 0
+        var previous: Date?
+        for day in days {
+            if let previous, calendar.date(byAdding: .day, value: 1, to: previous) == day {
+                current += 1
+            } else {
+                current = 1
+            }
+            longest = max(longest, current)
+            previous = day
+        }
+        return longest
+    }
+
+    struct TempoChange: Equatable {
+        let title: String
+        let first: Int
+        let last: Int
+        let total: TimeInterval
+    }
+
+    // Tempo of the first and the last session per groove or preset, most practised first
+    static func tempoProgress(_ sessions: [PracticeSession], limit: Int = 5) -> [TempoChange] {
+        Dictionary(grouping: sessions, by: \.title)
+            .compactMap { title, group -> TempoChange? in
+                let ordered = group.sorted { $0.start < $1.start }
+                guard let first = ordered.first, let last = ordered.last else { return nil }
+                return TempoChange(title: title, first: first.bpm, last: last.bpm,
+                                   total: group.reduce(0) { $0 + $1.duration })
+            }
+            .sorted { $0.total == $1.total ? $0.title < $1.title : $0.total > $1.total }
+            .prefix(limit)
+            .map { $0 }
+    }
+
+    static func pluralized(_ count: Int, _ word: String) -> String {
+        "\(count) \(word)\(count == 1 ? "" : "s")"
     }
 }
