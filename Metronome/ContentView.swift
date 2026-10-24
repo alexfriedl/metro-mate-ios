@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var metronome = MetronomeManager.shared
     @State private var showSettings = false
+    @State private var showLearn = false
     @State private var showQuickNoteValuePicker = false
     @State private var showGridSettings = false
     @State private var showBeatPresets = false
@@ -31,6 +32,9 @@ struct ContentView: View {
             GeometryReader { geometry in
                 content
             }
+        }
+        .sheet(isPresented: $showLearn) {
+            LearnView()
         }
         .sheet(isPresented: $showSettings) {
             SettingsView(metronome: metronome)
@@ -67,6 +71,26 @@ struct ContentView: View {
                     }
                     
                     Spacer()
+                    
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        showLearn = true
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(hex: "#242424").opacity(0.8))
+                                .frame(width: 44, height: 44)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color(hex: "#303030"), lineWidth: 1)
+                                )
+                            
+                            Image(systemName: "graduationcap")
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundColor(Color(hex: "#DDDDDD"))
+                        }
+                    }
+                    .accessibilityLabel("Learn")
                     
                     Button(action: { 
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)

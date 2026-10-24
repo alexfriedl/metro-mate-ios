@@ -58,7 +58,7 @@ enum ClickSound: String, CaseIterable, Identifiable, Codable {
     }
 }
 
-private enum Synth {
+enum Synth {
     static func render(seconds: Double, format: AVAudioFormat, sample: (Double, Int) -> Double) -> AVAudioPCMBuffer {
         let frames = AVAudioFrameCount(format.sampleRate * seconds)
         let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames)!
@@ -187,6 +187,31 @@ private enum Synth {
             // Soft swell then fade, like beads hitting the shell
             let envelope = min(1, t / 0.006) * exp(-t / 0.024)
             return highpassed * envelope * gain
+        }
+    }
+
+    static func snare(gain: Double, format: AVAudioFormat) -> AVAudioPCMBuffer {
+        var noise = Noise()
+        var lowpass = 0.0
+        return render(seconds: 0.16, format: format) { t, _ in
+            let raw = noise.next()
+            lowpass += 0.5 * (raw - lowpass)
+            let wires = lowpass * exp(-t / 0.045) * 0.75
+            let head = (sin(2 * .pi * 190 * t) + 0.5 * sin(2 * .pi * 330 * t)) * exp(-t / 0.03) * 0.6
+            return (wires + head) * attack(t, 0.0004) * gain
+        }
+    }
+
+    static func openHat(gain: Double, format: AVAudioFormat) -> AVAudioPCMBuffer {
+        var noise = Noise()
+        var previous = 0.0
+        var previousOut = 0.0
+        return render(seconds: 0.3, format: format) { t, _ in
+            let raw = noise.next()
+            let highpassed = 0.88 * (previousOut + raw - previous)
+            previous = raw
+            previousOut = highpassed
+            return highpassed * attack(t, 0.0004) * exp(-t / 0.09) * gain
         }
     }
 

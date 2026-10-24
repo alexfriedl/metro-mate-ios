@@ -220,6 +220,10 @@ class MetronomeManager: ObservableObject {
         }
     }
 
+    func stopIfPlaying() {
+        if isPlaying { stop() }
+    }
+
     func previewSound() {
         clicks?.preview()
     }
