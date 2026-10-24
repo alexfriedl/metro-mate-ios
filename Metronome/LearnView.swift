@@ -214,12 +214,14 @@ struct GroovePager: View {
 
                 Legend()
 
-                VStack(spacing: 8) {
-                    BPMControl(bpm: $player.tempo, range: 10...240)
+                // Tempo is secondary here, one slim row with the target chip beside it
+                HStack(spacing: 12) {
+                    BPMControl(bpm: $player.tempo, range: 10...240, compact: true)
                     TargetTempoChip(target: groove.tempo, current: Int(player.tempo.rounded())) {
                         player.tempo = Double(groove.tempo)
                     }
                 }
+                .padding(.horizontal, 20)
 
                 HStack(spacing: 20) {
                     StepButton(symbol: "backward.end.fill", label: "Previous groove", enabled: index > 0) { step(-1) }

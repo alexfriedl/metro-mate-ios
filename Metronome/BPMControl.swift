@@ -5,6 +5,8 @@ import UIKit
 struct BPMControl: View {
     @Binding var bpm: Double
     var range: ClosedRange<Int> = 1...300
+    // Compact is a slim single row for secondary places like the learn player
+    var compact = false
 
     @State private var dragStart: Double?
     @State private var dragValue: Double?
@@ -17,16 +19,74 @@ struct BPMControl: View {
     private var shownValue: Double { dragValue ?? bpm }
 
     var body: some View {
-        HStack(spacing: 12) {
-            StepperKey(symbol: "minus") { pressing in
-                pressing ? beginRepeat(-1) : endRepeat()
+        if compact {
+            HStack(spacing: 4) {
+                StepperKey(symbol: "minus", size: 44) { pressing in
+                    pressing ? beginRepeat(-1) : endRepeat()
+                }
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("\(Int(shownValue.rounded()))")
+                        .font(.system(size: 20, weight: .medium, design: .monospaced))
+                        .foregroundColor(Color.textPrimary)
+                    Text("BPM")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(Color.textSecondary)
+                }
+                .frame(minWidth: 84, minHeight: 44)
+                .contentShape(Rectangle())
+                .gesture(dragGesture)
+                .accessibilityElement()
+                .accessibilityLabel("Tempo")
+                .accessibilityValue("\(Int(bpm)) BPM")
+                .accessibilityAdjustableAction(adjust)
+                StepperKey(symbol: "plus", size: 44) { pressing in
+                    pressing ? beginRepeat(1) : endRepeat()
+                }
             }
+            .padding(2)
+            .background(Capsule().fill(Color.surface))
+        } else {
+            HStack(spacing: 12) {
+                StepperKey(symbol: "minus") { pressing in
+                    pressing ? beginRepeat(-1) : endRepeat()
+                }
 
-            wheel
+                wheel
 
-            StepperKey(symbol: "plus") { pressing in
-                pressing ? beginRepeat(1) : endRepeat()
+                StepperKey(symbol: "plus") { pressing in
+                    pressing ? beginRepeat(1) : endRepeat()
+                }
             }
+        }
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 2)
+            .onChanged { gesture in
+                let start = dragStart ?? bpm
+                if dragStart == nil {
+                    dragStart = bpm
+                    haptics.prepare()
+                }
+                // Fixed mapping from finger travel to tempo, measured from where the drag began
+                let raw = start - Double(gesture.translation.height / notch)
+                let clamped = min(max(raw, Double(range.lowerBound)), Double(range.upperBound))
+                dragValue = clamped
+                commit(Int(clamped.rounded()), hitLimit: raw != clamped)
+            }
+            .onEnded { _ in
+                withAnimation(.interpolatingSpring(stiffness: 420, damping: 30)) {
+                    dragValue = nil
+                }
+                dragStart = nil
+            }
+    }
+
+    private func adjust(_ direction: AccessibilityAdjustmentDirection) {
+        switch direction {
+        case .increment: commit(Int(bpm) + 1, hitLimit: false)
+        case .decrement: commit(Int(bpm) - 1, hitLimit: false)
+        @unknown default: break
         }
     }
 
@@ -66,37 +126,11 @@ struct BPMControl: View {
             )
         )
         .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 2)
-                .onChanged { gesture in
-                    let start = dragStart ?? bpm
-                    if dragStart == nil {
-                        dragStart = bpm
-                        haptics.prepare()
-                    }
-                    // Fixed mapping from finger travel to tempo, measured from where the drag began
-                    let raw = start - Double(gesture.translation.height / notch)
-                    let clamped = min(max(raw, Double(range.lowerBound)), Double(range.upperBound))
-                    dragValue = clamped
-                    commit(Int(clamped.rounded()), hitLimit: raw != clamped)
-                }
-                .onEnded { _ in
-                    withAnimation(.interpolatingSpring(stiffness: 420, damping: 30)) {
-                        dragValue = nil
-                    }
-                    dragStart = nil
-                }
-        )
+        .gesture(dragGesture)
         .accessibilityElement()
         .accessibilityLabel("Tempo")
         .accessibilityValue("\(Int(bpm)) BPM")
-        .accessibilityAdjustableAction { direction in
-            switch direction {
-            case .increment: commit(Int(bpm) + 1, hitLimit: false)
-            case .decrement: commit(Int(bpm) - 1, hitLimit: false)
-            @unknown default: break
-            }
-        }
+        .accessibilityAdjustableAction(adjust)
     }
 
     private func commit(_ value: Int, hitLimit: Bool) {
@@ -138,15 +172,16 @@ struct BPMControl: View {
 // Large round key that reports press and release itself, so tap and hold never fight each other
 private struct StepperKey: View {
     let symbol: String
+    var size: CGFloat = 60
     let onPress: (Bool) -> Void
 
     @State private var pressed = false
 
     var body: some View {
         Image(systemName: symbol)
-            .font(.system(size: 22, weight: .semibold))
+            .font(.system(size: size > 50 ? 22 : 15, weight: .semibold))
             .foregroundColor(Color.textPrimary)
-            .frame(width: 60, height: 60)
+            .frame(width: size, height: size)
             .background(
                 Circle().fill(pressed ? Color.surfacePressed : Color.surface)
             )
