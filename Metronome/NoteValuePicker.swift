@@ -10,11 +10,11 @@ struct NoteValuePicker: View {
             VStack {
                 Text("BEAT PATTERN")
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
                     .padding(.vertical, 20)
             }
             .frame(maxWidth: .infinity)
-            .background(Color(hex: "#1C1C1B"))
+            .background(Color.ground)
             
             // Scrollable content
             ScrollView {
@@ -48,7 +48,7 @@ struct NoteValuePicker: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("QUICK PRESETS")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                        .foregroundColor(Color.textSecondary)
                         .padding(.horizontal)
                     
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -64,9 +64,9 @@ struct NoteValuePicker: View {
                 .padding(.top, 20)
                 .padding(.bottom, 40)
             }
-            .background(Color(hex: "#1C1C1B"))
+            .background(Color.ground)
         }
-        .background(Color(hex: "#1C1C1B"))
+        .background(Color.ground)
         .presentationDetents([.fraction(0.6)])
         .presentationDragIndicator(.visible)
         .sheetCornerRadius(20)
@@ -83,17 +83,17 @@ struct NoteValueButton: View {
             VStack(spacing: 8) {
                 Text(noteValue.displayName)
                     .font(.system(size: 36))
-                    .foregroundColor(isSelected ? Color(hex: "#F54206") : Color(hex: "#DDDDDD"))
+                    .foregroundColor(isSelected ? Color.signal : Color.textPrimary)
                 
                 Text(noteValue.rawValue)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                    .foregroundColor(Color.textSecondary)
                 
                 // Visual representation
                 HStack(spacing: 2) {
                     ForEach(0..<getVisualBeats(), id: \.self) { _ in
                         Circle()
-                            .fill(isSelected ? Color(hex: "#F54206") : Color(hex: "#303030"))
+                            .fill(isSelected ? Color.signal : Color.surfaceRaised)
                             .frame(width: 4, height: 4)
                     }
                 }
@@ -101,11 +101,11 @@ struct NoteValueButton: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(isSelected ? Color(hex: "#303030") : Color(hex: "#242424"))
+            .background(isSelected ? Color.surfaceRaised : Color.surface)
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color(hex: "#F54206") : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? Color.signal : Color.clear, lineWidth: 2)
             )
         }
     }
@@ -145,18 +145,18 @@ struct PresetButton: View {
             VStack(spacing: 6) {
                 Text(title.uppercased())
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
                 
                 Text("\(bpm)")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(Color(hex: "#F54206"))
+                    .foregroundColor(Color.textPrimary)
                 
                 Text(noteValue.displayName)
                     .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                    .foregroundColor(Color.textSecondary)
             }
             .frame(width: 80, height: 80)
-            .background(Color(hex: "#242424"))
+            .background(Color.surface)
             .cornerRadius(12)
         }
     }

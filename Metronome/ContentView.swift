@@ -21,7 +21,7 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             // Background with animated stars
-            Color(hex: "#1C1C1B")
+            Color.ground
                 .ignoresSafeArea()
             
             PulseFieldView(
@@ -67,11 +67,11 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("PRESET")
                                 .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                                .foregroundColor(Color.textSecondary)
                             
                             Text(metronome.currentBeatName.uppercased())
                                 .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                .foregroundColor(Color.textPrimary)
                         }
                     }
                     
@@ -87,16 +87,16 @@ struct ContentView: View {
                     }) {
                         ZStack {
                             Circle()
-                                .fill(Color(hex: "#242424").opacity(0.8))
+                                .fill(Color.surface.opacity(0.8))
                                 .frame(width: 44, height: 44)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color(hex: "#303030"), lineWidth: 1)
+                                        .stroke(Color.surfaceRaised, lineWidth: 1)
                                 )
                             
                             Image(systemName: "graduationcap")
                                 .font(.system(size: 17, weight: .medium))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                .foregroundColor(Color.textPrimary)
                         }
                     }
                     .accessibilityLabel("Learn")
@@ -108,16 +108,16 @@ struct ContentView: View {
                     }) {
                         ZStack {
                             Circle()
-                                .fill(Color(hex: "#242424").opacity(0.8))
+                                .fill(Color.surface.opacity(0.8))
                                 .frame(width: 44, height: 44)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color(hex: "#303030"), lineWidth: 1)
+                                        .stroke(Color.surfaceRaised, lineWidth: 1)
                                 )
                             
                             Image(systemName: "ellipsis")
                                 .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                .foregroundColor(Color.textPrimary)
                         }
                     }
                 }
@@ -142,19 +142,19 @@ struct ContentView: View {
                     HStack(spacing: 8) {
                         Text("PATTERN")
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                            .foregroundColor(Color.textSecondary)
                         
                         Text(metronome.noteValue.displayName)
                             .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(Color(hex: "#F54206"))
+                            .foregroundColor(Color.textPrimary)
                         
                         Image(systemName: "chevron.down.circle.fill")
                             .font(.system(size: 16))
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.4))
+                            .foregroundColor(Color.textSecondary)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(Color(hex: "#242424"))
+                    .background(Color.surface)
                     .cornerRadius(20)
                 }
                 // Undo sits beside the pattern pill so it never covers the new pattern
@@ -183,19 +183,19 @@ struct ContentView: View {
                     }) {
                         ZStack {
                             Circle()
-                                .fill(Color(hex: "#242424"))
+                                .fill(Color.surface)
                                 .frame(width: 64, height: 64)
                             
                             VStack(spacing: 2) {
                                 Text("TAP")
                                     .font(.system(size: 13, weight: .bold))
-                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                    .foregroundColor(Color.textPrimary)
                                 
                                 // Show tap count
                                 if metronome.tapCount > 0 {
                                     Text("\(metronome.tapCount)")
                                         .font(.system(size: 10, weight: .medium))
-                                        .foregroundColor(Color(hex: "#F54206"))
+                                        .foregroundColor(Color.signal)
                                         .transition(.opacity)
                                 }
                             }
@@ -209,7 +209,7 @@ struct ContentView: View {
                     } label: {
                         Image(systemName: metronome.isPlaying ? "stop.fill" : "play.fill")
                             .font(.system(size: 32))
-                            .foregroundColor(metronome.isPlaying ? Color(hex: "#1C1C1B") : Color(hex: "#DDDDDD"))
+                            .foregroundColor(metronome.isPlaying ? Color.onSignal : Color.textPrimary)
                     }
                     .buttonStyle(PlayKeyStyle(isPlaying: metronome.isPlaying, punch: playButtonPunch))
                     .accessibilityLabel(metronome.isPlaying ? "Stop" : "Start")
@@ -223,12 +223,12 @@ struct ContentView: View {
                     }) {
                         ZStack {
                             Circle()
-                                .fill(Color(hex: "#242424"))
+                                .fill(Color.surface)
                                 .frame(width: 64, height: 64)
                             
                             Image(systemName: "shuffle")
                                 .font(.system(size: 19))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                .foregroundColor(Color.textPrimary)
                         }
                     }
                 }
@@ -277,10 +277,10 @@ private struct UndoChip: View {
                 Text("Undo")
                     .font(.system(size: 14, weight: .semibold))
             }
-            .foregroundColor(Color(hex: "#DDDDDD"))
+            .foregroundColor(Color.textPrimary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Capsule().fill(Color(hex: "#303030")))
+            .background(Capsule().fill(Color.surfaceRaised))
             .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
@@ -298,7 +298,7 @@ private struct PlayKeyStyle: ButtonStyle {
         return ZStack {
             TimelineView(.animation(minimumInterval: nil, paused: !isPlaying)) { context in
                 Circle()
-                    .fill(isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
+                    .fill(isPlaying ? Color.signal : Color.surface)
                     .frame(width: 96, height: 96)
                     .scaleEffect(pressScale * punch(context.date))
             }
@@ -371,9 +371,9 @@ struct GridView: View {
     private func getAccentColor(for beat: Int) -> Color {
         if beat < metronome.accentPattern.count && metronome.accentPattern[beat] {
             if beat == metronome.currentBeat && metronome.isPlaying {
-                return Color(hex: "#F54206") // Orange when playing accent
+                return Color.signal // Orange when playing accent
             } else {
-                return Color(hex: "#303030") // Gray accent dots
+                return Color.surfaceRaised // Gray accent dots
             }
         } else {
             return Color.clear
@@ -398,15 +398,15 @@ struct SettingsView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(sound.title)
-                                        .foregroundColor(Color(hex: "#DDDDDD"))
+                                        .foregroundColor(Color.textPrimary)
                                     Text(sound.subtitle)
                                         .font(.caption)
-                                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                                        .foregroundColor(Color.textSecondary)
                                 }
                                 Spacer()
                                 if metronome.clickSound == sound {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(Color(hex: "#F54206"))
+                                        .foregroundColor(Color.signal)
                                 }
                             }
                             .contentShape(Rectangle())
@@ -422,13 +422,13 @@ struct SettingsView: View {
                     .onChange(of: metronome.beatsPerMeasure) { newValue in
                         metronome.updateBeatsPerMeasure(newValue)
                     }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
-                    .accentColor(Color(hex: "#F54206"))
+                    .foregroundColor(Color.textPrimary)
+                    .accentColor(Color.signal)
                 }
             }
-            .background(Color(hex: "#1C1C1B"))
+            .background(Color.ground)
             .scrollContentBackground(.hidden)
-            .foregroundColor(Color(hex: "#DDDDDD"))
+            .foregroundColor(Color.textPrimary)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
@@ -439,11 +439,11 @@ struct SettingsView: View {
                         impactFeedback.impactOccurred()
                         dismiss()
                     }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
                 }
             }
         }
-        .background(Color(hex: "#1C1C1B"))
+        .background(Color.ground)
         .preferredColorScheme(.dark)
     }
 }
@@ -458,35 +458,35 @@ struct GridSettingsView: View {
                 Section("Grid Configuration") {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Number of Beats: \(metronome.beatsPerMeasure)")
-                            .foregroundColor(Color(hex: "#DDDDDD"))
+                            .foregroundColor(Color.textPrimary)
                         
                         let maxBeats = metronome.noteValue.isTriplet ? 12 : 16
                         Slider(value: Binding(
                             get: { Double(metronome.beatsPerMeasure) },
                             set: { metronome.updateGridBeats(Int($0)) }
                         ), in: 1...Double(maxBeats), step: 1)
-                        .accentColor(Color(hex: "#F54206"))
+                        .accentColor(Color.signal)
                         
                         HStack {
                             Text("1")
                                 .font(.caption)
-                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                                .foregroundColor(Color.textSecondary)
                             Spacer()
                             Text("\(maxBeats)")
                                 .font(.caption)
-                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                                .foregroundColor(Color.textSecondary)
                         }
                         
                         Text("Note: Triplets are limited to 12 beats max")
                             .font(.caption)
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                            .foregroundColor(Color.textSecondary)
                     }
                     .padding(.vertical, 8)
                 }
             }
-            .background(Color(hex: "#1C1C1B"))
+            .background(Color.ground)
             .scrollContentBackground(.hidden)
-            .foregroundColor(Color(hex: "#DDDDDD"))
+            .foregroundColor(Color.textPrimary)
             .navigationTitle("Grid Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
@@ -497,11 +497,11 @@ struct GridSettingsView: View {
                         impactFeedback.impactOccurred()
                         dismiss()
                     }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
                 }
             }
         }
-        .background(Color(hex: "#1C1C1B"))
+        .background(Color.ground)
         .preferredColorScheme(.dark)
     }
 }
@@ -520,10 +520,10 @@ struct BeatPresetsView: View {
                         VStack(alignment: .leading) {
                             Text(metronome.currentBeatName)
                                 .font(.headline)
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                .foregroundColor(Color.textPrimary)
                             Text("\(metronome.noteValue.displayName) • \(Int(metronome.bpm)) BPM • \(metronome.beatsPerMeasure) beats")
                                 .font(.caption)
-                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                                .foregroundColor(Color.textSecondary)
                         }
                         
                         Spacer()
@@ -534,9 +534,9 @@ struct BeatPresetsView: View {
                             newBeatName = metronome.currentBeatName
                             showSaveDialog = true
                         }
-                        .foregroundColor(Color(hex: "#F54206"))
+                        .foregroundColor(Color.signal)
                     }
-                    .listRowBackground(Color(hex: "#303030"))
+                    .listRowBackground(Color.surfaceRaised)
                 }
                 
                 Section("Presets") {
@@ -545,10 +545,10 @@ struct BeatPresetsView: View {
                             VStack(alignment: .leading) {
                                 Text(preset.name)
                                     .font(.headline)
-                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                    .foregroundColor(Color.textPrimary)
                                 Text("\(preset.noteValue.displayName) • \(Int(preset.bpm)) BPM • \(preset.beatsPerMeasure) beats")
                                     .font(.caption)
-                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                                    .foregroundColor(Color.textSecondary)
                             }
                             
                             Spacer()
@@ -559,11 +559,11 @@ struct BeatPresetsView: View {
                                 metronome.loadBeatPreset(preset)
                                 dismiss()
                             }
-                            .foregroundColor(Color(hex: "#F54206"))
+                            .foregroundColor(Color.signal)
                             .disabled(preset.name == metronome.currentBeatName)
                             .opacity(preset.name == metronome.currentBeatName ? 0.5 : 1.0)
                         }
-                        .listRowBackground(Color(hex: "#303030"))
+                        .listRowBackground(Color.surfaceRaised)
                     }
                 }
                 
@@ -573,10 +573,10 @@ struct BeatPresetsView: View {
                             VStack(alignment: .leading) {
                                 Text(preset.name)
                                     .font(.headline)
-                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                    .foregroundColor(Color.textPrimary)
                                 Text("\(preset.noteValue.displayName) • \(Int(preset.bpm)) BPM • \(preset.beatsPerMeasure) beats")
                                     .font(.caption)
-                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                                    .foregroundColor(Color.textSecondary)
                             }
                             
                             Spacer()
@@ -587,11 +587,11 @@ struct BeatPresetsView: View {
                                 metronome.loadBeatPreset(preset)
                                 dismiss()
                             }
-                            .foregroundColor(Color(hex: "#F54206"))
+                            .foregroundColor(Color.signal)
                             .disabled(preset.name == metronome.currentBeatName)
                             .opacity(preset.name == metronome.currentBeatName ? 0.5 : 1.0)
                         }
-                        .listRowBackground(Color(hex: "#303030"))
+                        .listRowBackground(Color.surfaceRaised)
                     }
                     .onDelete { indexSet in
                         for index in indexSet {
@@ -600,9 +600,9 @@ struct BeatPresetsView: View {
                     }
                 }
             }
-            .background(Color(hex: "#1C1C1B"))
+            .background(Color.ground)
             .scrollContentBackground(.hidden)
-            .foregroundColor(Color(hex: "#DDDDDD"))
+            .foregroundColor(Color.textPrimary)
             .navigationTitle("Beat Presets")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
@@ -614,7 +614,7 @@ struct BeatPresetsView: View {
                         metronome.resetToBasicBeat()
                         dismiss()
                     }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -623,11 +623,11 @@ struct BeatPresetsView: View {
                         impactFeedback.impactOccurred()
                         dismiss()
                     }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
                 }
             }
         }
-        .background(Color(hex: "#1C1C1B"))
+        .background(Color.ground)
         .preferredColorScheme(.dark)
         .alert("Save Beat Preset", isPresented: $showSaveDialog) {
             TextField("Beat Name", text: $newBeatName)
@@ -744,12 +744,12 @@ struct HeaderIconButton: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .medium))
-                .foregroundColor(Color(hex: "#DDDDDD"))
+                .foregroundColor(Color.textPrimary)
                 .frame(width: 44, height: 44)
                 .background(
                     Circle()
-                        .fill(Color(hex: "#242424").opacity(0.8))
-                        .overlay(Circle().stroke(Color(hex: "#303030"), lineWidth: 1))
+                        .fill(Color.surface.opacity(0.8))
+                        .overlay(Circle().stroke(Color.surfaceRaised, lineWidth: 1))
                 )
         }
         .accessibilityLabel(label)

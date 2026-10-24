@@ -38,15 +38,15 @@ struct HistoryView: View {
                     .listRowBackground(Color.clear)
 
                     summary
-                        .listRowBackground(Color(hex: "#242424"))
+                        .listRowBackground(Color.surface)
                 }
 
                 if log.sessions.isEmpty {
                     Section {
                         Text("Your practice shows up here once you have played for 30 seconds. Short pauses of up to 3 minutes stay in the same session. Stored on this device only.")
                             .font(.subheadline)
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
-                            .listRowBackground(Color(hex: "#242424"))
+                            .foregroundColor(Color.textSecondary)
+                            .listRowBackground(Color.surface)
                     }
                 }
 
@@ -54,7 +54,7 @@ struct HistoryView: View {
                     Section(header: Text(dayTitle(group.day))) {
                         ForEach(group.sessions) { session in
                             SessionRow(session: session)
-                                .listRowBackground(Color(hex: "#242424"))
+                                .listRowBackground(Color.surface)
                                 .swipeActions {
                                     Button(role: .destructive) { log.delete(session) } label: {
                                         Label("Delete", systemImage: "trash")
@@ -65,14 +65,14 @@ struct HistoryView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color(hex: "#1C1C1B"))
+            .background(Color.ground)
             .navigationTitle("History")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(Color(hex: "#DDDDDD"))
+                        .foregroundColor(Color.textPrimary)
                 }
             }
         }
@@ -104,12 +104,12 @@ struct HistoryView: View {
                 ForEach(Array(days.enumerated()), id: \.offset) { index, day in
                     VStack(spacing: 6) {
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(calendar.isDateInToday(day) ? Color(hex: "#F54206") : Color(hex: "#DDDDDD").opacity(perDay[index] > 0 ? 0.7 : 0.12))
+                            .fill(calendar.isDateInToday(day) ? Color.signal : Color.textPrimary.opacity(perDay[index] > 0 ? 0.7 : 0.12))
                             .frame(height: max(3, 80 * perDay[index] / peak))
                         if range == .week {
                             Text(day.formatted(.dateTime.weekday(.narrow)))
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.5))
+                                .foregroundColor(Color.textSecondary)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -122,7 +122,7 @@ struct HistoryView: View {
             if let favourite {
                 Text("Most practised: \(favourite)")
                     .font(.caption)
-                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                    .foregroundColor(Color.textSecondary)
             }
         }
         .padding(.vertical, 8)
@@ -155,12 +155,12 @@ private struct Stat: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
                 .font(.system(size: 22, weight: .semibold, design: .rounded))
-                .foregroundColor(Color(hex: "#DDDDDD"))
+                .foregroundColor(Color.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(label)
                 .font(.caption)
-                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.55))
+                .foregroundColor(Color.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -173,21 +173,21 @@ private struct SessionRow: View {
         HStack(spacing: 12) {
             Image(systemName: session.kind == .groove ? "graduationcap" : "metronome")
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(Color(hex: "#F54206"))
+                .foregroundColor(Color.textPrimary)
                 .frame(width: 30, height: 30)
-                .background(Circle().fill(Color(hex: "#303030")))
+                .background(Circle().fill(Color.surfaceRaised))
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.title)
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
                 Text("\(session.start.formatted(date: .omitted, time: .shortened)) · \(session.detail) · \(session.bpm) BPM")
                     .font(.caption)
-                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.55))
+                    .foregroundColor(Color.textSecondary)
                     .lineLimit(1)
             }
             Spacer()
             Text(HistoryView.format(session.duration))
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
-                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.75))
+                .foregroundColor(Color.textSecondary)
         }
         .padding(.vertical, 2)
     }

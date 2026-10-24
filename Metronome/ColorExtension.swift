@@ -26,3 +26,18 @@ extension Color {
         )
     }
 }
+
+// Brand palette from docs/BRAND.md, use these instead of raw hex values
+extension Color {
+    static let ground = Color(hex: "#1C1C1B")
+    static let surface = Color(hex: "#242424")
+    static let surfaceRaised = Color(hex: "#303030")
+    static let surfacePressed = Color(hex: "#3A3A3A")
+    // Only two text levels: primary for content, secondary for labels, meta lines and hints
+    static let textPrimary = Color(hex: "#DDDDDD")
+    static let textSecondary = Color(hex: "#DDDDDD").opacity(0.65)
+    // Signal orange always means something: the current beat, playback, selection
+    static let signal = Color(hex: "#F54206")
+    // Symbols and text on signal orange
+    static let onSignal = Color(hex: "#1C1C1B")
+}

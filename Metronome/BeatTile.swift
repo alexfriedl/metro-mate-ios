@@ -26,11 +26,11 @@ struct BeatTile: View {
                     Text(metronome.gridDisplayMode.getLabel(for: beat, noteValue: metronome.noteValue))
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(Color(hex: "#DDDDDD"))
+                        .foregroundColor(isCurrent ? Color.onSignal : Color.textPrimary)
                 } else {
                     Image(systemName: "minus")
                         .font(.caption)
-                        .foregroundColor(Color(hex: "#DDDDDD"))
+                        .foregroundColor(Color.textPrimary)
                         .opacity(0.3)
                 }
             }
@@ -48,11 +48,11 @@ struct BeatTile: View {
     
     private var tileColor: Color {
         if isCurrent {
-            return Color(hex: "#F54206")
+            return Color.signal
         } else if isActive {
-            return Color(hex: "#303030")
+            return Color.surfaceRaised
         } else {
-            return Color(hex: "#242424").opacity(0.5)
+            return Color.surface.opacity(0.5)
         }
     }
 }
