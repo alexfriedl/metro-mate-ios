@@ -75,7 +75,7 @@ Don't
 ## Klang
 
 - Echte, klare Aufnahmen (CC0), Quellen stehen in `Metronome/Sounds/SOURCES.md`.
-- Classic (Woodblock) ist Standard. Weitere Klänge: Clean, Claves, Pocket, Cowbell, Punch, Deep.
+- Cowbell ist Standard (Alex' Wahl, 2026-10-24). Weitere Klänge: Classic (Woodblock), Clean, Claves, Pocket, Punch, Deep.
 - Akzent und Zwischenschlag klingen hörbar verschieden.
 
 Don't

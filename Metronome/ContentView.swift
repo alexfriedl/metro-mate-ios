@@ -37,15 +37,19 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showHistory) {
             HistoryView()
+                .pageSheet()
         }
         .sheet(isPresented: $showLearn) {
             LearnView()
+                .pageSheet()
         }
         .sheet(isPresented: $showSettings) {
             SettingsView(metronome: metronome)
+                .pageSheet()
         }
         .sheet(isPresented: $showBeatPresets) {
             BeatPresetsView(metronome: metronome)
+                .pageSheet()
         }
         .sheet(isPresented: $showQuickNoteValuePicker) {
             NoteValuePicker(metronome: metronome, isPresented: $showQuickNoteValuePicker)
@@ -901,5 +905,17 @@ struct SoundRow: View {
             }
         }
         .contentShape(Rectangle())
+    }
+}
+
+extension View {
+    // On iPad a sheet would open as a small card that cuts off the player, show it as a full page instead
+    @ViewBuilder
+    func pageSheet() -> some View {
+        if #available(iOS 18.0, *) {
+            presentationSizing(.page)
+        } else {
+            self
+        }
     }
 }

@@ -20,6 +20,10 @@ THE CLICK
 - 7 click sounds: Classic woodblock, Clean, Claves, Pocket, Cowbell, Punch, Deep
 - Keeps playing with the ringer on silent and in the background
 
+YOUR SOUND
+- Build your own drum kit for Learn: 8 snares, 6 kicks, 5 hi-hats, 4 open hi-hats and 3 practice pad sounds, each with a preview
+- Import your own one-shots from the Files app, for example an export from your DAW. They stay on your device
+
 LEARN
 - 70 grooves and exercises in 9 categories, Beginner to Advanced
 - All-Time Classics in the style of Funky Drummer, Purdie Shuffle, Amen Break and more
@@ -44,17 +48,27 @@ The drum and click samples are recorded instruments released under CC0, the Clea
 - Learn: 70 grooves and exercises on a real funk kit, with loops and dynamics
 - Practice history by week and month
 - Recorded click sounds, tempo from 1 to 300 BPM with haptics
+- Pick your own drum kit for Learn, 26 recorded sounds with preview
+- Import your own sounds from the Files app, they stay on your device
+- Now in German
 - New app icon
 
 ## Keywords (max 100)
 
 drum,drummer,metronome,groove,click,tempo,bpm,practice,rudiments,funk,ghost notes,paradiddle,drums
 
-## Screenshots (6.9", 1320 x 2868)
+## Screenshots (6.9", 1320 x 2868, German set in screenshots-de/)
 
 1. `screenshots/01-feel-every-beat.png` · Main screen playing, beat 1 on the wave
 2. `screenshots/02-play-the-classics.png` · Learn, Funky Drummer playing
 3. `screenshots/03-grooves-and-exercises.png` · Categories sheet over Funk & Ghost Notes
 4. `screenshots/04-loop-the-hard-part.png` · Paradiddle with loop on and column cursor
 5. `screenshots/05-watch-it-add-up.png` · History, month view (fictional practice data)
-6. `screenshots/06-pick-your-click.png` · Sound sheet with all 7 sounds
+6. `screenshots/06-pick-your-sound.png` · Snare list of the Learn drum kit, with Your sounds and Import
+
+## Screenshots (iPad 13", 2064 x 2752)
+
+1. `screenshots-ipad/01-feel-every-beat.png` · Main screen playing, beat 1 on the wave
+2. `screenshots-ipad/02-loop-the-hard-part.png` · Paradiddle with loop on
+3. `screenshots-ipad/03-grooves-and-exercises.png` · Categories sheet over Funk & Ghost Notes
+4. `screenshots-ipad/04-pick-your-sound.png` · Sound settings with click and Learn drum kit
