@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import AVFoundation
 
 // One choosable sound for a kit voice: recorded file per dynamic and the level it plays at
 struct KitSound: Identifiable, Equatable {
@@ -35,7 +36,7 @@ enum KitVoice: String, CaseIterable, Identifiable {
         }
     }
 
-    var options: [KitSound] {
+    var builtInOptions: [KitSound] {
         switch self {
         case .snare:
             return [
@@ -103,19 +104,111 @@ final class DrumKit: ObservableObject {
     static let shared = DrumKit()
 
     @Published private(set) var selection: [KitVoice: String] = [:]
+    @Published private(set) var imported: [KitVoice: [UserSounds.Entry]] = [:]
 
     init() {
         for voice in KitVoice.allCases {
-            selection[voice] = UserDefaults.standard.string(forKey: "kit.\(voice.rawValue)") ?? voice.options[0].id
+            imported[voice] = UserSounds.entries(for: voice)
+            selection[voice] = UserDefaults.standard.string(forKey: "kit.\(voice.rawValue)") ?? voice.builtInOptions[0].id
+        }
+    }
+
+    func options(for voice: KitVoice) -> [KitSound] {
+        voice.builtInOptions + importedSounds(for: voice)
+    }
+
+    func importedSounds(for voice: KitVoice) -> [KitSound] {
+        let ghost: Float = voice == .snare ? 0.2 : 0.35
+        return (imported[voice] ?? []).map {
+            .single($0.id, $0.name, "Your sound", file: UserSounds.prefix + $0.file, normal: 0.65, ghost: ghost)
         }
     }
 
     func sound(for voice: KitVoice) -> KitSound {
-        voice.options.first { $0.id == selection[voice] } ?? voice.options[0]
+        options(for: voice).first { $0.id == selection[voice] } ?? voice.builtInOptions[0]
+    }
+
+    // Copies the picked files into the app, the newest one becomes the selected sound
+    func importSounds(_ urls: [URL], for voice: KitVoice) -> Int {
+        var added = 0
+        for url in urls {
+            guard let entry = UserSounds.add(url, for: voice) else { continue }
+            imported[voice, default: []].append(entry)
+            added += 1
+        }
+        if added > 0, let last = importedSounds(for: voice).last { select(last, for: voice) }
+        return added
+    }
+
+    func remove(_ sound: KitSound, for voice: KitVoice) {
+        UserSounds.remove(id: sound.id, for: voice)
+        imported[voice] = UserSounds.entries(for: voice)
+        if selection[voice] == sound.id { select(voice.builtInOptions[0], for: voice) }
     }
 
     func select(_ sound: KitSound, for voice: KitVoice) {
         selection[voice] = sound.id
         UserDefaults.standard.set(sound.id, forKey: "kit.\(voice.rawValue)")
+    }
+}
+
+// Sounds the user imported from Files, stored on device only, never bundled or shared
+enum UserSounds {
+    struct Entry: Codable {
+        let id: String
+        let name: String
+        let file: String
+    }
+
+    static let prefix = "user/"
+
+    static var directory: URL {
+        let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("UserSounds", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder
+    }
+
+    private static func key(_ voice: KitVoice) -> String { "kit.imported.\(voice.rawValue)" }
+
+    static func entries(for voice: KitVoice) -> [Entry] {
+        guard let data = UserDefaults.standard.data(forKey: key(voice)),
+              let list = try? JSONDecoder().decode([Entry].self, from: data) else { return [] }
+        return list.filter { FileManager.default.fileExists(atPath: directory.appendingPathComponent($0.file).path) }
+    }
+
+    private static func save(_ list: [Entry], for voice: KitVoice) {
+        if let data = try? JSONEncoder().encode(list) { UserDefaults.standard.set(data, forKey: key(voice)) }
+    }
+
+    static func add(_ url: URL, for voice: KitVoice) -> Entry? {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        let id = "user-" + UUID().uuidString
+        let file = id + "." + (url.pathExtension.isEmpty ? "wav" : url.pathExtension.lowercased())
+        let destination = directory.appendingPathComponent(file)
+        do {
+            try FileManager.default.copyItem(at: url, to: destination)
+        } catch {
+            return nil
+        }
+        // Only keep files the engine can actually play
+        let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2)!
+        guard Synth.decode(destination, to: format) != nil else {
+            try? FileManager.default.removeItem(at: destination)
+            return nil
+        }
+        let entry = Entry(id: id, name: url.deletingPathExtension().lastPathComponent, file: file)
+        save(entries(for: voice) + [entry], for: voice)
+        return entry
+    }
+
+    static func remove(id: String, for voice: KitVoice) {
+        var list = entries(for: voice)
+        if let entry = list.first(where: { $0.id == id }) {
+            try? FileManager.default.removeItem(at: directory.appendingPathComponent(entry.file))
+        }
+        list.removeAll { $0.id == id }
+        save(list, for: voice)
     }
 }

@@ -783,7 +783,7 @@ struct KitSoundList: View {
     var body: some View {
         List {
             Section {
-                ForEach(voice.options) { sound in
+                ForEach(voice.builtInOptions) { sound in
                     Button {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         kit.select(sound, for: voice)
@@ -798,6 +798,40 @@ struct KitSoundList: View {
                 }
             } footer: {
                 Text("Tap a sound to hear it, play the example to hear it in \(example.title).")
+                    .foregroundColor(Color.textSecondary)
+            }
+
+            // Imported sounds stay on this device; swipe to delete
+            Section {
+                ForEach(kit.importedSounds(for: voice)) { sound in
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        kit.select(sound, for: voice)
+                        player.stop()
+                        previewHit(sound)
+                    } label: {
+                        SoundRow(title: sound.name, detail: sound.detail, isSelected: kit.sound(for: voice) == sound)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowBackground(Color.surface)
+                    .swipeActions {
+                        Button(role: .destructive) { kit.remove(sound, for: voice) } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                }
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    showImporter = true
+                } label: {
+                    Label("Import sound", systemImage: "square.and.arrow.down")
+                        .foregroundColor(Color.textPrimary)
+                }
+                .listRowBackground(Color.surface)
+            } header: {
+                Text("Your sounds")
+            } footer: {
+                Text(importMessage ?? "Add a one-shot from Files, for example an export from your DAW. WAV, AIFF, M4A or MP3. It stays on this device.")
                     .foregroundColor(Color.textSecondary)
             }
 
@@ -817,12 +851,20 @@ struct KitSoundList: View {
         .navigationTitle(voice.title)
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear { player.stop() }
+        .fileImporter(isPresented: $showImporter, allowedContentTypes: [.audio], allowsMultipleSelection: true) { result in
+            guard case .success(let urls) = result else { return }
+            let added = kit.importSounds(urls, for: voice)
+            importMessage = added == urls.count ? nil : "\(urls.count - added) file(s) could not be read as audio."
+            if let sound = kit.importedSounds(for: voice).last, added > 0 { previewHit(sound) }
+        }
     }
 
     @State private var hitPlayer: AVAudioPlayer?
+    @State private var showImporter = false
+    @State private var importMessage: String?
 
     private func previewHit(_ sound: KitSound) {
-        guard let url = Bundle.main.url(forResource: sound.accent.file, withExtension: "wav") else { return }
+        guard let url = Synth.url(for: sound.accent.file) else { return }
         try? AVAudioSession.sharedInstance().setActive(true)
         hitPlayer = try? AVAudioPlayer(contentsOf: url)
         hitPlayer?.volume = sound.accent.gain * Float(MetronomeManager.shared.volume)

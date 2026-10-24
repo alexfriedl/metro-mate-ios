@@ -75,21 +75,59 @@ enum Synth {
         return buffer
     }
 
-    static func sample(_ name: String, gain: Float, format: AVAudioFormat) -> AVAudioPCMBuffer? {
-        let url = Bundle.main.url(forResource: name, withExtension: "wav")
+    // Bundled samples by name, imported ones as "user/<file>" from the app's own sound folder
+    static func url(for name: String) -> URL? {
+        if name.hasPrefix(UserSounds.prefix) {
+            return UserSounds.directory.appendingPathComponent(String(name.dropFirst(UserSounds.prefix.count)))
+        }
+        return Bundle.main.url(forResource: name, withExtension: "wav")
             ?? Bundle.main.url(forResource: name, withExtension: "wav", subdirectory: "Sounds")
-        guard let url, let file = try? AVAudioFile(forReading: url),
-              file.processingFormat.sampleRate == format.sampleRate,
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(file.length)),
-              (try? file.read(into: buffer)) != nil else {
-            assertionFailure("Sample \(name) could not be loaded")
+    }
+
+    static func sample(_ name: String, gain: Float, format: AVAudioFormat) -> AVAudioPCMBuffer? {
+        guard let url = url(for: name), let buffer = decode(url, to: format) else {
+            if !name.hasPrefix(UserSounds.prefix) { assertionFailure("Sample \(name) could not be loaded") }
             return nil
+        }
+        // Imported files come at any level, bring them to the same peak as the bundled samples
+        var scale = gain
+        if name.hasPrefix(UserSounds.prefix) {
+            var peak: Float = 0
+            for channel in 0..<Int(format.channelCount) {
+                guard let data = buffer.floatChannelData?[channel] else { continue }
+                for frame in 0..<Int(buffer.frameLength) { peak = max(peak, abs(data[frame])) }
+            }
+            if peak > 0.001 { scale *= 0.9 / peak }
         }
         for channel in 0..<Int(format.channelCount) {
             guard let data = buffer.floatChannelData?[channel] else { continue }
-            for frame in 0..<Int(buffer.frameLength) { data[frame] *= gain }
+            for frame in 0..<Int(buffer.frameLength) { data[frame] *= scale }
         }
         return buffer
+    }
+
+    // Reads any audio file iOS can decode and converts it to the engine format
+    static func decode(_ url: URL, to format: AVAudioFormat, maxSeconds: Double = 2) -> AVAudioPCMBuffer? {
+        guard let file = try? AVAudioFile(forReading: url) else { return nil }
+        let frames = AVAudioFrameCount(min(Double(file.length), maxSeconds * file.processingFormat.sampleRate))
+        guard frames > 0, let source = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: frames),
+              (try? file.read(into: source, frameCount: frames)) != nil else { return nil }
+        if source.format == format { return source }
+        guard let converter = AVAudioConverter(from: source.format, to: format) else { return nil }
+        let capacity = AVAudioFrameCount(Double(source.frameLength) * format.sampleRate / source.format.sampleRate) + 1024
+        guard let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: capacity) else { return nil }
+        var fed = false
+        var error: NSError?
+        converter.convert(to: output, error: &error) { _, status in
+            if fed {
+                status.pointee = .endOfStream
+                return nil
+            }
+            fed = true
+            status.pointee = .haveData
+            return source
+        }
+        return error == nil ? output : nil
     }
 
     static func attack(_ t: Double, _ seconds: Double = 0.0008) -> Double {
