@@ -120,6 +120,29 @@ struct Groove: Identifiable {
         }
     }
 
+    // What is actually played: with dynamics on, unmarked hats and kicks get a musical weighting, flat plays every hit evenly
+    func played(_ voice: DrumVoice, at step: Int, dynamic: Bool) -> DrumHit? {
+        guard let raw = hit(voice, at: step) else { return nil }
+        if !dynamic {
+            return raw == .ghost || raw == .open ? raw : .normal
+        }
+        let line = line(for: voice)
+        let marked = line.contains("X") || line.contains("g")
+        guard voice != .snare, sticking.isEmpty, category != .hands, raw == .normal, !marked else { return raw }
+        let position = step % stepsPerBeat
+        switch voice {
+        case .hiHat:
+            if position == 0 { return .accent }
+            if isTriplet || position == 2 { return .normal }
+            return .ghost
+        case .kick:
+            if step == 0 { return .accent }
+            return position == 0 ? .normal : .ghost
+        case .snare:
+            return raw
+        }
+    }
+
     // R or L when the step is played by a hand in a sticking exercise
     func hand(at step: Int) -> Character? {
         guard !sticking.isEmpty, step < sticking.count else { return nil }
@@ -177,7 +200,10 @@ final class GroovePlayer: ObservableObject {
             "snare": Synth.sample("snare", gain: 0.55, format: format),
             "snareAccent": Synth.sample("snare-accent", gain: 1.0, format: format),
             "ghost": Synth.sample("snare-ghost", gain: 0.3, format: format),
-            "kick": Synth.sample("kick", gain: 1.0, format: format),
+            "kick": Synth.sample("kick", gain: 0.85, format: format),
+            "kickAccent": Synth.sample("kick-accent", gain: 1.0, format: format),
+            "kickSoft": Synth.sample("kick-soft", gain: 0.6, format: format),
+            "hatSoft": Synth.sample("hihat-soft", gain: 0.3, format: format),
             "kickFeather": Synth.sample("kick-soft", gain: 0.45, format: format),
             // Hand exercises sound like a practice pad, the left hand a touch lower so both hands are told apart
             "right": Synth.sample("pad-right", gain: 0.42, format: format),
@@ -259,25 +285,34 @@ final class GroovePlayer: ObservableObject {
             let index = step % groove.steps
             let when = AVAudioTime(sampleTime: AVAudioFramePosition(nextSample.rounded()), atRate: rate)
 
-            switch groove.hit(.hiHat, at: index) {
+            let dynamic = pendingDynamics
+            switch groove.played(.hiHat, at: index, dynamic: dynamic) {
             case .open: schedule("open", on: 0, at: when)
             case .accent: schedule("hatAccent", on: 0, at: when)
+            case .ghost: schedule("hatSoft", on: 0, at: when)
             case .some: schedule("hat", on: 0, at: when)
             case nil: break
             }
             if let hand = groove.hand(at: index) {
-                let accented = groove.hit(.snare, at: index) == .accent
+                let accented = groove.played(.snare, at: index, dynamic: dynamic) == .accent
                 schedule(hand == "R" ? (accented ? "rightAccent" : "right") : (accented ? "leftAccent" : "left"), on: 1, at: when)
             } else {
-            switch groove.hit(.snare, at: index) {
+            switch groove.played(.snare, at: index, dynamic: dynamic) {
             case .ghost: schedule("ghost", on: 1, at: when)
             case .accent: schedule("snareAccent", on: 1, at: when)
             case .some: schedule("snare", on: 1, at: when)
             case nil: break
             }
             }
-            if groove.hit(.kick, at: index) != nil {
-                let kick = groove.category == .hands ? "kickFeather" : (groove.sticking.isEmpty ? "kick" : "kickTight")
+            if let kickHit = groove.played(.kick, at: index, dynamic: dynamic) {
+                let kick: String
+                if groove.category == .hands {
+                    kick = "kickFeather"
+                } else if !groove.sticking.isEmpty {
+                    kick = "kickTight"
+                } else {
+                    kick = kickHit == .accent ? "kickAccent" : (kickHit == .ghost ? "kickSoft" : "kick")
+                }
                 schedule(kick, on: 2, at: when)
             }
 
@@ -300,6 +335,15 @@ final class GroovePlayer: ObservableObject {
 
     private var trimmed: [String: AVAudioPCMBuffer] = [:]
     private var volumeObserver: AnyCancellable?
+    private var pendingDynamics = UserDefaults.standard.object(forKey: "grooveDynamics") as? Bool ?? true
+
+    // Dynamics on gives accents and soft notes, off plays everything at one level
+    @Published var dynamics = UserDefaults.standard.object(forKey: "grooveDynamics") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(dynamics, forKey: "grooveDynamics")
+            queue.async { [self] in pendingDynamics = dynamics }
+        }
+    }
 
     // A hit longer than the step would push every later hit on that voice late, so cut it to fit
     private func schedule(_ name: String, on node: Int, at when: AVAudioTime) {

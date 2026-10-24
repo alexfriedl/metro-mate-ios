@@ -183,7 +183,7 @@ struct GroovePager: View {
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 24)
-                    DrumGrid(groove: groove, currentStep: player.isPlaying ? player.currentStep : -1)
+                    DrumGrid(groove: groove, currentStep: player.isPlaying ? player.currentStep : -1, dynamic: player.dynamics)
                 }
                 .frame(minHeight: 190, alignment: .top)
                 .id(groove.id)
@@ -194,9 +194,6 @@ struct GroovePager: View {
                 .offset(x: dragOffset)
 
                 BPMControl(bpm: $player.tempo, range: 10...240)
-
-                VolumeSlider(volume: $metronome.volume)
-                    .padding(.horizontal, 32)
 
                 HStack(spacing: 28) {
                     StepButton(symbol: "backward.fill", label: "Previous groove", enabled: index > 0) { step(-1) }
@@ -215,6 +212,22 @@ struct GroovePager: View {
 
                     StepButton(symbol: "forward.fill", label: "Next groove", enabled: index < grooves.count - 1) { step(1) }
                 }
+
+                VolumeSlider(volume: $metronome.volume)
+                    .padding(.horizontal, 32)
+
+                Toggle(isOn: $player.dynamics) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Dynamics")
+                            .foregroundColor(Color(hex: "#DDDDDD"))
+                        Text(player.dynamics ? "Accents and soft notes" : "Flat, every hit at one level")
+                            .font(.caption)
+                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.65))
+                    }
+                }
+                .tint(Color(hex: "#F54206"))
+                .padding(.horizontal, 32)
+                .onChange(of: player.dynamics) { _ in UISelectionFeedbackGenerator().selectionChanged() }
 
                 Legend()
             }
@@ -381,6 +394,7 @@ private struct StepButton: View {
 private struct DrumGrid: View {
     let groove: Groove
     let currentStep: Int
+    let dynamic: Bool
 
     private var counts: [String] {
         let sub = groove.isTriplet ? ["&", "a"] : ["e", "&", "a"]
@@ -397,14 +411,14 @@ private struct DrumGrid: View {
             if groove.sticking.isEmpty {
                 ForEach(DrumVoice.allCases.filter { groove.uses($0) }, id: \.self) { voice in
                     row(label: voice.label) { step in
-                        NoteCell(hit: groove.hit(voice, at: step), voice: voice, isCurrent: step == currentStep)
+                        NoteCell(hit: groove.played(voice, at: step, dynamic: dynamic), voice: voice, isCurrent: step == currentStep)
                     }
                 }
             } else {
                 // Sticking exercises get one row per hand, so you see at a glance which hand plays
                 ForEach(["R", "L"], id: \.self) { hand in
                     row(label: hand) { step in
-                        NoteCell(hit: groove.hand(at: step) == Character(hand) ? groove.hit(.snare, at: step) : nil,
+                        NoteCell(hit: groove.hand(at: step) == Character(hand) ? groove.played(.snare, at: step, dynamic: dynamic) : nil,
                                  voice: .snare, isCurrent: step == currentStep)
                     }
                 }
@@ -454,17 +468,29 @@ private struct NoteCell: View {
         case .none:
             EmptyView()
         case .ghost:
-            Circle()
-                .stroke(Color(hex: "#DDDDDD").opacity(0.7), lineWidth: 1)
-                .frame(width: 8, height: 8)
+            if voice == .hiHat {
+                Image(systemName: "xmark")
+                    .font(.system(size: 7, weight: .semibold))
+                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.55))
+            } else {
+                Circle()
+                    .stroke(Color(hex: "#DDDDDD").opacity(0.7), lineWidth: 1)
+                    .frame(width: 8, height: 8)
+            }
         case .open:
             Circle()
                 .stroke(Color(hex: "#F54206"), lineWidth: 1.5)
                 .frame(width: 11, height: 11)
         case .accent:
-            Circle()
-                .fill(Color(hex: "#F54206"))
-                .frame(width: 13, height: 13)
+            if voice == .hiHat {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .heavy))
+                    .foregroundColor(Color(hex: "#F54206"))
+            } else {
+                Circle()
+                    .fill(Color(hex: "#F54206"))
+                    .frame(width: 13, height: 13)
+            }
         case .normal:
             if voice == .hiHat {
                 Image(systemName: "xmark")
@@ -484,7 +510,7 @@ private struct Legend: View {
         HStack(spacing: 16) {
             item(Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundColor(Color(hex: "#DDDDDD")), "Hit")
             item(Circle().fill(Color(hex: "#F54206")).frame(width: 10, height: 10), "Accent")
-            item(Circle().stroke(Color(hex: "#DDDDDD").opacity(0.7), lineWidth: 1).frame(width: 8, height: 8), "Ghost")
+            item(Circle().stroke(Color(hex: "#DDDDDD").opacity(0.7), lineWidth: 1).frame(width: 8, height: 8), "Soft")
             item(Circle().stroke(Color(hex: "#F54206"), lineWidth: 1.5).frame(width: 10, height: 10), "Open hat")
         }
         .font(.caption)
