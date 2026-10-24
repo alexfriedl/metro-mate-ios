@@ -156,14 +156,19 @@ struct BeatPreset: Identifiable, Codable {
 class MetronomeManager: ObservableObject {
     static let shared = MetronomeManager()
     @Published var isPlaying = false
-    @Published var bpm: Double = 60
-    @Published var beatsPerMeasure = 8
+    @Published var bpm: Double = 60 { didSet { syncPattern() } }
+    @Published var beatsPerMeasure = 8 { didSet { syncPattern() } }
     @Published var currentBeat = -1
-    @Published var shouldBlink = false
-    @Published var gridPattern: [[Bool]] = Array(repeating: Array(repeating: false, count: 16), count: 4)
-    @Published var accentPattern: [Bool] = Array(repeating: false, count: 16)
+    @Published var gridPattern: [[Bool]] = Array(repeating: Array(repeating: false, count: 16), count: 4) { didSet { syncPattern() } }
+    @Published var accentPattern: [Bool] = Array(repeating: false, count: 16) { didSet { syncPattern() } }
     @Published var gridSize = 4
-    @Published var noteValue: NoteValue = .eighth
+    @Published var noteValue: NoteValue = .eighth { didSet { syncPattern() } }
+    @Published var clickSound: ClickSound = ClickSound(rawValue: UserDefaults.standard.string(forKey: "clickSound") ?? "") ?? .clean {
+        didSet {
+            UserDefaults.standard.set(clickSound.rawValue, forKey: "clickSound")
+            clicks?.setSound(clickSound)
+        }
+    }
     @Published var gridDisplayMode: GridDisplayMode = .andCounting
     @Published var currentBeatName: String = "Eighth"
     @Published var savedBeats: [BeatPreset] = []
@@ -174,87 +179,60 @@ class MetronomeManager: ObservableObject {
     private var tapClearTimer: Timer?
     private var tapPointTimer: Timer?
     
-    private var audioEngine: AVAudioEngine?
-    private var playerNode: AVAudioPlayerNode?
-    private var timer: DispatchSourceTimer?
-    private var accentClickFile: AVAudioFile?
-    private var normalClickFile: AVAudioFile?
+    private var clicks: ClickEngine?
+    private var isConfigured = false
+
+    // Beats stamped with the time they are heard, the visuals render from this instead of @Published ticks
+    var beatTimeline: BeatTimeline { clicks!.timeline }
 
     private let savedBeatsKey = "savedBeatPresets"
 
     init() {
-        setupAudio()
         setupDefaultPattern()
         restorePresets()
+        clicks = ClickEngine(pattern: clickPattern, sound: clickSound)
+        clicks?.onBeat = { [weak self] event in
+            self?.currentBeat = event.index
+        }
+        isConfigured = true
+    }
+
+    private var clickPattern: ClickPattern {
+        ClickPattern(
+            bpm: bpm,
+            subdivision: noteValue.multiplier,
+            beats: beatsPerMeasure,
+            grid: gridPattern.first ?? [],
+            accents: accentPattern
+        )
+    }
+
+    private var syncPending = false
+
+    // Pattern edits arrive cell by cell, so coalesce them into one engine update per run loop
+    private func syncPattern() {
+        guard isConfigured, !syncPending else { return }
+        syncPending = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.syncPending = false
+            self.clicks?.update(self.clickPattern)
+        }
+    }
+
+    func previewSound() {
+        clicks?.preview()
+    }
+
+    // Structural changes (note value, preset, reset) start the bar again from beat 1
+    private func restartIfPlaying() {
+        guard isPlaying else { return }
+        currentBeat = -1
+        clicks?.start(clickPattern)
     }
     
     deinit {
         tapPointTimer?.invalidate()
-    }
-    
-    private func setupAudio() {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("Failed to setup audio session: \(error)")
-        }
-        
-        audioEngine = AVAudioEngine()
-        playerNode = AVAudioPlayerNode()
-        
-        guard let audioEngine = audioEngine, let playerNode = playerNode else { return }
-        
-        audioEngine.attach(playerNode)
-        audioEngine.connect(playerNode, to: audioEngine.mainMixerNode, format: nil)
-        
-        do {
-            try audioEngine.start()
-        } catch {
-            print("Failed to start audio engine: \(error)")
-        }
-        
-        loadSoundFiles()
-    }
-    
-    private func loadSoundFiles() {
-        if let accentURL = Bundle.main.url(forResource: "accent_click", withExtension: "wav") {
-            do {
-                accentClickFile = try AVAudioFile(forReading: accentURL)
-            } catch {
-                print("Failed to load accent click file: \(error)")
-            }
-        }
-        
-        if let normalURL = Bundle.main.url(forResource: "normal_click", withExtension: "wav") {
-            do {
-                normalClickFile = try AVAudioFile(forReading: normalURL)
-            } catch {
-                print("Failed to load normal click file: \(error)")
-            }
-        }
-    }
-    
-    private func createClickBuffer(accent: Bool = false) -> AVAudioPCMBuffer? {
-        let sampleRate = 44100.0
-        let duration = 0.1
-        let frameCount = AVAudioFrameCount(sampleRate * duration)
-        
-        guard let audioFormat = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1) else { return nil }
-        guard let audioBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: frameCount) else { return nil }
-        
-        audioBuffer.frameLength = frameCount
-        
-        let frequency: Float = accent ? 800 : 400
-        
-        guard let channelData = audioBuffer.floatChannelData?[0] else { return nil }
-        
-        for frame in 0..<Int(frameCount) {
-            let value = sin(2.0 * Float.pi * frequency * Float(frame) / Float(sampleRate)) * 0.5
-            channelData[frame] = value * Float(1.0 - Double(frame) / Double(frameCount))
-        }
-        
-        return audioBuffer
     }
     
     private func setupDefaultPattern() {
@@ -326,144 +304,19 @@ class MetronomeManager: ObservableObject {
     
     private func start() {
         isPlaying = true
-        currentBeat = -1  // Start at -1 so first increment makes it 0 (beat 1)
-        
-        // Ensure audio engine is running and player is ready
-        if let audioEngine = audioEngine, !audioEngine.isRunning {
-            do {
-                try audioEngine.start()
-            } catch {
-                print("Failed to restart audio engine: \(error)")
-            }
-        }
-        
-        // Ensure player node is ready
-        if let playerNode = playerNode, !playerNode.isPlaying {
-            playerNode.play()
-        }
-        
-        // Small delay to ensure audio system is ready, then play first beat
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { [weak self] in
-            self?.tick()
-            
-            // Use DispatchSourceTimer for subsequent beats
-            guard let self = self else { return }
-            let interval = (60.0 / self.bpm) / self.noteValue.multiplier
-            let queue = DispatchQueue(label: "metronome.timer", qos: .userInteractive)
-            
-            self.timer = DispatchSource.makeTimerSource(queue: queue)
-            // Start after one interval, then repeat
-            self.timer?.schedule(deadline: .now() + interval, repeating: interval)
-            self.timer?.setEventHandler { [weak self] in
-                DispatchQueue.main.async {
-                    self?.tick()
-                }
-            }
-            self.timer?.resume()
-        }
+        currentBeat = -1
+        clicks?.start(clickPattern)
     }
     
     private func stop() {
         isPlaying = false
-        timer?.cancel()
-        timer = nil
         currentBeat = -1
-        shouldBlink = false
-        
-        // Stop the player node
-        playerNode?.stop()
-    }
-    
-    private func tick() {
-        // Update beat counter BEFORE playing sound and visual update
-        currentBeat = (currentBeat + 1) % beatsPerMeasure
-        
-        // Update visual immediately
-        triggerVisualBlink()
-        
-        // Check if this beat should play based on grid pattern
-        let shouldPlayBeat = currentBeat < gridPattern[0].count && gridPattern[0][currentBeat]
-        
-        if shouldPlayBeat {
-            playClick()
-        }
-    }
-    
-    private func playClick() {
-        guard let playerNode = playerNode else { return }
-        
-        let shouldAccent = currentBeat < accentPattern.count && accentPattern[currentBeat]
-        let audioFile = shouldAccent ? accentClickFile : normalClickFile
-        
-        if let audioFile = audioFile {
-            playerNode.scheduleFile(audioFile, at: nil)
-        } else {
-            guard let audioBuffer = createClickBuffer(accent: shouldAccent) else { return }
-            playerNode.scheduleBuffer(audioBuffer, at: nil, options: [], completionHandler: nil)
-        }
-        
-        if !playerNode.isPlaying {
-            playerNode.play()
-        }
-    }
-    
-    private func playTapSound() {
-        guard let playerNode = playerNode else { return }
-        
-        // Ensure audio engine is running
-        if let audioEngine = audioEngine, !audioEngine.isRunning {
-            do {
-                try audioEngine.start()
-            } catch {
-                print("Failed to start audio engine for tap: \(error)")
-                return
-            }
-        }
-        
-        // Use normal click sound for tap
-        if let audioFile = normalClickFile {
-            playerNode.scheduleFile(audioFile, at: nil)
-        } else {
-            guard let audioBuffer = createClickBuffer(accent: false) else { return }
-            playerNode.scheduleBuffer(audioBuffer, at: nil, options: [], completionHandler: nil)
-        }
-        
-        if !playerNode.isPlaying {
-            playerNode.play()
-        }
-    }
-    
-    
-    private func triggerVisualBlink() {
-        // Always trigger blink but with different intensities
-        shouldBlink = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.shouldBlink = false
-        }
+        clicks?.stop()
     }
     
     func updateBPM(_ newBPM: Double) {
-        let oldBPM = bpm
+        // Tempo changes glide in on the next beat, no restart, so the groove keeps its phase
         bpm = newBPM
-        
-        if isPlaying {
-            // Cancel old timer
-            timer?.cancel()
-            
-            // Calculate new interval
-            let newInterval = (60.0 / bpm) / noteValue.multiplier
-            let queue = DispatchQueue(label: "metronome.timer", qos: .userInteractive)
-            
-            // Restart immediately with new interval to maintain beat continuity
-            timer = DispatchSource.makeTimerSource(queue: queue)
-            timer?.schedule(deadline: .now() + newInterval, repeating: newInterval)
-            timer?.setEventHandler { [weak self] in
-                DispatchQueue.main.async {
-                    self?.tick()
-                }
-            }
-            timer?.resume()
-        }
     }
     
     func updateNoteValue(_ newNoteValue: NoteValue) {
@@ -515,20 +368,7 @@ class MetronomeManager: ObservableObject {
         
         setupDefaultPattern()
         
-        if isPlaying {
-            timer?.cancel()
-            let interval = (60.0 / bpm) / noteValue.multiplier
-            let queue = DispatchQueue(label: "metronome.timer", qos: .userInteractive)
-            
-            timer = DispatchSource.makeTimerSource(queue: queue)
-            timer?.schedule(deadline: .now() + interval, repeating: interval)
-            timer?.setEventHandler { [weak self] in
-                DispatchQueue.main.async {
-                    self?.tick()
-                }
-            }
-            timer?.resume()
-        }
+        restartIfPlaying()
     }
     
     func updateBeatsPerMeasure(_ beats: Int) {
@@ -577,14 +417,8 @@ class MetronomeManager: ObservableObject {
         // Add to tap times for BPM calculation
         tapTimes.append(now)
         
-        // Play tap sound
-        playTapSound()
-        
-        // Always trigger background pulse effect (even when not playing)
-        shouldBlink = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.shouldBlink = false
-        }
+        // Play tap sound and pulse the background (even when not playing)
+        clicks?.tap()
         
         // Only keep recent taps for BPM calculation (but don't affect count)
         tapTimes = tapTimes.filter { now.timeIntervalSince($0) < 3.0 }
@@ -602,10 +436,6 @@ class MetronomeManager: ObservableObject {
             
             // Clamp BPM to reasonable range
             bpm = min(max(newBPM, 40), 200)
-            
-            if isPlaying {
-                updateBPM(bpm)
-            }
         }
         
         // Clear tap count after 3 seconds of no tapping
@@ -748,20 +578,7 @@ class MetronomeManager: ObservableObject {
             }
         }
         
-        if isPlaying {
-            timer?.cancel()
-            let interval = (60.0 / bpm) / noteValue.multiplier
-            let queue = DispatchQueue(label: "metronome.timer", qos: .userInteractive)
-            
-            timer = DispatchSource.makeTimerSource(queue: queue)
-            timer?.schedule(deadline: .now() + interval, repeating: interval)
-            timer?.setEventHandler { [weak self] in
-                DispatchQueue.main.async {
-                    self?.tick()
-                }
-            }
-            timer?.resume()
-        }
+        restartIfPlaying()
     }
     
     func deleteBeatPreset(_ preset: BeatPreset) {
@@ -821,21 +638,8 @@ class MetronomeManager: ObservableObject {
             }
         }
         
-        // Update timer if playing
-        if isPlaying {
-            timer?.cancel()
-            let interval = (60.0 / bpm) / noteValue.multiplier
-            let queue = DispatchQueue(label: "metronome.timer", qos: .userInteractive)
-            
-            timer = DispatchSource.makeTimerSource(queue: queue)
-            timer?.schedule(deadline: .now() + interval, repeating: interval)
-            timer?.setEventHandler { [weak self] in
-                DispatchQueue.main.async {
-                    self?.tick()
-                }
-            }
-            timer?.resume()
-        }
+        // Restart the bar if playing
+        restartIfPlaying()
         
         currentBeatName = "Random Beat"
     }
@@ -867,21 +671,8 @@ class MetronomeManager: ObservableObject {
         // Set up basic 4/4 pattern
         setupDefaultPattern()
         
-        // Update timer if playing
-        if isPlaying {
-            timer?.cancel()
-            let interval = (60.0 / bpm) / noteValue.multiplier
-            let queue = DispatchQueue(label: "metronome.timer", qos: .userInteractive)
-            
-            timer = DispatchSource.makeTimerSource(queue: queue)
-            timer?.schedule(deadline: .now() + interval, repeating: interval)
-            timer?.setEventHandler { [weak self] in
-                DispatchQueue.main.async {
-                    self?.tick()
-                }
-            }
-            timer?.resume()
-        }
+        // Restart the bar if playing
+        restartIfPlaying()
         
         currentBeatName = "Eighth"
     }

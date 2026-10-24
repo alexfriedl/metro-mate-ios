@@ -13,7 +13,6 @@ struct ContentView: View {
     @State private var showQuickNoteValuePicker = false
     @State private var showGridSettings = false
     @State private var showBeatPresets = false
-    @State private var repeatTimer: Timer?
     @State private var isPlayButtonPressed = false
     
     var body: some View {
@@ -22,9 +21,11 @@ struct ContentView: View {
             Color(hex: "#1C1C1B")
                 .ignoresSafeArea()
             
-            StarFieldView(metronome: metronome)
-                .ignoresSafeArea()
-                .allowsHitTesting(false) // Don't block UI interactions
+            PulseFieldView(
+                timeline: metronome.beatTimeline,
+                isPlaying: metronome.isPlaying,
+                tapCount: metronome.tapCount
+            )
             
             // Main content
             GeometryReader { geometry in
@@ -92,105 +93,10 @@ struct ContentView: View {
                 Spacer()
                 
                 // BPM Display
-                VStack {
-                    HStack(spacing: 20) {
-                        Button(action: { 
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                            impactFeedback.impactOccurred()
-                            let newBPM = max(metronome.bpm - 1, 40)
-                            metronome.bpm = newBPM
-                            metronome.updateBPM(newBPM)
-                        }) {
-                            Image(systemName: "minus")
-                                .font(.title2)
-                                .foregroundColor(Color(hex: "#DDDDDD"))
-                        }
-                        .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 50) {
-                            // Long press action
-                        } onPressingChanged: { pressing in
-                            if pressing {
-                                startRepeatingDecrease()
-                            } else {
-                                stopRepeating()
-                            }
-                        }
-                        
-                        // Custom BPM Picker
-                        VStack(spacing: 0) {
-                            // Upper value (only show if not at minimum)
-                            if Int(metronome.bpm) > 40 {
-                                Text("\(Int(metronome.bpm) - 1)")
-                                    .font(.system(size: 48, weight: .light, design: .monospaced))
-                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.2))
-                                    .frame(height: 60)
-                            } else {
-                                Spacer()
-                                    .frame(height: 60)
-                            }
-                            
-                            // Current value with background
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(hex: "#303030"))
-                                    .frame(width: 120, height: 60)
-                                
-                                Text("\(Int(metronome.bpm))")
-                                    .font(.system(size: 48, weight: .light, design: .monospaced))
-                                    .foregroundColor(Color(hex: "#DDDDDD"))
-                            }
-                            .frame(height: 60)
-                            
-                            // Lower value (only show if not at maximum)
-                            if Int(metronome.bpm) < 200 {
-                                Text("\(Int(metronome.bpm) + 1)")
-                                    .font(.system(size: 48, weight: .light, design: .monospaced))
-                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.2))
-                                    .frame(height: 60)
-                            } else {
-                                Spacer()
-                                    .frame(height: 60)
-                            }
-                        }
-                        .gesture(
-                            DragGesture()
-                                .onChanged { gesture in
-                                    let sensitivity: Double = 0.02
-                                    let change = -Double(gesture.translation.height) * sensitivity
-                                    let newBPM = max(40, min(200, metronome.bpm + change))
-                                    
-                                    // Haptic feedback on BPM change
-                                    if Int(newBPM) != Int(metronome.bpm) {
-                                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                        impactFeedback.impactOccurred()
-                                    }
-                                    
-                                    metronome.bpm = newBPM
-                                    metronome.updateBPM(newBPM)
-                                }
-                        )
-                        
-                        Button(action: { 
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                            impactFeedback.impactOccurred()
-                            let newBPM = min(metronome.bpm + 1, 200)
-                            metronome.bpm = newBPM
-                            metronome.updateBPM(newBPM)
-                        }) {
-                            Image(systemName: "plus")
-                                .font(.title2)
-                                .foregroundColor(Color(hex: "#DDDDDD"))
-                        }
-                        .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 50) {
-                            // Long press action
-                        } onPressingChanged: { pressing in
-                            if pressing {
-                                startRepeatingIncrease()
-                            } else {
-                                stopRepeating()
-                            }
-                        }
-                    }
-                }
+                BPMControl(bpm: Binding(
+                    get: { metronome.bpm },
+                    set: { metronome.updateBPM($0) }
+                ))
                 
                 Spacer()
                     .frame(height: 20)
@@ -256,12 +162,14 @@ struct ContentView: View {
                     
                     // Central Play Button
                     ZStack {
-                        Circle()
-                            .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
-                            .frame(width: 96, height: 96)
-                            .scaleEffect(isPlayButtonPressed ? 0.95 : (metronome.shouldBlink ? 1.1 : 1.0))
-                            .animation(.easeInOut(duration: 0.1), value: metronome.shouldBlink)
-                            .animation(.easeInOut(duration: 0.1), value: isPlayButtonPressed)
+                        // Beat punch is read from the audio clock every frame, no implicit animation lag
+                        TimelineView(.animation(minimumInterval: nil, paused: !metronome.isPlaying)) { context in
+                            Circle()
+                                .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
+                                .frame(width: 96, height: 96)
+                                .scaleEffect((isPlayButtonPressed ? 0.95 : 1.0) * playButtonPunch(at: context.date))
+                        }
+                        .animation(.easeInOut(duration: 0.1), value: isPlayButtonPressed)
                         
                         Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 32))
@@ -303,31 +211,11 @@ struct ContentView: View {
             .padding()
     }
     
-    private func startRepeatingIncrease() {
-        repeatTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            let newBPM = min(metronome.bpm + 1, 200)
-            metronome.bpm = newBPM
-            metronome.updateBPM(newBPM)
-            
-            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-            impactFeedback.impactOccurred()
-        }
-    }
-    
-    private func startRepeatingDecrease() {
-        repeatTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            let newBPM = max(metronome.bpm - 1, 40)
-            metronome.bpm = newBPM
-            metronome.updateBPM(newBPM)
-            
-            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-            impactFeedback.impactOccurred()
-        }
-    }
-    
-    private func stopRepeating() {
-        repeatTimer?.invalidate()
-        repeatTimer = nil
+    private func playButtonPunch(at date: Date) -> CGFloat {
+        guard metronome.isPlaying else { return 1 }
+        let time = PulseClock.now(for: date)
+        guard let hit = metronome.beatTimeline.recent(at: time, limit: 4).first(where: { $0.audible }) else { return 1 }
+        return 1 + 0.07 * CGFloat(PulseClock.weight(of: hit) * PulseClock.punch(of: hit, at: time))
     }
 }
 
@@ -408,6 +296,33 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             Form {
+                Section("Sound") {
+                    ForEach(ClickSound.allCases) { sound in
+                        Button {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            metronome.clickSound = sound
+                            metronome.previewSound()
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(sound.title)
+                                        .foregroundColor(Color(hex: "#DDDDDD"))
+                                    Text(sound.subtitle)
+                                        .font(.caption)
+                                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                                }
+                                Spacer()
+                                if metronome.clickSound == sound {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(Color(hex: "#F54206"))
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
                 Section("Beat Configuration") {
                     Stepper("Beats per Measure: \(metronome.beatsPerMeasure)", 
                            value: $metronome.beatsPerMeasure, 
