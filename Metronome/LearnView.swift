@@ -167,7 +167,10 @@ struct GroovePager: View {
     @State private var dragOffset: CGFloat = 0
     @State private var cursor: Int?
     @State private var isScrubbing = false
-    @State private var loop: ClosedRange<Int>?
+    @State private var loopRange: ClosedRange<Int>?
+    @State private var loopOn = false
+
+    private var loop: ClosedRange<Int>? { loopOn ? loopRange : nil }
 
     private var grooves: [Groove] { category.grooves }
     private var groove: Groove { grooves[index] }
@@ -196,9 +199,11 @@ struct GroovePager: View {
                         onScrubEnd: { DispatchQueue.main.async { isScrubbing = false } }
                     )
 
-                    LoopControl(groove: groove, loop: $loop, cursor: cursor) { active in
-                        if active { isScrubbing = true } else { DispatchQueue.main.async { isScrubbing = false } }
-                    }
+                    LoopControl(groove: groove, range: $loopRange, isOn: $loopOn, cursor: cursor,
+                                onInteract: { active in
+                                    if active { isScrubbing = true } else { DispatchQueue.main.async { isScrubbing = false } }
+                                },
+                                onCommit: commitLoop)
                         .padding(.horizontal, 12)
                 }
                 .frame(minHeight: 190, alignment: .top)
@@ -283,7 +288,7 @@ struct GroovePager: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             player.tempo = savedTempo(for: groove)
-            player.setLoop(nil)
+            restoreLoop()
         }
         .onDisappear { player.stop() }
         .onChange(of: player.tempo) { tempo in
@@ -292,10 +297,9 @@ struct GroovePager: View {
             tempos[groove.id] = tempo
             UserDefaults.standard.set(tempos, forKey: "grooveTempos")
         }
-        .onChange(of: loop) { range in player.setLoop(range) }
         .onChange(of: index) { _ in
             cursor = nil
-            loop = nil
+            restoreLoop()
             UISelectionFeedbackGenerator().selectionChanged()
             player.tempo = savedTempo(for: groove)
             // Keep the music going, the next groove picks up straight away
@@ -383,6 +387,30 @@ struct GroovePager: View {
         }
         player.tempo = savedTempo(for: groove)
         if wasPlaying { player.play(groove) }
+    }
+
+    // Loop part and switch are remembered per groove; a change restarts playback from the left edge of the loop
+    private func commitLoop() {
+        var ranges = UserDefaults.standard.dictionary(forKey: "grooveLoops") as? [String: [Int]] ?? [:]
+        var switches = UserDefaults.standard.dictionary(forKey: "grooveLoopOn") as? [String: Bool] ?? [:]
+        ranges[groove.id] = loopRange.map { [$0.lowerBound, $0.upperBound] }
+        switches[groove.id] = loopOn
+        UserDefaults.standard.set(ranges, forKey: "grooveLoops")
+        UserDefaults.standard.set(switches, forKey: "grooveLoopOn")
+        player.setLoop(loop)
+        if player.isPlaying { player.play(groove) }
+    }
+
+    private func restoreLoop() {
+        let ranges = UserDefaults.standard.dictionary(forKey: "grooveLoops") as? [String: [Int]] ?? [:]
+        let switches = UserDefaults.standard.dictionary(forKey: "grooveLoopOn") as? [String: Bool] ?? [:]
+        if let bounds = ranges[groove.id], bounds.count == 2, bounds[0] <= bounds[1], bounds[1] < groove.steps {
+            loopRange = bounds[0]...bounds[1]
+        } else {
+            loopRange = nil
+        }
+        loopOn = loopRange != nil && (switches[groove.id] ?? false)
+        player.setLoop(loop)
     }
 
     private func scrub(to step: Int) {
@@ -618,9 +646,11 @@ private struct Legend: View {
 // Loop a part of the bar: a switch, then two handles that snap to the grid columns
 private struct LoopControl: View {
     let groove: Groove
-    @Binding var loop: ClosedRange<Int>?
+    @Binding var range: ClosedRange<Int>?
+    @Binding var isOn: Bool
     let cursor: Int?
     var onInteract: (Bool) -> Void = { _ in }
+    var onCommit: () -> Void = {}
 
     @State private var dragging: Handle?
 
@@ -631,31 +661,31 @@ private struct LoopControl: View {
             HStack {
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    if loop == nil {
+                    if range == nil {
                         // Start with the beat under the cursor, or the first two beats
                         let beat = groove.stepsPerBeat
                         let start = cursor.map { ($0 / beat) * beat } ?? 0
-                        loop = start...min(groove.steps - 1, start + (cursor == nil ? beat * 2 : beat) - 1)
-                    } else {
-                        loop = nil
+                        range = start...min(groove.steps - 1, start + (cursor == nil ? beat * 2 : beat) - 1)
                     }
+                    isOn.toggle()
+                    onCommit()
                 } label: {
-                    Label(loop == nil ? "Loop a part" : "Loop on", systemImage: "repeat")
+                    Label(range == nil ? "Loop a part" : (isOn ? "Loop on" : "Loop off"), systemImage: "repeat")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(loop == nil ? Color(hex: "#DDDDDD") : Color(hex: "#1C1C1B"))
+                        .foregroundColor(isOn ? Color(hex: "#1C1C1B") : Color(hex: "#DDDDDD"))
                         .padding(.horizontal, 14)
                         .frame(height: 36)
-                        .background(Capsule().fill(loop == nil ? Color(hex: "#303030") : Color(hex: "#F54206")))
+                        .background(Capsule().fill(isOn ? Color(hex: "#F54206") : Color(hex: "#303030")))
                 }
                 Spacer()
-                if let loop {
+                if let loop = range {
                     Text("Steps \(loop.lowerBound + 1) to \(loop.upperBound + 1)")
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
-                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.65))
+                        .foregroundColor(Color(hex: "#DDDDDD").opacity(isOn ? 0.65 : 0.4))
                 }
             }
 
-            if let loop {
+            if isOn, let loop = range {
                 GeometryReader { proxy in
                     let width = proxy.size.width
                     let startX = DrumGrid.center(of: loop.lowerBound, width: width, groove: groove)
@@ -690,12 +720,13 @@ private struct LoopControl: View {
                                 }
                                 if updated != loop {
                                     UISelectionFeedbackGenerator().selectionChanged()
-                                    self.loop = updated
+                                    range = updated
                                 }
                             }
                             .onEnded { _ in
                                 dragging = nil
                                 onInteract(false)
+                                onCommit()
                             }
                     )
                 }
