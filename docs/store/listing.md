@@ -69,6 +69,8 @@ drum,drummer,metronome,groove,click,tempo,bpm,practice,rudiments,funk,ghost note
 ## Screenshots (iPad 13", 2064 x 2752)
 
 1. `screenshots-ipad/01-feel-every-beat.png` · Main screen playing, beat 1 on the wave
-2. `screenshots-ipad/02-loop-the-hard-part.png` · Paradiddle with loop on
+2. `screenshots-ipad/02-play-the-classics.png` · Learn, Funky Drummer playing
 3. `screenshots-ipad/03-grooves-and-exercises.png` · Categories sheet over Funk & Ghost Notes
-4. `screenshots-ipad/04-pick-your-sound.png` · Sound settings with click and Learn drum kit
+4. `screenshots-ipad/04-loop-the-hard-part.png` · Paradiddle with loop on and column cursor
+5. `screenshots-ipad/05-watch-it-add-up.png` · History, month view (fictional practice data)
+6. `screenshots-ipad/06-pick-your-sound.png` · Snare list of the Learn drum kit, with Your sounds and Import
