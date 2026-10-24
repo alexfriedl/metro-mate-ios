@@ -3,14 +3,16 @@ import SwiftUI
 struct LearnView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var player = GroovePlayer()
+    @State private var selected: Groove?
 
     var body: some View {
         NavigationView {
             List {
                 Section {
                     ForEach(Groove.library) { groove in
-                        NavigationLink {
-                            GrooveDetailView(groove: groove, player: player)
+                        Button {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            selected = groove
                         } label: {
                             HStack(spacing: 12) {
                                 LevelBadge(level: groove.level)
@@ -22,9 +24,15 @@ struct LearnView: View {
                                         .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
                                         .lineLimit(2)
                                 }
+                                Spacer()
+                                Image(systemName: "chevron.up")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.4))
                             }
                             .padding(.vertical, 4)
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
                         .listRowBackground(Color(hex: "#242424"))
                     }
                 } footer: {
@@ -46,6 +54,20 @@ struct LearnView: View {
         }
         .navigationViewStyle(.stack)
         .preferredColorScheme(.dark)
+        // Each groove opens as its own sheet stacked on top of the list
+        .sheet(item: $selected, onDismiss: { player.stop() }) { groove in
+            NavigationView {
+                GrooveDetailView(groove: groove, player: player)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") { selected = nil }
+                                .foregroundColor(Color(hex: "#DDDDDD"))
+                        }
+                    }
+            }
+            .navigationViewStyle(.stack)
+            .preferredColorScheme(.dark)
+        }
         .onDisappear { player.stop() }
     }
 }

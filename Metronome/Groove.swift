@@ -111,17 +111,20 @@ final class GroovePlayer: ObservableObject {
     private var generation = 0
 
     init() {
-        buffers = [
-            "hat": Synth.hiHat(gain: 0.5, format: format),
-            "hatAccent": Synth.hiHat(gain: 0.75, format: format),
-            "open": Synth.openHat(gain: 0.5, format: format),
-            "snare": Synth.snare(gain: 0.8, format: format),
-            "snareAccent": Synth.snare(gain: 1.0, format: format),
-            "ghost": Synth.snare(gain: 0.18, format: format),
-            "kick": Synth.kick(start: 150, end: 50, pitchDecay: 0.04, decay: 0.12, drive: 1.3, gain: 0.85, format: format),
+        let synthesized: [String: AVAudioPCMBuffer] = [
             "click": Synth.beep(frequency: 1320, gain: 0.22, format: format),
             "clickOne": Synth.beep(frequency: 1760, gain: 0.3, format: format)
         ]
+        let sampled: [String: AVAudioPCMBuffer?] = [
+            "hat": Synth.sample("hihat", gain: 0.55, format: format),
+            "hatAccent": Synth.sample("hihat-accent", gain: 0.7, format: format),
+            "open": Synth.sample("hihat-open", gain: 0.55, format: format),
+            "snare": Synth.sample("snare", gain: 0.8, format: format),
+            "snareAccent": Synth.sample("snare-accent", gain: 1.0, format: format),
+            "ghost": Synth.sample("snare", gain: 0.16, format: format),
+            "kick": Synth.sample("kick", gain: 0.95, format: format)
+        ]
+        buffers = synthesized.merging(sampled.compactMapValues { $0 }) { first, _ in first }
         // One node per voice so overlapping hits never queue behind each other
         for _ in 0..<4 {
             let player = AVAudioPlayerNode()
