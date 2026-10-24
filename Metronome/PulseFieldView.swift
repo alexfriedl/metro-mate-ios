@@ -1,4 +1,6 @@
 import SwiftUI
+import CoreMotion
+import UIKit
 import QuartzCore
 
 enum PulseClock {
@@ -25,6 +27,51 @@ enum PulseClock {
         guard age >= 0 else { return 0 }
         let tau = min(0.11, max(0.035, event.interval * 0.3))
         return exp(-age / tau)
+    }
+}
+
+// How the phone is held, used to move the camera over the wave field like looking through a window
+final class DeviceTilt {
+    static let shared = DeviceTilt()
+
+    // Smoothed offset from the resting position, roughly -1...1 on each axis
+    private(set) var x: Double = 0
+    private(set) var y: Double = 0
+
+    private let motion = CMMotionManager()
+    private var baseX: Double?
+    private var baseY: Double = 0
+    private var users = 0
+
+    func start() {
+        users += 1
+        guard users == 1, motion.isDeviceMotionAvailable, !UIAccessibility.isReduceMotionEnabled else { return }
+        motion.deviceMotionUpdateInterval = 1.0 / 60.0
+        motion.startDeviceMotionUpdates(to: .main) { [weak self] data, _ in
+            guard let self, let gravity = data?.gravity else { return }
+            let rawX = gravity.x
+            let rawY = gravity.y
+            if self.baseX == nil {
+                self.baseX = rawX
+                self.baseY = rawY
+            }
+            // The resting position follows slowly, so a new grip re-centres after a few seconds
+            self.baseX! += (rawX - self.baseX!) * 0.006
+            self.baseY += (rawY - self.baseY) * 0.006
+            let targetX = max(-1, min(1, (rawX - self.baseX!) * 2.5))
+            let targetY = max(-1, min(1, (rawY - self.baseY) * 2.5))
+            self.x += (targetX - self.x) * 0.2
+            self.y += (targetY - self.y) * 0.2
+        }
+    }
+
+    func stop() {
+        users = max(0, users - 1)
+        guard users == 0 else { return }
+        motion.stopDeviceMotionUpdates()
+        baseX = nil
+        x = 0
+        y = 0
     }
 }
 
@@ -58,6 +105,11 @@ struct PulseFieldView: View {
         .onChange(of: isPlaying) { playing in
             if !playing { linger() }
         }
+        // The motion sensor only runs while the field animates
+        .onChange(of: isPlaying || lingering) { running in
+            running ? DeviceTilt.shared.start() : DeviceTilt.shared.stop()
+        }
+        .onDisappear { if isPlaying || lingering { DeviceTilt.shared.stop() } }
         .onChange(of: tapCount) { count in
             if count > 0 { linger() }
         }
@@ -154,7 +206,11 @@ struct WaveMesh {
 
     func draw(in canvas: inout GraphicsContext, size: CGSize) {
         let focal = size.width * 0.95
-        let horizon = size.height * 0.30
+        // Tilting the phone moves the camera: sideways shifts it, forward and back raise or lower it
+        let tilt = DeviceTilt.shared
+        let cameraX = tilt.x * 1.4
+        let cameraHeight = max(0.7, Self.cameraHeight - tilt.y * 0.5)
+        let horizon = size.height * (0.30 + tilt.y * 0.05)
         let centerX = size.width / 2
         let fraction = flowRows - floor(flowRows)
         let columns = Self.columns
@@ -177,8 +233,8 @@ struct WaveMesh {
                 guard z > 0.25 else { continue }
                 let sample = height(x: x, z: z, worldZ: worldZ)
                 let screen = CGPoint(
-                    x: centerX + x / z * focal,
-                    y: horizon + (Self.cameraHeight - sample.height) / z * focal
+                    x: centerX + (x - cameraX) / z * focal,
+                    y: horizon + (cameraHeight - sample.height) / z * focal
                 )
                 points[index] = screen
                 alphas[index] = fog * entry * min(1, (0.5 + 0.8 * sample.crest) * (1 + 0.9 * bounce))
