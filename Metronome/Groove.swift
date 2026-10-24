@@ -140,8 +140,18 @@ struct Groove: Identifiable {
 final class GroovePlayer: ObservableObject {
     @Published private(set) var isPlaying = false
     @Published private(set) var currentStep = -1
-    @Published var tempo: Double = 88 { didSet { queue.async { [self] in pendingTempo = tempo } } }
-    @Published var clickInBackground = true { didSet { queue.async { [self] in pendingClick = clickInBackground } } }
+    @Published var tempo: Double = 88 {
+        didSet {
+            queue.async { [self] in pendingTempo = tempo }
+            if isPlaying { PracticeLog.shared.updateTempo(Int(tempo)) }
+        }
+    }
+    @Published var clickInBackground = UserDefaults.standard.bool(forKey: "learnClick") {
+        didSet {
+            UserDefaults.standard.set(clickInBackground, forKey: "learnClick")
+            queue.async { [self] in pendingClick = clickInBackground }
+        }
+    }
 
     private let engine = AVAudioEngine()
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2)!
@@ -152,7 +162,7 @@ final class GroovePlayer: ObservableObject {
     // Scheduler state, only touched on `queue`
     private var groove: Groove?
     private var pendingTempo: Double = 88
-    private var pendingClick = true
+    private var pendingClick = UserDefaults.standard.bool(forKey: "learnClick")
     private var timer: DispatchSourceTimer?
     private var nextSample: Double = 0
     private var step = 0
@@ -164,13 +174,15 @@ final class GroovePlayer: ObservableObject {
             "clickOne": Synth.beep(frequency: 1760, gain: 0.3, format: format)
         ]
         let sampled: [String: AVAudioPCMBuffer?] = [
-            "hat": Synth.sample("hihat", gain: 0.55, format: format),
-            "hatAccent": Synth.sample("hihat-accent", gain: 0.7, format: format),
+            // Each dynamic is its own recorded stroke, so accents sound harder, not just louder
+            "hat": Synth.sample("hihat", gain: 0.45, format: format),
+            "hatAccent": Synth.sample("hihat-accent", gain: 0.8, format: format),
             "open": Synth.sample("hihat-open", gain: 0.55, format: format),
-            "snare": Synth.sample("snare", gain: 0.8, format: format),
+            "snare": Synth.sample("snare", gain: 0.55, format: format),
             "snareAccent": Synth.sample("snare-accent", gain: 1.0, format: format),
-            "ghost": Synth.sample("snare", gain: 0.16, format: format),
-            "kick": Synth.sample("kick", gain: 0.95, format: format)
+            "ghost": Synth.sample("snare-ghost", gain: 0.3, format: format),
+            "kick": Synth.sample("kick", gain: 1.0, format: format),
+            "kickFeather": Synth.sample("kick-soft", gain: 0.45, format: format)
         ]
         buffers = synthesized.merging(sampled.compactMapValues { $0 }) { first, _ in first }
         // One node per voice so overlapping hits never queue behind each other
@@ -185,6 +197,7 @@ final class GroovePlayer: ObservableObject {
 
     func play(_ groove: Groove) {
         MetronomeManager.shared.stopIfPlaying()
+        PracticeLog.shared.begin(.groove, title: groove.title, detail: groove.category.title, bpm: Int(tempo))
         isPlaying = true
         currentStep = -1
         queue.async { [self] in
@@ -211,6 +224,7 @@ final class GroovePlayer: ObservableObject {
     }
 
     func stop() {
+        if isPlaying { PracticeLog.shared.end() }
         isPlaying = false
         currentStep = -1
         queue.async { [self] in
@@ -252,7 +266,9 @@ final class GroovePlayer: ObservableObject {
             case .some: schedule("snare", on: 1, at: when)
             case nil: break
             }
-            if groove.hit(.kick, at: index) != nil { schedule("kick", on: 2, at: when) }
+            if groove.hit(.kick, at: index) != nil {
+                schedule(groove.category == .hands ? "kickFeather" : "kick", on: 2, at: when)
+            }
             if pendingClick && index % groove.stepsPerBeat == 0 { schedule(index == 0 ? "clickOne" : "click", on: 3, at: when) }
 
             let host: CFTimeInterval

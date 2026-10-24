@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import SwiftUI
+import Combine
 
 struct TapPoint: Identifiable {
     let id = UUID()
@@ -156,14 +157,19 @@ struct BeatPreset: Identifiable, Codable {
 class MetronomeManager: ObservableObject {
     static let shared = MetronomeManager()
     @Published var isPlaying = false
-    @Published var bpm: Double = 60 { didSet { syncPattern() } }
+    @Published var bpm: Double = 60 {
+        didSet {
+            syncPattern()
+            if isPlaying { PracticeLog.shared.updateTempo(Int(bpm)) }
+        }
+    }
     @Published var beatsPerMeasure = 8 { didSet { syncPattern() } }
     @Published var currentBeat = -1
     @Published var gridPattern: [[Bool]] = Array(repeating: Array(repeating: false, count: 16), count: 4) { didSet { syncPattern() } }
     @Published var accentPattern: [Bool] = Array(repeating: false, count: 16) { didSet { syncPattern() } }
     @Published var gridSize = 4
     @Published var noteValue: NoteValue = .eighth { didSet { syncPattern() } }
-    @Published var clickSound: ClickSound = ClickSound(rawValue: UserDefaults.standard.string(forKey: "clickSound") ?? "") ?? .clean {
+    @Published var clickSound: ClickSound = ClickSound(rawValue: UserDefaults.standard.string(forKey: "clickSound") ?? "") ?? .classic {
         didSet {
             UserDefaults.standard.set(clickSound.rawValue, forKey: "clickSound")
             clicks?.setSound(clickSound)
@@ -186,15 +192,61 @@ class MetronomeManager: ObservableObject {
     var beatTimeline: BeatTimeline { clicks!.timeline }
 
     private let savedBeatsKey = "savedBeatPresets"
+    private let stateKey = "metronomeState"
+    private var persistence: AnyCancellable?
+
+    // Everything the user can set survives quitting the app
+    private struct SavedState: Codable {
+        var bpm: Double
+        var noteValue: NoteValue
+        var beatsPerMeasure: Int
+        var gridPattern: [[Bool]]
+        var accentPattern: [Bool]
+        var gridDisplayMode: GridDisplayMode
+        var currentBeatName: String
+    }
 
     init() {
         setupDefaultPattern()
         restorePresets()
+        restoreState()
         clicks = ClickEngine(pattern: clickPattern, sound: clickSound)
         clicks?.onBeat = { [weak self] event in
             self?.currentBeat = event.index
         }
         isConfigured = true
+
+        // Save shortly after the last change, ticks while playing just keep pushing it back
+        persistence = objectWillChange
+            .debounce(for: .milliseconds(600), scheduler: RunLoop.main)
+            .sink { [weak self] _ in self?.persistState() }
+    }
+
+    private func persistState() {
+        let state = SavedState(
+            bpm: bpm,
+            noteValue: noteValue,
+            beatsPerMeasure: beatsPerMeasure,
+            gridPattern: gridPattern,
+            accentPattern: accentPattern,
+            gridDisplayMode: gridDisplayMode,
+            currentBeatName: currentBeatName
+        )
+        if let data = try? JSONEncoder().encode(state) {
+            UserDefaults.standard.set(data, forKey: stateKey)
+        }
+    }
+
+    private func restoreState() {
+        guard let data = UserDefaults.standard.data(forKey: stateKey),
+              let state = try? JSONDecoder().decode(SavedState.self, from: data) else { return }
+        bpm = state.bpm
+        noteValue = state.noteValue
+        beatsPerMeasure = state.beatsPerMeasure
+        gridPattern = state.gridPattern
+        accentPattern = state.accentPattern
+        gridDisplayMode = state.gridDisplayMode
+        currentBeatName = state.currentBeatName
     }
 
     private var clickPattern: ClickPattern {
@@ -310,12 +362,14 @@ class MetronomeManager: ObservableObject {
         isPlaying = true
         currentBeat = -1
         clicks?.start(clickPattern)
+        PracticeLog.shared.begin(.metronome, title: currentBeatName, detail: "Metronome · \(noteValue.rawValue)", bpm: Int(bpm))
     }
     
     private func stop() {
         isPlaying = false
         currentBeat = -1
         clicks?.stop()
+        PracticeLog.shared.end()
     }
     
     func updateBPM(_ newBPM: Double) {

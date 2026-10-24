@@ -224,11 +224,17 @@ struct GroovePager: View {
         }
         .background(Color(hex: "#1C1C1B").ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { player.tempo = Double(groove.tempo) }
+        .onAppear { player.tempo = savedTempo(for: groove) }
         .onDisappear { player.stop() }
+        .onChange(of: player.tempo) { tempo in
+            // Remember the tempo you practise each groove at
+            var tempos = UserDefaults.standard.dictionary(forKey: "grooveTempos") as? [String: Double] ?? [:]
+            tempos[groove.id] = tempo
+            UserDefaults.standard.set(tempos, forKey: "grooveTempos")
+        }
         .onChange(of: index) { _ in
             UISelectionFeedbackGenerator().selectionChanged()
-            player.tempo = Double(groove.tempo)
+            player.tempo = savedTempo(for: groove)
             // Keep the music going, the next groove picks up straight away
             if player.isPlaying { player.play(groove) }
         }
@@ -306,8 +312,13 @@ struct GroovePager: View {
         let wasPlaying = player.isPlaying
         category = item
         index = 0
-        player.tempo = Double(groove.tempo)
+        player.tempo = savedTempo(for: groove)
         if wasPlaying { player.play(groove) }
+    }
+
+    private func savedTempo(for groove: Groove) -> Double {
+        let tempos = UserDefaults.standard.dictionary(forKey: "grooveTempos") as? [String: Double] ?? [:]
+        return tempos[groove.id] ?? Double(groove.tempo)
     }
 
     private func step(_ direction: Int) {

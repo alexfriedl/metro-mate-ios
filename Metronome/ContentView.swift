@@ -11,6 +11,7 @@ struct ContentView: View {
     @StateObject private var metronome = MetronomeManager.shared
     @State private var showSettings = false
     @State private var showLearn = false
+    @State private var showHistory = false
     @State private var showQuickNoteValuePicker = false
     @State private var showGridSettings = false
     @State private var showBeatPresets = false
@@ -32,6 +33,9 @@ struct ContentView: View {
             GeometryReader { geometry in
                 content
             }
+        }
+        .sheet(isPresented: $showHistory) {
+            HistoryView()
         }
         .sheet(isPresented: $showLearn) {
             LearnView()
@@ -71,6 +75,10 @@ struct ContentView: View {
                     }
                     
                     Spacer()
+                    
+                    HeaderIconButton(symbol: "clock.arrow.circlepath", label: "History") {
+                        showHistory = true
+                    }
                     
                     Button(action: {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -661,4 +669,29 @@ struct BeatPresetsView: View {
 
 #Preview {
     ContentView()
+}
+
+// Round header control matching the learn and settings buttons
+struct HeaderIconButton: View {
+    let symbol: String
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            action()
+        } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundColor(Color(hex: "#DDDDDD"))
+                .frame(width: 44, height: 44)
+                .background(
+                    Circle()
+                        .fill(Color(hex: "#242424").opacity(0.8))
+                        .overlay(Circle().stroke(Color(hex: "#303030"), lineWidth: 1))
+                )
+        }
+        .accessibilityLabel(label)
+    }
 }
