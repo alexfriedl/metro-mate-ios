@@ -560,33 +560,6 @@ class MetronomeManager: ObservableObject {
         }
     }
     
-    func updateGridBeats(_ beats: Int) {
-        let maxBeats = max(16, beats)
-        
-        // Update beatsPerMeasure based on note value
-        if noteValue.isTriplet {
-            beatsPerMeasure = min(beats, 12) // Max 12 for triplets
-        } else {
-            beatsPerMeasure = min(beats, 16) // Max 16 for regular notes
-        }
-        
-        currentBeat = -1
-        
-        // Ensure grid pattern accommodates new beat count
-        for i in 0..<gridPattern.count {
-            while gridPattern[i].count < maxBeats {
-                gridPattern[i].append(false)
-            }
-        }
-        
-        // Reset accent pattern for new beat count
-        while accentPattern.count < maxBeats {
-            accentPattern.append(false)
-        }
-        
-        setupDefaultPattern()
-    }
-    
     func saveBeatPreset(name: String) {
         let preset = BeatPreset(
             name: name,

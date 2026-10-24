@@ -13,7 +13,6 @@ struct ContentView: View {
     @State private var showLearn = false
     @State private var showHistory = false
     @State private var showQuickNoteValuePicker = false
-    @State private var showGridSettings = false
     @State private var showBeatPresets = false
     @State private var showUndo = false
     @State private var undoTask: Task<Void, Never>?
@@ -43,9 +42,6 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsView(metronome: metronome)
-        }
-        .sheet(isPresented: $showGridSettings) {
-            GridSettingsView(metronome: metronome)
         }
         .sheet(isPresented: $showBeatPresets) {
             BeatPresetsView(metronome: metronome)
@@ -81,44 +77,12 @@ struct ContentView: View {
                         showHistory = true
                     }
                     
-                    Button(action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    HeaderIconButton(symbol: "graduationcap", label: "Learn") {
                         showLearn = true
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.surface.opacity(0.8))
-                                .frame(width: 44, height: 44)
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.surfaceRaised, lineWidth: 1)
-                                )
-                            
-                            Image(systemName: "graduationcap")
-                                .font(.system(size: 17, weight: .medium))
-                                .foregroundColor(Color.textPrimary)
-                        }
                     }
-                    .accessibilityLabel("Learn")
-                    
-                    Button(action: { 
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                        showSettings.toggle() 
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.surface.opacity(0.8))
-                                .frame(width: 44, height: 44)
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.surfaceRaised, lineWidth: 1)
-                                )
-                            
-                            Image(systemName: "ellipsis")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(Color.textPrimary)
-                        }
+
+                    HeaderIconButton(symbol: "speaker.wave.2", label: "Sound") {
+                        showSettings = true
                     }
                 }
                 .padding(.horizontal)
@@ -405,7 +369,7 @@ struct SettingsView: View {
                         .listRowBackground(Color.surface)
                 }
 
-                Section("Sound") {
+                Section("Click sound") {
                     ForEach(ClickSound.allCases) { sound in
                         Button {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -433,8 +397,8 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Beat Configuration") {
-                    Stepper("Beats per Measure: \(metronome.beatsPerMeasure)", 
+                Section("Pattern") {
+                    Stepper("Beats per bar: \(metronome.beatsPerMeasure)", 
                            value: $metronome.beatsPerMeasure, 
                            in: 1...16)
                     .onChange(of: metronome.beatsPerMeasure) { newValue in
@@ -448,65 +412,7 @@ struct SettingsView: View {
             .background(Color.ground)
             .scrollContentBackground(.hidden)
             .foregroundColor(Color.textPrimary)
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                        dismiss()
-                    }
-                    .foregroundColor(Color.textPrimary)
-                }
-            }
-        }
-        .background(Color.ground)
-        .preferredColorScheme(.dark)
-    }
-}
-
-struct GridSettingsView: View {
-    @ObservedObject var metronome: MetronomeManager
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section("Grid Configuration") {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Number of Beats: \(metronome.beatsPerMeasure)")
-                            .foregroundColor(Color.textPrimary)
-                        
-                        let maxBeats = metronome.noteValue.isTriplet ? 12 : 16
-                        Slider(value: Binding(
-                            get: { Double(metronome.beatsPerMeasure) },
-                            set: { metronome.updateGridBeats(Int($0)) }
-                        ), in: 1...Double(maxBeats), step: 1)
-                        .accentColor(Color.signal)
-                        
-                        HStack {
-                            Text("1")
-                                .font(.caption)
-                                .foregroundColor(Color.textSecondary)
-                            Spacer()
-                            Text("\(maxBeats)")
-                                .font(.caption)
-                                .foregroundColor(Color.textSecondary)
-                        }
-                        
-                        Text("Note: Triplets are limited to 12 beats max")
-                            .font(.caption)
-                            .foregroundColor(Color.textSecondary)
-                    }
-                    .padding(.vertical, 8)
-                }
-            }
-            .background(Color.ground)
-            .scrollContentBackground(.hidden)
-            .foregroundColor(Color.textPrimary)
-            .navigationTitle("Grid Settings")
+            .navigationTitle("Sound")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
             .toolbar {
@@ -759,7 +665,7 @@ private struct PresetRow: View {
     ContentView()
 }
 
-// Round header control matching the learn and settings buttons
+// Round header control used for history, learn and sound
 struct HeaderIconButton: View {
     let symbol: String
     let label: String

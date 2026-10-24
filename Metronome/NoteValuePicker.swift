@@ -8,7 +8,7 @@ struct NoteValuePicker: View {
         VStack(spacing: 0) {
             // Fixed header
             VStack {
-                Text("BEAT PATTERN")
+                Text("PATTERN")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(Color.textPrimary)
                     .padding(.vertical, 20)
