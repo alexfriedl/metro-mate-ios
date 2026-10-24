@@ -11,7 +11,7 @@ struct LearnView: View {
             GroovePager(category: category, player: player, index: GroovePager.lastIndex(in: category))
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") { dismiss() }
+                        Button("Close") { dismiss() }
                             .foregroundColor(Color.textPrimary)
                     }
                 }
