@@ -96,9 +96,7 @@ struct GrooveListView: View {
                                                 .lineLimit(2)
                                         }
                                         Spacer()
-                                        Text("\(groove.tempo)")
-                                            .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                            .foregroundColor(Color.textSecondary)
+                                        GrooveTempoLabel(groove: groove)
                                     }
                                     .padding(.vertical, 4)
                                     .contentShape(Rectangle())
@@ -193,24 +191,31 @@ struct GroovePager: View {
                 ))
                 .offset(x: dragOffset)
 
-                BPMControl(bpm: $player.tempo, range: 10...240)
+                Legend()
 
-                HStack(spacing: 28) {
-                    StepButton(symbol: "backward.fill", label: "Previous groove", enabled: index > 0) { step(-1) }
+                VStack(spacing: 8) {
+                    BPMControl(bpm: $player.tempo, range: 10...240)
+                    TargetTempoChip(target: groove.tempo, current: Int(player.tempo.rounded())) {
+                        player.tempo = Double(groove.tempo)
+                    }
+                }
+
+                HStack(spacing: 20) {
+                    StepButton(symbol: "backward.end.fill", label: "Previous groove", enabled: index > 0) { step(-1) }
 
                     Button {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         player.isPlaying ? player.stop() : player.play(groove)
                     } label: {
                         Image(systemName: player.isPlaying ? "stop.fill" : "play.fill")
-                            .font(.system(size: 30))
+                            .font(.system(size: 32))
                             .foregroundColor(player.isPlaying ? Color.onSignal : Color.textPrimary)
-                            .frame(width: 88, height: 88)
+                            .frame(width: 96, height: 96)
                             .background(Circle().fill(player.isPlaying ? Color.signal : Color.surfaceRaised))
                     }
                     .accessibilityLabel(player.isPlaying ? "Stop groove" : "Play groove")
 
-                    StepButton(symbol: "forward.fill", label: "Next groove", enabled: index < grooves.count - 1) { step(1) }
+                    StepButton(symbol: "forward.end.fill", label: "Next groove", enabled: index < grooves.count - 1) { step(1) }
                 }
 
                 VolumeSlider(volume: $metronome.volume)
@@ -228,8 +233,6 @@ struct GroovePager: View {
                 .tint(Color.signal)
                 .padding(.horizontal, 32)
                 .onChange(of: player.dynamics) { _ in UISelectionFeedbackGenerator().selectionChanged() }
-
-                Legend()
             }
             .padding(.vertical, 16)
         }
@@ -260,10 +263,7 @@ struct GroovePager: View {
         .onAppear { player.tempo = savedTempo(for: groove) }
         .onDisappear { player.stop() }
         .onChange(of: player.tempo) { tempo in
-            // Remember the tempo you practise each groove at
-            var tempos = UserDefaults.standard.dictionary(forKey: "grooveTempos") as? [String: Double] ?? [:]
-            tempos[groove.id] = tempo
-            UserDefaults.standard.set(tempos, forKey: "grooveTempos")
+            GrooveTempos.save(tempo, for: groove)
         }
         .onChange(of: index) { _ in
             UISelectionFeedbackGenerator().selectionChanged()
@@ -358,8 +358,7 @@ struct GroovePager: View {
     }
 
     private func savedTempo(for groove: Groove) -> Double {
-        let tempos = UserDefaults.standard.dictionary(forKey: "grooveTempos") as? [String: Double] ?? [:]
-        return tempos[groove.id] ?? Double(groove.tempo)
+        GrooveTempos.saved(for: groove) ?? Double(groove.tempo)
     }
 
     private func step(_ delta: Int) {
@@ -370,6 +369,73 @@ struct GroovePager: View {
         }
         direction = delta
         withAnimation(.easeOut(duration: 0.25)) { index = target }
+    }
+}
+
+// Remembers the tempo you practise each groove at
+enum GrooveTempos {
+    private static let key = "grooveTempos"
+
+    static func saved(for groove: Groove) -> Double? {
+        let tempos = UserDefaults.standard.dictionary(forKey: key) as? [String: Double] ?? [:]
+        return tempos[groove.id]
+    }
+
+    static func save(_ tempo: Double, for groove: Groove) {
+        var tempos = UserDefaults.standard.dictionary(forKey: key) as? [String: Double] ?? [:]
+        tempos[groove.id] = tempo
+        UserDefaults.standard.set(tempos, forKey: key)
+    }
+}
+
+// Practised tempo in the list, the target tempo small below it once they differ
+private struct GrooveTempoLabel: View {
+    let groove: Groove
+
+    var body: some View {
+        let practised = GrooveTempos.saved(for: groove).map { Int($0.rounded()) } ?? groove.tempo
+        VStack(alignment: .trailing, spacing: 2) {
+            Text("\(practised) BPM")
+                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .foregroundColor(practised == groove.tempo ? Color.textSecondary : Color.textPrimary)
+            if practised != groove.tempo {
+                Text("Target \(groove.tempo)")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(Color.textSecondary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+// Tap to go back to the suggested tempo, quiet while you are already there
+private struct TargetTempoChip: View {
+    let target: Int
+    let current: Int
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            action()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: current == target ? "checkmark" : "arrow.uturn.backward")
+                    .font(.system(size: 11, weight: .semibold))
+                Text("Target \(target) BPM")
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+            }
+            .foregroundColor(current == target ? Color.textSecondary : Color.textPrimary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(Color.surface))
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(current == target)
+        .accessibilityLabel("Target \(target) BPM")
+        .accessibilityHint(current == target ? "" : "Sets the tempo back to the target")
     }
 }
 
@@ -384,7 +450,7 @@ private struct StepButton: View {
             Image(systemName: symbol)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(Color.textPrimary.opacity(enabled ? 1 : 0.25))
-                .frame(width: 56, height: 56)
+                .frame(width: 64, height: 64)
                 .background(Circle().fill(Color.surface))
         }
         .disabled(!enabled)
