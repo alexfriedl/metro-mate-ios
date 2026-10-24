@@ -49,6 +49,7 @@ struct GroovePager: View {
     @State private var isScrubbing = false
     @State private var resumeAfterScrub = false
     @State private var showPicker = false
+    @State private var showCategories = false
     @State private var loopRange: ClosedRange<Int>?
     @State private var loopOn = false
 
@@ -59,7 +60,10 @@ struct GroovePager: View {
     private let levels = ["Beginner", "Intermediate", "Advanced"]
 
     var body: some View {
+        GeometryReader { geometry in
         ScrollView {
+            // Three zones: notation on top, transport in the middle, settings at the bottom, spare height goes between them
+            VStack(spacing: 0) {
             VStack(spacing: 22) {
                 header
 
@@ -68,7 +72,8 @@ struct GroovePager: View {
                     Text(groove.focus)
                         .font(.subheadline)
                         .foregroundColor(Color.textSecondary)
-                        .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 24)
                     DrumGrid(
@@ -78,14 +83,16 @@ struct GroovePager: View {
                         cursor: cursor,
                         loop: loop,
                         onScrub: scrub,
-                        onScrubEnd: endScrub
+                        onScrubEnd: endScrub,
+                        cellHeight: geometry.size.height > 760 ? 38 : 30
                     )
 
                     LoopControl(groove: groove, range: $loopRange, isOn: $loopOn, cursor: cursor,
                                 onInteract: { active in
                                     if active { isScrubbing = true } else { DispatchQueue.main.async { isScrubbing = false } }
                                 },
-                                onCommit: commitLoop)
+                                onCommit: commitLoop,
+                                onLiveChange: playLoop)
                         .padding(.horizontal, 12)
                 }
                 .frame(minHeight: 190, alignment: .top)
@@ -97,7 +104,11 @@ struct GroovePager: View {
                 .offset(x: dragOffset)
 
                 Legend()
+            }
 
+            Spacer(minLength: 24)
+
+            VStack(spacing: 22) {
                 // Tempo is secondary here, one slim row with the target chip beside it
                 HStack(spacing: 12) {
                     BPMControl(bpm: $player.tempo, range: 10...240, compact: true)
@@ -124,7 +135,9 @@ struct GroovePager: View {
 
                     StepButton(symbol: "forward.end.fill", label: "Next groove", enabled: index < grooves.count - 1) { step(1) }
                 }
+            }
 
+            Spacer(minLength: 24)
 
                 Toggle(isOn: $player.dynamics) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -139,7 +152,10 @@ struct GroovePager: View {
                 .padding(.horizontal, 32)
                 .onChange(of: player.dynamics) { _ in UISelectionFeedbackGenerator().selectionChanged() }
             }
-            .padding(.vertical, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
+            .frame(minHeight: geometry.size.height)
+        }
         }
         .background(Color.ground.ignoresSafeArea())
         .clipped()
@@ -181,6 +197,12 @@ struct GroovePager: View {
         .onChange(of: player.tempo) { tempo in
             GrooveTempos.save(tempo, for: groove)
         }
+        .sheet(isPresented: $showCategories) {
+            CategoryPicker(current: category) { item in
+                showCategories = false
+                select(category: item, index: Self.lastIndex(in: item))
+            }
+        }
         .sheet(isPresented: $showPicker) {
             GroovePicker(category: category, groove: groove) { item, position in
                 showPicker = false
@@ -201,10 +223,10 @@ struct GroovePager: View {
     private var header: some View {
         VStack(spacing: 10) {
             HStack {
-                // Category and groove are picked in one sheet
+                // The category chip only switches categories, the title picks a groove
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    showPicker = true
+                    showCategories = true
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: category.symbol)
@@ -220,7 +242,7 @@ struct GroovePager: View {
                     .padding(.vertical, 6)
                     .background(Capsule().fill(Color.signal.opacity(0.12)))
                 }
-                .accessibilityLabel("Category \(category.title), choose category and groove")
+                .accessibilityLabel("Category \(category.title), choose category")
                 Spacer()
                 Text("\(index + 1) of \(grooves.count)")
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
@@ -308,6 +330,16 @@ struct GroovePager: View {
         UserDefaults.standard.set(switches, forKey: "grooveLoopOn")
         player.setLoop(loop)
         if player.isPlaying { player.play(groove) }
+    }
+
+    // While a handle is dragged the new part plays right away from its left edge
+    private func playLoop(_ range: ClosedRange<Int>) {
+        player.setLoop(range)
+        if player.isPlaying {
+            player.resume(from: range.lowerBound)
+        } else {
+            player.play(groove, from: range.lowerBound)
+        }
     }
 
     private func restoreLoop() {
@@ -458,6 +490,7 @@ private struct DrumGrid: View {
     var loop: ClosedRange<Int>? = nil
     var onScrub: ((Int) -> Void)? = nil
     var onScrubEnd: (() -> Void)? = nil
+    var cellHeight: CGFloat = 30
 
     static let labelWidth: CGFloat = 26
     static let beatGap: CGFloat = 4
@@ -496,7 +529,7 @@ private struct DrumGrid: View {
             if groove.sticking.isEmpty {
                 ForEach(DrumVoice.allCases.filter { groove.uses($0) }, id: \.self) { voice in
                     row(label: voice.label) { step in
-                        NoteCell(hit: groove.played(voice, at: step, dynamic: dynamic), voice: voice, isCurrent: step == currentStep, isCursor: step == cursor, isOutsideLoop: isOutside(step))
+                        NoteCell(hit: groove.played(voice, at: step, dynamic: dynamic), voice: voice, isCurrent: step == currentStep, isCursor: step == cursor, isOutsideLoop: isOutside(step), height: cellHeight)
                     }
                 }
             } else {
@@ -504,12 +537,12 @@ private struct DrumGrid: View {
                 ForEach(["R", "L"], id: \.self) { hand in
                     row(label: hand) { step in
                         NoteCell(hit: groove.hand(at: step) == Character(hand) ? groove.played(.snare, at: step, dynamic: dynamic) : nil,
-                                 voice: .snare, isCurrent: step == currentStep, isCursor: step == cursor, isOutsideLoop: isOutside(step))
+                                 voice: .snare, isCurrent: step == currentStep, isCursor: step == cursor, isOutsideLoop: isOutside(step), height: cellHeight)
                     }
                 }
                 if groove.uses(.kick) {
                     row(label: "K") { step in
-                        NoteCell(hit: groove.hit(.kick, at: step), voice: .kick, isCurrent: step == currentStep, isCursor: step == cursor, isOutsideLoop: isOutside(step))
+                        NoteCell(hit: groove.hit(.kick, at: step), voice: .kick, isCurrent: step == currentStep, isCursor: step == cursor, isOutsideLoop: isOutside(step), height: cellHeight)
                     }
                 }
             }
@@ -558,6 +591,7 @@ private struct NoteCell: View {
     let isCurrent: Bool
     var isCursor = false
     var isOutsideLoop = false
+    var height: CGFloat = 30
 
     var body: some View {
         ZStack {
@@ -569,7 +603,7 @@ private struct NoteCell: View {
             }
             symbol
         }
-        .frame(height: 30)
+        .frame(height: height)
         .padding(1)
     }
 
@@ -644,13 +678,80 @@ private struct LoopControl: View {
     let cursor: Int?
     var onInteract: (Bool) -> Void = { _ in }
     var onCommit: () -> Void = {}
+    var onLiveChange: (ClosedRange<Int>) -> Void = { _ in }
 
     @State private var dragging: Handle?
 
     private enum Handle { case start, end }
 
     var body: some View {
-        VStack(spacing: 8) {
+        if isOn, let loop = range {
+            // Active loop: one slim row under the grid, the switch sits in the label column
+            GeometryReader { proxy in
+                let width = proxy.size.width
+                let startX = DrumGrid.center(of: loop.lowerBound, width: width, groove: groove)
+                let endX = DrumGrid.center(of: loop.upperBound, width: width, groove: groove)
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.surfaceRaised)
+                        .frame(height: 3)
+                        .padding(.leading, DrumGrid.labelWidth)
+                    Capsule()
+                        .fill(Color.signal)
+                        .frame(width: max(3, endX - startX), height: 3)
+                        .offset(x: startX)
+                    handle.offset(x: startX - 9)
+                    handle.offset(x: endX - 9)
+
+                    // Drag area for the handles, everything right of the label column
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .padding(.leading, DrumGrid.labelWidth)
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    let x = value.location.x + DrumGrid.labelWidth
+                                    let step = DrumGrid.step(at: x, width: width, groove: groove)
+                                    if dragging == nil {
+                                        onInteract(true)
+                                        let startPoint = value.startLocation.x + DrumGrid.labelWidth
+                                        dragging = abs(startPoint - startX) <= abs(startPoint - endX) ? .start : .end
+                                    }
+                                    var updated = loop
+                                    if dragging == .start {
+                                        updated = min(step, loop.upperBound)...loop.upperBound
+                                    } else {
+                                        updated = loop.lowerBound...max(step, loop.lowerBound)
+                                    }
+                                    if updated != loop {
+                                        UISelectionFeedbackGenerator().selectionChanged()
+                                        range = updated
+                                        onLiveChange(updated)
+                                    }
+                                }
+                                .onEnded { _ in
+                                    dragging = nil
+                                    onInteract(false)
+                                    onCommit()
+                                }
+                        )
+
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        isOn = false
+                        onCommit()
+                    } label: {
+                        Image(systemName: "repeat")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color.signal)
+                            .frame(width: DrumGrid.labelWidth, height: 32)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel("Loop on, steps \(loop.lowerBound + 1) to \(loop.upperBound + 1), turn off")
+                }
+            }
+            .frame(height: 32)
+        } else {
             HStack {
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -660,73 +761,17 @@ private struct LoopControl: View {
                         let start = cursor.map { ($0 / beat) * beat } ?? 0
                         range = start...min(groove.steps - 1, start + (cursor == nil ? beat * 2 : beat) - 1)
                     }
-                    isOn.toggle()
+                    isOn = true
                     onCommit()
                 } label: {
-                    Label(range == nil ? "Loop a part" : (isOn ? "Loop on" : "Loop off"), systemImage: "repeat")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(isOn ? Color.onSignal : Color.textPrimary)
-                        .padding(.horizontal, 14)
-                        .frame(height: 36)
-                        .background(Capsule().fill(isOn ? Color.signal : Color.surfaceRaised))
+                    Label("Loop a part", systemImage: "repeat")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Color.textSecondary)
+                        .padding(.horizontal, 12)
+                        .frame(height: 32)
+                        .background(Capsule().fill(Color.surface))
                 }
                 Spacer()
-                if let loop = range {
-                    Text("Steps \(loop.lowerBound + 1) to \(loop.upperBound + 1)")
-                        .font(.system(size: 12, weight: .medium, design: .monospaced))
-                        .foregroundColor(isOn ? Color.textSecondary : Color.textPrimary.opacity(0.4))
-                }
-            }
-
-            if isOn, let loop = range {
-                GeometryReader { proxy in
-                    let width = proxy.size.width
-                    let startX = DrumGrid.center(of: loop.lowerBound, width: width, groove: groove)
-                    let endX = DrumGrid.center(of: loop.upperBound, width: width, groove: groove)
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.surfaceRaised)
-                            .frame(height: 4)
-                            .padding(.leading, DrumGrid.labelWidth)
-                        Capsule()
-                            .fill(Color.signal)
-                            .frame(width: max(4, endX - startX), height: 4)
-                            .offset(x: startX)
-                        handle.offset(x: startX - 14)
-                        handle.offset(x: endX - 14)
-                    }
-                    .frame(height: 44)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                let step = DrumGrid.step(at: value.location.x, width: width, groove: groove)
-                                if dragging == nil {
-                                    onInteract(true)
-                                    dragging = abs(value.startLocation.x - startX) <= abs(value.startLocation.x - endX) ? .start : .end
-                                }
-                                var updated = loop
-                                if dragging == .start {
-                                    updated = min(step, loop.upperBound)...loop.upperBound
-                                } else {
-                                    updated = loop.lowerBound...max(step, loop.lowerBound)
-                                }
-                                if updated != loop {
-                                    UISelectionFeedbackGenerator().selectionChanged()
-                                    range = updated
-                                }
-                            }
-                            .onEnded { _ in
-                                dragging = nil
-                                onInteract(false)
-                                onCommit()
-                            }
-                    )
-                }
-                .frame(height: 44)
-                .accessibilityElement()
-                .accessibilityLabel("Loop range")
-                .accessibilityValue("Steps \(loop.lowerBound + 1) to \(loop.upperBound + 1)")
             }
         }
     }
@@ -734,7 +779,7 @@ private struct LoopControl: View {
     private var handle: some View {
         Circle()
             .fill(Color.textPrimary)
-            .frame(width: 28, height: 28)
+            .frame(width: 18, height: 18)
             .overlay(Circle().stroke(Color.signal, lineWidth: 2))
     }
 }
@@ -805,5 +850,68 @@ private struct GroovePicker: View {
         }
         .navigationViewStyle(.stack)
         .preferredColorScheme(.dark)
+    }
+}
+
+// Category switch from the chip: just the categories, each jumps to its last played groove
+private struct CategoryPicker: View {
+    let current: GrooveCategory
+    let onSelect: (GrooveCategory) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            List {
+                ForEach(GrooveCategory.allCases) { item in
+                    Button {
+                        onSelect(item)
+                    } label: {
+                        HStack(spacing: 14) {
+                            Image(systemName: item.symbol)
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundColor(item == current ? Color.signal : Color.textPrimary)
+                                .frame(width: 36, height: 36)
+                                .background(Circle().fill(Color.surfaceRaised))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.title)
+                                    .foregroundColor(Color.textPrimary)
+                                Text(item.subtitle)
+                                    .font(.caption)
+                                    .foregroundColor(Color.textSecondary)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            if item == current {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(Color.signal)
+                            } else {
+                                Text("\(item.grooves.count)")
+                                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                    .foregroundColor(Color.textSecondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .listRowBackground(Color.surface)
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Color.ground)
+            .navigationTitle("Categories")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(Color.textPrimary)
+                }
+            }
+        }
+        .navigationViewStyle(.stack)
+        .preferredColorScheme(.dark)
+        .presentationDetents([.medium, .large])
     }
 }
