@@ -152,11 +152,22 @@ struct BeatPreset: Identifiable, Codable {
     let gridPattern: [Bool]
     let accentPattern: [Bool]
     let gridDisplayMode: GridDisplayMode
+
+    // Loaded means the same pattern by value, the name may differ and the tempo may have moved since
+    func matches(noteValue: NoteValue, beatsPerMeasure: Int, grid: [Bool], accents: [Bool]) -> Bool {
+        guard noteValue == self.noteValue, beatsPerMeasure == self.beatsPerMeasure else { return false }
+        func steps(_ cells: [Bool]) -> [Bool] {
+            (0..<beatsPerMeasure).map { $0 < cells.count && cells[$0] }
+        }
+        return steps(grid) == steps(gridPattern) && steps(accents) == steps(accentPattern)
+    }
 }
 
 class MetronomeManager: ObservableObject {
     static let shared = MetronomeManager()
-    @Published var isPlaying = false
+    @Published var isPlaying = false {
+        didSet { ScreenAwake.set("metronome", playing: isPlaying) }
+    }
     @Published var bpm: Double = 60 {
         didSet {
             syncPattern()
@@ -194,6 +205,7 @@ class MetronomeManager: ObservableObject {
     
     private var clicks: ClickEngine?
     private var isConfigured = false
+    private var interruptionObserver: NSObjectProtocol?
 
     // Beats stamped with the time they are heard, the visuals render from this instead of @Published ticks
     var beatTimeline: BeatTimeline { clicks!.timeline }
@@ -222,6 +234,9 @@ class MetronomeManager: ObservableObject {
         clicks?.onBeat = { [weak self] event in
             self?.currentBeat = event.index
         }
+        // A failed start or a phone call leaves the metronome stopped and closes the practice session
+        clicks?.onStartFailed = { [weak self] in self?.stopIfPlaying() }
+        interruptionObserver = observeAudioInterruptions { [weak self] in self?.stopIfPlaying() }
         isConfigured = true
 
         // Save shortly after the last change, ticks while playing just keep pushing it back
@@ -545,33 +560,6 @@ class MetronomeManager: ObservableObject {
         }
     }
     
-    func updateGridBeats(_ beats: Int) {
-        let maxBeats = max(16, beats)
-        
-        // Update beatsPerMeasure based on note value
-        if noteValue.isTriplet {
-            beatsPerMeasure = min(beats, 12) // Max 12 for triplets
-        } else {
-            beatsPerMeasure = min(beats, 16) // Max 16 for regular notes
-        }
-        
-        currentBeat = -1
-        
-        // Ensure grid pattern accommodates new beat count
-        for i in 0..<gridPattern.count {
-            while gridPattern[i].count < maxBeats {
-                gridPattern[i].append(false)
-            }
-        }
-        
-        // Reset accent pattern for new beat count
-        while accentPattern.count < maxBeats {
-            accentPattern.append(false)
-        }
-        
-        setupDefaultPattern()
-    }
-    
     func saveBeatPreset(name: String) {
         let preset = BeatPreset(
             name: name,
@@ -647,6 +635,10 @@ class MetronomeManager: ObservableObject {
         restartIfPlaying()
     }
     
+    func isLoaded(_ preset: BeatPreset) -> Bool {
+        preset.matches(noteValue: noteValue, beatsPerMeasure: beatsPerMeasure, grid: gridPattern.first ?? [], accents: accentPattern)
+    }
+
     func deleteBeatPreset(_ preset: BeatPreset) {
         savedBeats.removeAll { $0.id == preset.id }
         if currentBeatName == preset.name {
@@ -655,7 +647,40 @@ class MetronomeManager: ObservableObject {
         persistPresets()
     }
     
+    // Everything the shuffle key changes, kept so one roll can be taken back, the tempo is never touched
+    private struct PatternSnapshot {
+        let noteValue: NoteValue
+        let beatsPerMeasure: Int
+        let gridPattern: [[Bool]]
+        let accentPattern: [Bool]
+        let gridDisplayMode: GridDisplayMode
+        let name: String
+    }
+
+    private var beforeRandom: PatternSnapshot?
+
+    func undoRandomize() {
+        guard let previous = beforeRandom else { return }
+        beforeRandom = nil
+        noteValue = previous.noteValue
+        beatsPerMeasure = previous.beatsPerMeasure
+        gridPattern = previous.gridPattern
+        accentPattern = previous.accentPattern
+        gridDisplayMode = previous.gridDisplayMode
+        currentBeatName = previous.name
+        restartIfPlaying()
+    }
+
     func randomizeBeat() {
+        beforeRandom = PatternSnapshot(
+            noteValue: noteValue,
+            beatsPerMeasure: beatsPerMeasure,
+            gridPattern: gridPattern,
+            accentPattern: accentPattern,
+            gridDisplayMode: gridDisplayMode,
+            name: currentBeatName
+        )
+
         // Randomize note value
         let allNoteValues = NoteValue.allCases
         let randomNoteValue = allNoteValues.randomElement()!

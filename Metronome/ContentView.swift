@@ -13,14 +13,14 @@ struct ContentView: View {
     @State private var showLearn = false
     @State private var showHistory = false
     @State private var showQuickNoteValuePicker = false
-    @State private var showGridSettings = false
     @State private var showBeatPresets = false
-    @State private var isPlayButtonPressed = false
+    @State private var showUndo = false
+    @State private var undoTask: Task<Void, Never>?
     
     var body: some View {
         ZStack {
             // Background with animated stars
-            Color(hex: "#1C1C1B")
+            Color.ground
                 .ignoresSafeArea()
             
             PulseFieldView(
@@ -43,9 +43,6 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(metronome: metronome)
         }
-        .sheet(isPresented: $showGridSettings) {
-            GridSettingsView(metronome: metronome)
-        }
         .sheet(isPresented: $showBeatPresets) {
             BeatPresetsView(metronome: metronome)
         }
@@ -66,11 +63,11 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("PRESET")
                                 .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                                .foregroundColor(Color.textSecondary)
                             
                             Text(metronome.currentBeatName.uppercased())
                                 .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                .foregroundColor(Color.textPrimary)
                         }
                     }
                     
@@ -80,44 +77,12 @@ struct ContentView: View {
                         showHistory = true
                     }
                     
-                    Button(action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    HeaderIconButton(symbol: "graduationcap", label: "Learn") {
                         showLearn = true
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(hex: "#242424").opacity(0.8))
-                                .frame(width: 44, height: 44)
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color(hex: "#303030"), lineWidth: 1)
-                                )
-                            
-                            Image(systemName: "graduationcap")
-                                .font(.system(size: 17, weight: .medium))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
-                        }
                     }
-                    .accessibilityLabel("Learn")
-                    
-                    Button(action: { 
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                        showSettings.toggle() 
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(hex: "#242424").opacity(0.8))
-                                .frame(width: 44, height: 44)
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color(hex: "#303030"), lineWidth: 1)
-                                )
-                            
-                            Image(systemName: "ellipsis")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
-                        }
+
+                    HeaderIconButton(symbol: "speaker.wave.2", label: "Sound") {
+                        showSettings = true
                     }
                 }
                 .padding(.horizontal)
@@ -133,30 +98,43 @@ struct ContentView: View {
                 Spacer()
                     .frame(height: 20)
                 
-                Button(action: {
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                    impactFeedback.impactOccurred()
-                    showQuickNoteValuePicker = true
-                }) {
-                    HStack(spacing: 8) {
-                        Text("PATTERN")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                // Undo sits beside the pattern pill so it never covers the new pattern, the pill stays centered
+                HStack(spacing: 8) {
+                    Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                    Button(action: {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                        showQuickNoteValuePicker = true
+                    }) {
+                        HStack(spacing: 8) {
+                            Text("PATTERN")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(Color.textSecondary)
                         
-                        Text(metronome.noteValue.displayName)
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(Color(hex: "#F54206"))
+                            Text(metronome.noteValue.displayName)
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(Color.textPrimary)
                         
-                        Image(systemName: "chevron.down.circle.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.4))
+                            Image(systemName: "chevron.down.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(Color.textSecondary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.surface)
+                        .cornerRadius(20)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color(hex: "#242424"))
-                    .cornerRadius(20)
+                    .fixedSize()
+                    ZStack(alignment: .leading) {
+                        Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                        if showUndo {
+                            UndoChip(action: undoShuffle)
+                                .fixedSize()
+                                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                        }
+                    }
                 }
-                
+
                 // Beat Pattern Grid
                 GridView(metronome: metronome)
                 
@@ -173,19 +151,19 @@ struct ContentView: View {
                     }) {
                         ZStack {
                             Circle()
-                                .fill(Color(hex: "#242424"))
+                                .fill(Color.surface)
                                 .frame(width: 64, height: 64)
                             
                             VStack(spacing: 2) {
                                 Text("TAP")
                                     .font(.system(size: 13, weight: .bold))
-                                    .foregroundColor(Color(hex: "#DDDDDD"))
+                                    .foregroundColor(Color.textPrimary)
                                 
                                 // Show tap count
                                 if metronome.tapCount > 0 {
                                     Text("\(metronome.tapCount)")
                                         .font(.system(size: 10, weight: .medium))
-                                        .foregroundColor(Color(hex: "#F54206"))
+                                        .foregroundColor(Color.signal)
                                         .transition(.opacity)
                                 }
                             }
@@ -193,47 +171,32 @@ struct ContentView: View {
                     }
                     
                     // Central Play Button
-                    ZStack {
-                        // Beat punch is read from the audio clock every frame, no implicit animation lag
-                        TimelineView(.animation(minimumInterval: nil, paused: !metronome.isPlaying)) { context in
-                            Circle()
-                                .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
-                                .frame(width: 96, height: 96)
-                                .scaleEffect((isPlayButtonPressed ? 0.95 : 1.0) * playButtonPunch(at: context.date))
-                        }
-                        .animation(.easeInOut(duration: 0.1), value: isPlayButtonPressed)
-                        
-                        Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(Color(hex: "#DDDDDD"))
-                            .scaleEffect(isPlayButtonPressed ? 0.95 : 1.0)
-                            .animation(.easeInOut(duration: 0.1), value: isPlayButtonPressed)
-                    }
-                    .onTapGesture {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
+                    Button {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         metronome.togglePlayback()
+                    } label: {
+                        Image(systemName: metronome.isPlaying ? "stop.fill" : "play.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(metronome.isPlaying ? Color.onSignal : Color.textPrimary)
                     }
-                    .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity) {
-                        // Never triggers
-                    } onPressingChanged: { pressing in
-                        isPlayButtonPressed = pressing
-                    }
+                    .buttonStyle(PlayKeyStyle(isPlaying: metronome.isPlaying, punch: playButtonPunch))
+                    .accessibilityLabel(metronome.isPlaying ? "Stop" : "Start")
                     
                     // Randomize Beat Button
                     Button(action: {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                         impactFeedback.impactOccurred()
                         metronome.randomizeBeat()
+                        offerUndo()
                     }) {
                         ZStack {
                             Circle()
-                                .fill(Color(hex: "#242424"))
+                                .fill(Color.surface)
                                 .frame(width: 64, height: 64)
                             
                             Image(systemName: "shuffle")
                                 .font(.system(size: 19))
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                .foregroundColor(Color.textPrimary)
                         }
                     }
                 }
@@ -243,11 +206,76 @@ struct ContentView: View {
             .padding()
     }
     
+    // The chip stays for five seconds after each roll, a new roll restarts the countdown
+    private func offerUndo() {
+        undoTask?.cancel()
+        withAnimation(.easeOut(duration: 0.2)) { showUndo = true }
+        undoTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.2)) { showUndo = false }
+        }
+    }
+
+    private func undoShuffle() {
+        undoTask?.cancel()
+        metronome.undoRandomize()
+        withAnimation(.easeOut(duration: 0.2)) { showUndo = false }
+    }
+
     private func playButtonPunch(at date: Date) -> CGFloat {
         guard metronome.isPlaying else { return 1 }
         let time = PulseClock.now(for: date)
         guard let hit = metronome.beatTimeline.recent(at: time, limit: 4).first(where: { $0.audible }) else { return 1 }
         return 1 + 0.07 * CGFloat(PulseClock.weight(of: hit) * PulseClock.punch(of: hit, at: time))
+    }
+}
+
+private struct UndoChip: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            action()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.uturn.backward")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Undo")
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundColor(Color.textPrimary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(Color.surfaceRaised))
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Undo shuffle")
+    }
+}
+
+// Round play key: pressed state from the button itself, beat punch read from the audio clock every frame
+private struct PlayKeyStyle: ButtonStyle {
+    let isPlaying: Bool
+    let punch: (Date) -> CGFloat
+
+    func makeBody(configuration: Configuration) -> some View {
+        let pressScale: CGFloat = configuration.isPressed ? 0.95 : 1.0
+        return ZStack {
+            TimelineView(.animation(minimumInterval: nil, paused: !isPlaying)) { context in
+                Circle()
+                    .fill(isPlaying ? Color.signal : Color.surface)
+                    .frame(width: 96, height: 96)
+                    .scaleEffect(pressScale * punch(context.date))
+            }
+            configuration.label
+                .scaleEffect(pressScale)
+        }
+        .frame(width: 96, height: 96)
+        .contentShape(Circle())
+        .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
@@ -280,11 +308,13 @@ struct GridView: View {
                                 impactFeedback.impactOccurred()
                                 metronome.toggleAccentCell(col: beat)
                             }) {
-                                Circle()
-                                    .fill(getAccentColor(for: beat))
-                                    .frame(width: 10, height: 10)
-                                    .frame(width: 40, height: 16) // Same width as tiles
+                                AccentDot(isOn: isAccent(beat), isCurrent: beat == metronome.currentBeat && metronome.isPlaying)
+                                    .frame(width: BeatTile.size, height: 24)
+                                    .contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Accent on step \(beat + 1)")
+                            .accessibilityValue(isAccent(beat) ? "On" : "Off")
                         }
                     }
                 }
@@ -308,15 +338,25 @@ struct GridView: View {
     
     
     
-    private func getAccentColor(for beat: Int) -> Color {
-        if beat < metronome.accentPattern.count && metronome.accentPattern[beat] {
-            if beat == metronome.currentBeat && metronome.isPlaying {
-                return Color(hex: "#F54206") // Orange when playing accent
-            } else {
-                return Color(hex: "#303030") // Gray accent dots
-            }
+    private func isAccent(_ beat: Int) -> Bool {
+        beat < metronome.accentPattern.count && metronome.accentPattern[beat]
+    }
+}
+
+// Filled when the step is accented, an outline shows where an accent can go
+private struct AccentDot: View {
+    let isOn: Bool
+    let isCurrent: Bool
+
+    var body: some View {
+        if isOn {
+            Circle()
+                .fill(isCurrent ? Color.signal : Color.textSecondary)
+                .frame(width: 10, height: 10)
         } else {
-            return Color.clear
+            Circle()
+                .stroke(Color.textSecondary, lineWidth: 1)
+                .frame(width: 10, height: 10)
         }
     }
 }
@@ -330,9 +370,10 @@ struct SettingsView: View {
             Form {
                 Section("Volume") {
                     VolumeSlider(volume: $metronome.volume)
+                        .listRowBackground(Color.surface)
                 }
 
-                Section("Sound") {
+                Section("Click sound") {
                     ForEach(ClickSound.allCases) { sound in
                         Button {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -342,38 +383,40 @@ struct SettingsView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(sound.title)
-                                        .foregroundColor(Color(hex: "#DDDDDD"))
+                                        .foregroundColor(Color.textPrimary)
                                     Text(sound.subtitle)
                                         .font(.caption)
-                                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                                        .foregroundColor(Color.textSecondary)
                                 }
                                 Spacer()
                                 if metronome.clickSound == sound {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(Color(hex: "#F54206"))
+                                        .foregroundColor(Color.signal)
                                 }
                             }
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .listRowBackground(Color.surface)
                     }
                 }
 
-                Section("Beat Configuration") {
-                    Stepper("Beats per Measure: \(metronome.beatsPerMeasure)", 
+                Section("Pattern") {
+                    Stepper("Beats per bar: \(metronome.beatsPerMeasure)", 
                            value: $metronome.beatsPerMeasure, 
                            in: 1...16)
                     .onChange(of: metronome.beatsPerMeasure) { newValue in
                         metronome.updateBeatsPerMeasure(newValue)
                     }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
-                    .accentColor(Color(hex: "#F54206"))
+                    .foregroundColor(Color.textPrimary)
+                    .accentColor(Color.signal)
+                    .listRowBackground(Color.surface)
                 }
             }
-            .background(Color(hex: "#1C1C1B"))
+            .background(Color.ground)
             .scrollContentBackground(.hidden)
-            .foregroundColor(Color(hex: "#DDDDDD"))
-            .navigationTitle("Settings")
+            .foregroundColor(Color.textPrimary)
+            .navigationTitle("Sound")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
             .toolbar {
@@ -383,69 +426,11 @@ struct SettingsView: View {
                         impactFeedback.impactOccurred()
                         dismiss()
                     }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
                 }
             }
         }
-        .background(Color(hex: "#1C1C1B"))
-        .preferredColorScheme(.dark)
-    }
-}
-
-struct GridSettingsView: View {
-    @ObservedObject var metronome: MetronomeManager
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section("Grid Configuration") {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Number of Beats: \(metronome.beatsPerMeasure)")
-                            .foregroundColor(Color(hex: "#DDDDDD"))
-                        
-                        let maxBeats = metronome.noteValue.isTriplet ? 12 : 16
-                        Slider(value: Binding(
-                            get: { Double(metronome.beatsPerMeasure) },
-                            set: { metronome.updateGridBeats(Int($0)) }
-                        ), in: 1...Double(maxBeats), step: 1)
-                        .accentColor(Color(hex: "#F54206"))
-                        
-                        HStack {
-                            Text("1")
-                                .font(.caption)
-                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                            Spacer()
-                            Text("\(maxBeats)")
-                                .font(.caption)
-                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                        }
-                        
-                        Text("Note: Triplets are limited to 12 beats max")
-                            .font(.caption)
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                    }
-                    .padding(.vertical, 8)
-                }
-            }
-            .background(Color(hex: "#1C1C1B"))
-            .scrollContentBackground(.hidden)
-            .foregroundColor(Color(hex: "#DDDDDD"))
-            .navigationTitle("Grid Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                        impactFeedback.impactOccurred()
-                        dismiss()
-                    }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
-                }
-            }
-        }
-        .background(Color(hex: "#1C1C1B"))
+        .background(Color.ground)
         .preferredColorScheme(.dark)
     }
 }
@@ -454,88 +439,52 @@ struct BeatPresetsView: View {
     @ObservedObject var metronome: MetronomeManager
     @Environment(\.dismiss) var dismiss
     @State private var showSaveDialog = false
+    @State private var showResetConfirmation = false
     @State private var newBeatName = ""
-    
+
     var body: some View {
         NavigationView {
             List {
-                Section("Current Beat") {
+                Section("Current") {
                     HStack {
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text(metronome.currentBeatName)
                                 .font(.headline)
-                                .foregroundColor(Color(hex: "#DDDDDD"))
-                            Text("\(metronome.noteValue.displayName) • \(Int(metronome.bpm)) BPM • \(metronome.beatsPerMeasure) beats")
+                                .foregroundColor(Color.textPrimary)
+                            Text("\(metronome.noteValue.displayName) · \(Int(metronome.bpm)) BPM · \(metronome.beatsPerMeasure) beats")
                                 .font(.caption)
-                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                                .foregroundColor(Color.textSecondary)
                         }
-                        
+
                         Spacer()
-                        
-                        Button("Save As...") {
+
+                        Button("Save") {
                             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                             impactFeedback.impactOccurred()
                             newBeatName = metronome.currentBeatName
                             showSaveDialog = true
                         }
-                        .foregroundColor(Color(hex: "#F54206"))
+                        .buttonStyle(.borderless)
+                        .foregroundColor(Color.signal)
                     }
-                    .listRowBackground(Color(hex: "#303030"))
+                    .listRowBackground(Color.surface)
                 }
-                
-                Section("Presets") {
+
+                Section("Built-in") {
                     ForEach(defaultPresets(), id: \.noteValue) { preset in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(preset.name)
-                                    .font(.headline)
-                                    .foregroundColor(Color(hex: "#DDDDDD"))
-                                Text("\(preset.noteValue.displayName) • \(Int(preset.bpm)) BPM • \(preset.beatsPerMeasure) beats")
-                                    .font(.caption)
-                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                            }
-                            
-                            Spacer()
-                            
-                            Button("Load") {
-                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                impactFeedback.impactOccurred()
-                                metronome.loadBeatPreset(preset)
-                                dismiss()
-                            }
-                            .foregroundColor(Color(hex: "#F54206"))
-                            .disabled(preset.name == metronome.currentBeatName)
-                            .opacity(preset.name == metronome.currentBeatName ? 0.5 : 1.0)
-                        }
-                        .listRowBackground(Color(hex: "#303030"))
+                        PresetRow(preset: preset, isActive: metronome.isLoaded(preset)) { load(preset) }
                     }
                 }
-                
-                Section("Saved Beats") {
+
+                Section("Saved presets") {
+                    if metronome.savedBeats.isEmpty {
+                        Text("No saved presets yet. Tap Save to keep the current pattern and tempo.")
+                            .font(.subheadline)
+                            .foregroundColor(Color.textSecondary)
+                            .listRowBackground(Color.surface)
+                    }
                     ForEach(metronome.savedBeats) { preset in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(preset.name)
-                                    .font(.headline)
-                                    .foregroundColor(Color(hex: "#DDDDDD"))
-                                Text("\(preset.noteValue.displayName) • \(Int(preset.bpm)) BPM • \(preset.beatsPerMeasure) beats")
-                                    .font(.caption)
-                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                            }
-                            
-                            Spacer()
-                            
-                            Button("Load") {
-                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                impactFeedback.impactOccurred()
-                                metronome.loadBeatPreset(preset)
-                                dismiss()
-                            }
-                            .foregroundColor(Color(hex: "#F54206"))
-                            .disabled(preset.name == metronome.currentBeatName)
-                            .opacity(preset.name == metronome.currentBeatName ? 0.5 : 1.0)
-                        }
-                        .listRowBackground(Color(hex: "#303030"))
+                        PresetRow(preset: preset, isActive: metronome.isLoaded(preset)) { load(preset) }
                     }
                     .onDelete { indexSet in
                         for index in indexSet {
@@ -544,10 +493,10 @@ struct BeatPresetsView: View {
                     }
                 }
             }
-            .background(Color(hex: "#1C1C1B"))
+            .background(Color.ground)
             .scrollContentBackground(.hidden)
-            .foregroundColor(Color(hex: "#DDDDDD"))
-            .navigationTitle("Beat Presets")
+            .foregroundColor(Color.textPrimary)
+            .navigationTitle("Presets")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
             .toolbar {
@@ -555,27 +504,34 @@ struct BeatPresetsView: View {
                     Button("Reset") {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                         impactFeedback.impactOccurred()
-                        metronome.resetToBasicBeat()
-                        dismiss()
+                        showResetConfirmation = true
                     }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                         impactFeedback.impactOccurred()
                         dismiss()
                     }
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
                 }
             }
+            .confirmationDialog("Reset to the basic pattern?", isPresented: $showResetConfirmation, titleVisibility: .visible) {
+                Button("Reset", role: .destructive) {
+                    metronome.resetToBasicBeat()
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Eighth notes at 80 BPM. Your saved presets stay.")
+            }
         }
-        .background(Color(hex: "#1C1C1B"))
+        .background(Color.ground)
         .preferredColorScheme(.dark)
-        .alert("Save Beat Preset", isPresented: $showSaveDialog) {
-            TextField("Beat Name", text: $newBeatName)
-                .foregroundColor(.black)
+        .alert("Save Preset", isPresented: $showSaveDialog) {
+            TextField("Preset name", text: $newBeatName)
             Button("Save") {
                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                 impactFeedback.impactOccurred()
@@ -585,10 +541,16 @@ struct BeatPresetsView: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Enter a name for this beat configuration")
+            Text("Saves the current pattern, accents and tempo")
         }
     }
-    
+
+    private func load(_ preset: BeatPreset) {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        metronome.loadBeatPreset(preset)
+        dismiss()
+    }
+
     func defaultPresets() -> [BeatPreset] {
         let presets: [(NoteValue, String)] = [
             (.quarter, "Quarter"),
@@ -671,11 +633,43 @@ struct BeatPresetsView: View {
     }
 }
 
+// Whole row loads the preset, the checkmark shows which one matches what is set right now
+private struct PresetRow: View {
+    let preset: BeatPreset
+    let isActive: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(preset.name)
+                        .font(.headline)
+                        .foregroundColor(Color.textPrimary)
+                    Text("\(preset.noteValue.displayName) · \(Int(preset.bpm)) BPM · \(preset.beatsPerMeasure) beats")
+                        .font(.caption)
+                        .foregroundColor(Color.textSecondary)
+                }
+                Spacer()
+                if isActive {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(Color.signal)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isActive ? .isSelected : [])
+        .listRowBackground(Color.surface)
+    }
+}
+
 #Preview {
     ContentView()
 }
 
-// Round header control matching the learn and settings buttons
+// Round header control used for history, learn and sound
 struct HeaderIconButton: View {
     let symbol: String
     let label: String
@@ -688,12 +682,12 @@ struct HeaderIconButton: View {
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .medium))
-                .foregroundColor(Color(hex: "#DDDDDD"))
+                .foregroundColor(Color.textPrimary)
                 .frame(width: 44, height: 44)
                 .background(
                     Circle()
-                        .fill(Color(hex: "#242424").opacity(0.8))
-                        .overlay(Circle().stroke(Color(hex: "#303030"), lineWidth: 1))
+                        .fill(Color.surface.opacity(0.8))
+                        .overlay(Circle().stroke(Color.surfaceRaised, lineWidth: 1))
                 )
         }
         .accessibilityLabel(label)
@@ -708,9 +702,9 @@ struct VolumeSlider: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "speaker.fill")
-                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.65))
+                .foregroundColor(Color.textSecondary)
             Slider(value: $volume, in: 0...1)
-                .tint(Color(hex: "#F54206"))
+                .tint(Color.signal)
                 .onChange(of: volume) { value in
                     let step = Int((value * 10).rounded())
                     if step != lastStep {
@@ -719,7 +713,7 @@ struct VolumeSlider: View {
                     }
                 }
             Image(systemName: "speaker.wave.3.fill")
-                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.65))
+                .foregroundColor(Color.textSecondary)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Volume")

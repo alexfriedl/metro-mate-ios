@@ -33,7 +33,7 @@ struct BPMControl: View {
     private var wheel: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(hex: "#303030"))
+                .fill(Color.surfaceRaised)
                 .frame(width: 132, height: rowHeight)
 
             // Neighbours roll past continuously while dragging, the wheel follows the finger exactly
@@ -45,7 +45,7 @@ struct BPMControl: View {
                     Text("\(number)")
                         .font(.system(size: 48, weight: .light, design: .monospaced))
                         .monospacedDigit()
-                        .foregroundColor(Color(hex: "#DDDDDD"))
+                        .foregroundColor(Color.textPrimary)
                         .opacity(max(0, 1 - abs(offset) / Double(rowHeight) * 0.8))
                         .scaleEffect(max(0.7, 1 - abs(offset) / Double(rowHeight) * 0.15))
                         .offset(y: offset)
@@ -145,10 +145,10 @@ private struct StepperKey: View {
     var body: some View {
         Image(systemName: symbol)
             .font(.system(size: 22, weight: .semibold))
-            .foregroundColor(Color(hex: "#DDDDDD"))
+            .foregroundColor(Color.textPrimary)
             .frame(width: 60, height: 60)
             .background(
-                Circle().fill(Color(hex: pressed ? "#3A3A3A" : "#242424"))
+                Circle().fill(pressed ? Color.surfacePressed : Color.surface)
             )
             .scaleEffect(pressed ? 0.92 : 1)
             .animation(.easeOut(duration: 0.08), value: pressed)

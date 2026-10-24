@@ -18,42 +18,42 @@ struct LearnView: View {
                             HStack(spacing: 14) {
                                 Image(systemName: item.symbol)
                                     .font(.system(size: 17, weight: .medium))
-                                    .foregroundColor(Color(hex: "#F54206"))
+                                    .foregroundColor(Color.textPrimary)
                                     .frame(width: 36, height: 36)
-                                    .background(Circle().fill(Color(hex: "#303030")))
+                                    .background(Circle().fill(Color.surfaceRaised))
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(item.title)
-                                        .foregroundColor(Color(hex: "#DDDDDD"))
+                                        .foregroundColor(Color.textPrimary)
                                     Text(item.subtitle)
                                         .font(.caption)
-                                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                                        .foregroundColor(Color.textSecondary)
                                         .lineLimit(2)
                                 }
                                 Spacer()
                                 Text("\(item.grooves.count)")
                                     .font(.system(size: 13, weight: .medium, design: .monospaced))
-                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.5))
+                                    .foregroundColor(Color.textSecondary)
                             }
                             .padding(.vertical, 4)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .listRowBackground(Color(hex: "#242424"))
+                        .listRowBackground(Color.surface)
                     }
                 } footer: {
                     Text("\(Groove.library.count) grooves and exercises. Start slow, speed up only when it feels effortless.")
-                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.5))
+                        .foregroundColor(Color.textSecondary)
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color(hex: "#1C1C1B"))
+            .background(Color.ground)
             .navigationTitle("Learn")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(Color(hex: "#DDDDDD"))
+                        .foregroundColor(Color.textPrimary)
                 }
             }
         }
@@ -89,36 +89,34 @@ struct GrooveListView: View {
                                         LevelBadge(level: groove.level)
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(groove.title)
-                                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                                .foregroundColor(Color.textPrimary)
                                             Text(groove.focus)
                                                 .font(.caption)
-                                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                                                .foregroundColor(Color.textSecondary)
                                                 .lineLimit(2)
                                         }
                                         Spacer()
-                                        Text("\(groove.tempo)")
-                                            .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.45))
+                                        GrooveTempoLabel(groove: groove)
                                     }
                                     .padding(.vertical, 4)
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
-                                .listRowBackground(Color(hex: "#242424"))
+                                .listRowBackground(Color.surface)
                             }
                         }
                     }
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color(hex: "#1C1C1B"))
+            .background(Color.ground)
             .navigationTitle(category.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(Color(hex: "#DDDDDD"))
+                        .foregroundColor(Color.textPrimary)
                 }
             }
         }
@@ -131,7 +129,7 @@ struct GrooveListView: View {
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button("Done") { selected = nil }
-                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                .foregroundColor(Color.textPrimary)
                         }
                     }
             }
@@ -148,7 +146,7 @@ private struct LevelBadge: View {
         HStack(spacing: 2) {
             ForEach(1...3, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 1)
-                    .fill(index <= level ? Color(hex: "#F54206") : Color(hex: "#DDDDDD").opacity(0.2))
+                    .fill(index <= level ? Color.signal : Color.textPrimary.opacity(0.2))
                     .frame(width: 4, height: 6 + CGFloat(index) * 4)
             }
         }
@@ -185,7 +183,7 @@ struct GroovePager: View {
                 VStack(spacing: 16) {
                     Text(groove.focus)
                         .font(.subheadline)
-                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                        .foregroundColor(Color.textSecondary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal, 24)
@@ -214,24 +212,31 @@ struct GroovePager: View {
                 ))
                 .offset(x: dragOffset)
 
-                BPMControl(bpm: $player.tempo, range: 10...240)
+                Legend()
 
-                HStack(spacing: 28) {
-                    StepButton(symbol: "backward.fill", label: "Previous groove", enabled: index > 0) { step(-1) }
+                VStack(spacing: 8) {
+                    BPMControl(bpm: $player.tempo, range: 10...240)
+                    TargetTempoChip(target: groove.tempo, current: Int(player.tempo.rounded())) {
+                        player.tempo = Double(groove.tempo)
+                    }
+                }
+
+                HStack(spacing: 20) {
+                    StepButton(symbol: "backward.end.fill", label: "Previous groove", enabled: index > 0) { step(-1) }
 
                     Button {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         player.isPlaying ? player.stop() : player.play(groove)
                     } label: {
                         Image(systemName: player.isPlaying ? "stop.fill" : "play.fill")
-                            .font(.system(size: 30))
-                            .foregroundColor(Color(hex: "#DDDDDD"))
-                            .frame(width: 88, height: 88)
-                            .background(Circle().fill(player.isPlaying ? Color(hex: "#F54206") : Color(hex: "#303030")))
+                            .font(.system(size: 32))
+                            .foregroundColor(player.isPlaying ? Color.onSignal : Color.textPrimary)
+                            .frame(width: 96, height: 96)
+                            .background(Circle().fill(player.isPlaying ? Color.signal : Color.surfaceRaised))
                     }
                     .accessibilityLabel(player.isPlaying ? "Stop groove" : "Play groove")
 
-                    StepButton(symbol: "forward.fill", label: "Next groove", enabled: index < grooves.count - 1) { step(1) }
+                    StepButton(symbol: "forward.end.fill", label: "Next groove", enabled: index < grooves.count - 1) { step(1) }
                 }
 
                 VolumeSlider(volume: $metronome.volume)
@@ -240,21 +245,19 @@ struct GroovePager: View {
                 Toggle(isOn: $player.dynamics) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Dynamics")
-                            .foregroundColor(Color(hex: "#DDDDDD"))
+                            .foregroundColor(Color.textPrimary)
                         Text(player.dynamics ? "Accents and soft notes" : "Flat, every hit at one level")
                             .font(.caption)
-                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.65))
+                            .foregroundColor(Color.textSecondary)
                     }
                 }
-                .tint(Color(hex: "#F54206"))
+                .tint(Color.signal)
                 .padding(.horizontal, 32)
                 .onChange(of: player.dynamics) { _ in UISelectionFeedbackGenerator().selectionChanged() }
-
-                Legend()
             }
             .padding(.vertical, 16)
         }
-        .background(Color(hex: "#1C1C1B").ignoresSafeArea())
+        .background(Color.ground.ignoresSafeArea())
         .clipped()
         // Swipe anywhere in the sheet, horizontal only so the tempo wheel and scrolling keep working
         .simultaneousGesture(
@@ -292,10 +295,7 @@ struct GroovePager: View {
         }
         .onDisappear { player.stop() }
         .onChange(of: player.tempo) { tempo in
-            // Remember the tempo you practise each groove at
-            var tempos = UserDefaults.standard.dictionary(forKey: "grooveTempos") as? [String: Double] ?? [:]
-            tempos[groove.id] = tempo
-            UserDefaults.standard.set(tempos, forKey: "grooveTempos")
+            GrooveTempos.save(tempo, for: groove)
         }
         .onChange(of: index) { _ in
             cursor = nil
@@ -322,26 +322,28 @@ struct GroovePager: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: category.symbol)
+                            .foregroundColor(Color.signal)
                         Text(category.title.uppercased())
+                            .foregroundColor(Color.textPrimary)
                         Image(systemName: "chevron.down")
                             .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(Color.signal)
                     }
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(Color(hex: "#F54206"))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Capsule().fill(Color(hex: "#F54206").opacity(0.12)))
+                    .background(Capsule().fill(Color.signal.opacity(0.12)))
                 }
                 .accessibilityLabel("Category \(category.title), change category")
                 Spacer()
                 Text("\(index + 1) of \(grooves.count)")
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
-                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                    .foregroundColor(Color.textSecondary)
             }
 
             Text(groove.title)
                 .font(.system(size: 26, weight: .bold))
-                .foregroundColor(Color(hex: "#DDDDDD"))
+                .foregroundColor(Color.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -352,7 +354,7 @@ struct GroovePager: View {
                 LevelBadge(level: groove.level)
                 Text("\(levels[groove.level - 1]) · \(groove.tempo) BPM · \(groove.isTriplet ? "Triplets" : "Sixteenths")")
                     .font(.caption)
-                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                    .foregroundColor(Color.textSecondary)
                 Spacer()
             }
 
@@ -360,7 +362,7 @@ struct GroovePager: View {
             HStack(spacing: 3) {
                 ForEach(grooves.indices, id: \.self) { position in
                     Capsule()
-                        .fill(position == index ? Color(hex: "#F54206") : Color(hex: "#DDDDDD").opacity(position < index ? 0.45 : 0.15))
+                        .fill(position == index ? Color.signal : (position < index ? Color.textSecondary : Color.textPrimary.opacity(0.15)))
                         .frame(height: 4)
                         .contentShape(Rectangle().inset(by: -10))
                         .onTapGesture {
@@ -422,8 +424,7 @@ struct GroovePager: View {
     }
 
     private func savedTempo(for groove: Groove) -> Double {
-        let tempos = UserDefaults.standard.dictionary(forKey: "grooveTempos") as? [String: Double] ?? [:]
-        return tempos[groove.id] ?? Double(groove.tempo)
+        GrooveTempos.saved(for: groove) ?? Double(groove.tempo)
     }
 
     private func step(_ delta: Int) {
@@ -437,6 +438,73 @@ struct GroovePager: View {
     }
 }
 
+// Remembers the tempo you practise each groove at
+enum GrooveTempos {
+    private static let key = "grooveTempos"
+
+    static func saved(for groove: Groove) -> Double? {
+        let tempos = UserDefaults.standard.dictionary(forKey: key) as? [String: Double] ?? [:]
+        return tempos[groove.id]
+    }
+
+    static func save(_ tempo: Double, for groove: Groove) {
+        var tempos = UserDefaults.standard.dictionary(forKey: key) as? [String: Double] ?? [:]
+        tempos[groove.id] = tempo
+        UserDefaults.standard.set(tempos, forKey: key)
+    }
+}
+
+// Practised tempo in the list, the target tempo small below it once they differ
+private struct GrooveTempoLabel: View {
+    let groove: Groove
+
+    var body: some View {
+        let practised = GrooveTempos.saved(for: groove).map { Int($0.rounded()) } ?? groove.tempo
+        VStack(alignment: .trailing, spacing: 2) {
+            Text("\(practised) BPM")
+                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .foregroundColor(practised == groove.tempo ? Color.textSecondary : Color.textPrimary)
+            if practised != groove.tempo {
+                Text("Target \(groove.tempo)")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(Color.textSecondary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+// Tap to go back to the suggested tempo, quiet while you are already there
+private struct TargetTempoChip: View {
+    let target: Int
+    let current: Int
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            action()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: current == target ? "checkmark" : "arrow.uturn.backward")
+                    .font(.system(size: 11, weight: .semibold))
+                Text("Target \(target) BPM")
+                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+            }
+            .foregroundColor(current == target ? Color.textSecondary : Color.textPrimary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(Color.surface))
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(current == target)
+        .accessibilityLabel("Target \(target) BPM")
+        .accessibilityHint(current == target ? "" : "Sets the tempo back to the target")
+    }
+}
+
 private struct StepButton: View {
     let symbol: String
     let label: String
@@ -447,9 +515,9 @@ private struct StepButton: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(Color(hex: "#DDDDDD").opacity(enabled ? 1 : 0.25))
-                .frame(width: 56, height: 56)
-                .background(Circle().fill(Color(hex: "#242424")))
+                .foregroundColor(Color.textPrimary.opacity(enabled ? 1 : 0.25))
+                .frame(width: 64, height: 64)
+                .background(Circle().fill(Color.surface))
         }
         .disabled(!enabled)
         .accessibilityLabel(label)
@@ -498,7 +566,7 @@ private struct DrumGrid: View {
             row(label: "") { step in
                 Text(counts[step])
                     .font(.system(size: 11, weight: step % groove.stepsPerBeat == 0 ? .bold : .regular, design: .monospaced))
-                    .foregroundColor(Color(hex: "#DDDDDD").opacity(step % groove.stepsPerBeat == 0 ? 0.9 : 0.45))
+                    .foregroundColor((step % groove.stepsPerBeat == 0 ? Color.textPrimary : Color.textSecondary))
             }
             if groove.sticking.isEmpty {
                 ForEach(DrumVoice.allCases.filter { groove.uses($0) }, id: \.self) { voice in
@@ -547,7 +615,7 @@ private struct DrumGrid: View {
         HStack(spacing: 0) {
             Text(label)
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.5))
+                .foregroundColor(Color.textSecondary)
                 .frame(width: Self.labelWidth, alignment: .leading)
             ForEach(0..<groove.steps, id: \.self) { step in
                 cell(step)
@@ -569,10 +637,10 @@ private struct NoteCell: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 4)
-                .fill(isCurrent ? Color(hex: "#F54206").opacity(0.25) : Color(hex: "#242424"))
+                .fill(isCurrent ? Color.signal.opacity(0.25) : Color.surface)
             if isCursor {
                 RoundedRectangle(cornerRadius: 4)
-                    .strokeBorder(Color(hex: "#F54206"), lineWidth: 1.5)
+                    .strokeBorder(Color.signal, lineWidth: 1.5)
             }
             symbol
         }
@@ -589,34 +657,34 @@ private struct NoteCell: View {
             if voice == .hiHat {
                 Image(systemName: "xmark")
                     .font(.system(size: 7, weight: .semibold))
-                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.55))
+                    .foregroundColor(Color.textSecondary)
             } else {
                 Circle()
-                    .stroke(Color(hex: "#DDDDDD").opacity(0.7), lineWidth: 1)
+                    .stroke(Color.textSecondary, lineWidth: 1)
                     .frame(width: 8, height: 8)
             }
         case .open:
             Circle()
-                .stroke(Color(hex: "#F54206"), lineWidth: 1.5)
+                .stroke(Color.signal, lineWidth: 1.5)
                 .frame(width: 11, height: 11)
         case .accent:
             if voice == .hiHat {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .heavy))
-                    .foregroundColor(Color(hex: "#F54206"))
+                    .foregroundColor(Color.signal)
             } else {
                 Circle()
-                    .fill(Color(hex: "#F54206"))
+                    .fill(Color.signal)
                     .frame(width: 13, height: 13)
             }
         case .normal:
             if voice == .hiHat {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(Color(hex: "#DDDDDD"))
+                    .foregroundColor(Color.textPrimary)
             } else {
                 Circle()
-                    .fill(Color(hex: "#DDDDDD"))
+                    .fill(Color.textPrimary)
                     .frame(width: 11, height: 11)
             }
         }
@@ -626,13 +694,13 @@ private struct NoteCell: View {
 private struct Legend: View {
     var body: some View {
         HStack(spacing: 16) {
-            item(Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundColor(Color(hex: "#DDDDDD")), "Hit")
-            item(Circle().fill(Color(hex: "#F54206")).frame(width: 10, height: 10), "Accent")
-            item(Circle().stroke(Color(hex: "#DDDDDD").opacity(0.7), lineWidth: 1).frame(width: 8, height: 8), "Soft")
-            item(Circle().stroke(Color(hex: "#F54206"), lineWidth: 1.5).frame(width: 10, height: 10), "Open hat")
+            item(Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundColor(Color.textPrimary), "Hit")
+            item(Circle().fill(Color.signal).frame(width: 10, height: 10), "Accent")
+            item(Circle().stroke(Color.textSecondary, lineWidth: 1).frame(width: 8, height: 8), "Soft")
+            item(Circle().stroke(Color.signal, lineWidth: 1.5).frame(width: 10, height: 10), "Open hat")
         }
         .font(.caption)
-        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+        .foregroundColor(Color.textSecondary)
     }
 
     private func item<Mark: View>(_ mark: Mark, _ text: String) -> some View {
@@ -672,16 +740,16 @@ private struct LoopControl: View {
                 } label: {
                     Label(range == nil ? "Loop a part" : (isOn ? "Loop on" : "Loop off"), systemImage: "repeat")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(isOn ? Color(hex: "#1C1C1B") : Color(hex: "#DDDDDD"))
+                        .foregroundColor(isOn ? Color.onSignal : Color.textPrimary)
                         .padding(.horizontal, 14)
                         .frame(height: 36)
-                        .background(Capsule().fill(isOn ? Color(hex: "#F54206") : Color(hex: "#303030")))
+                        .background(Capsule().fill(isOn ? Color.signal : Color.surfaceRaised))
                 }
                 Spacer()
                 if let loop = range {
                     Text("Steps \(loop.lowerBound + 1) to \(loop.upperBound + 1)")
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
-                        .foregroundColor(Color(hex: "#DDDDDD").opacity(isOn ? 0.65 : 0.4))
+                        .foregroundColor(isOn ? Color.textSecondary : Color.textPrimary.opacity(0.4))
                 }
             }
 
@@ -692,11 +760,11 @@ private struct LoopControl: View {
                     let endX = DrumGrid.center(of: loop.upperBound, width: width, groove: groove)
                     ZStack(alignment: .leading) {
                         Capsule()
-                            .fill(Color(hex: "#303030"))
+                            .fill(Color.surfaceRaised)
                             .frame(height: 4)
                             .padding(.leading, DrumGrid.labelWidth)
                         Capsule()
-                            .fill(Color(hex: "#F54206"))
+                            .fill(Color.signal)
                             .frame(width: max(4, endX - startX), height: 4)
                             .offset(x: startX)
                         handle.offset(x: startX - 14)
@@ -740,8 +808,8 @@ private struct LoopControl: View {
 
     private var handle: some View {
         Circle()
-            .fill(Color(hex: "#DDDDDD"))
+            .fill(Color.textPrimary)
             .frame(width: 28, height: 28)
-            .overlay(Circle().stroke(Color(hex: "#F54206"), lineWidth: 2))
+            .overlay(Circle().stroke(Color.signal, lineWidth: 2))
     }
 }

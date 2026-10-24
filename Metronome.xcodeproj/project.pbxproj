@@ -29,9 +29,22 @@
 		755B6B902E06E97000FC6B16 /* MetronomeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MetronomeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		75A1B0012EB0000000FC6B16 /* Exceptions for "Metronome" folder in "Metronome" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 755B6B762E06E96F00FC6B16 /* Metronome */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		755B6B792E06E96F00FC6B16 /* Metronome */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				75A1B0012EB0000000FC6B16 /* Exceptions for "Metronome" folder in "Metronome" target */,
+			);
 			path = Metronome;
 			sourceTree = "<group>";
 		};
@@ -403,6 +416,7 @@
 				DEVELOPMENT_TEAM = K6WRJB8J4N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Metronome/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_NSSiriUsageDescription = "Metronome uses Siri to start playback at specific tempos";
 				INFOPLIST_KEY_NSUserActivityTypes = PlayMetronomeIntent;
@@ -440,6 +454,7 @@
 				DEVELOPMENT_TEAM = K6WRJB8J4N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Metronome/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_NSSiriUsageDescription = "Metronome uses Siri to start playback at specific tempos";
 				INFOPLIST_KEY_NSUserActivityTypes = PlayMetronomeIntent;

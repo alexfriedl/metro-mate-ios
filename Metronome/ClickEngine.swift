@@ -62,6 +62,8 @@ struct ClickPattern {
 final class ClickEngine {
     let timeline = BeatTimeline()
     var onBeat: ((BeatEvent) -> Void)?
+    // Called on the main queue when the audio engine cannot start, so the UI can fall back to stopped
+    var onStartFailed: (() -> Void)?
 
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
@@ -182,7 +184,14 @@ final class ClickEngine {
     }
 
     private func startTransport() {
-        guard ensureEngineRunning() else { return }
+        guard ensureEngineRunning() else {
+            isRunning = false
+            generation += 1
+            timer?.cancel()
+            timer = nil
+            DispatchQueue.main.async { [weak self] in self?.onStartFailed?() }
+            return
+        }
         generation += 1
         isRunning = true
         timer?.cancel()
