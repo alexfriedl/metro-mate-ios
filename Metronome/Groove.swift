@@ -179,10 +179,11 @@ final class GroovePlayer: ObservableObject {
             "kick": Synth.sample("kick", gain: 1.0, format: format),
             "kickFeather": Synth.sample("kick-soft", gain: 0.45, format: format),
             // Hand exercises sound like a practice pad, the left hand a touch lower so both hands are told apart
-            "right": Synth.sample("pad-right", gain: 0.45, format: format),
-            "rightAccent": Synth.sample("pad-right", gain: 1.0, format: format),
-            "left": Synth.sample("pad-left", gain: 0.45, format: format),
-            "leftAccent": Synth.sample("pad-left", gain: 1.0, format: format)
+            "right": Synth.sample("pad-right", gain: 0.38, format: format),
+            "rightAccent": Synth.sample("pad-right-accent", gain: 1.0, format: format),
+            "left": Synth.sample("pad-left", gain: 0.38, format: format),
+            "leftAccent": Synth.sample("pad-left-accent", gain: 1.0, format: format),
+            "kickTight": Synth.sample("kick-tight", gain: 0.9, format: format)
         ]
         buffers = sampled.compactMapValues { $0 }
         // One node per voice so overlapping hits never queue behind each other
@@ -272,7 +273,8 @@ final class GroovePlayer: ObservableObject {
             }
             }
             if groove.hit(.kick, at: index) != nil {
-                schedule(groove.category == .hands ? "kickFeather" : "kick", on: 2, at: when)
+                let kick = groove.category == .hands ? "kickFeather" : (groove.sticking.isEmpty ? "kick" : "kickTight")
+                schedule(kick, on: 2, at: when)
             }
 
             let host: CFTimeInterval
