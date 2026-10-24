@@ -1,4 +1,5 @@
 import AVFoundation
+import Combine
 import QuartzCore
 
 enum DrumVoice: CaseIterable {
@@ -194,6 +195,9 @@ final class GroovePlayer: ObservableObject {
             players.append(player)
         }
         engine.prepare()
+        volumeObserver = MetronomeManager.shared.$volume.sink { [weak self] volume in
+            self?.engine.mainMixerNode.outputVolume = Float(volume)
+        }
     }
 
     func play(_ groove: Groove) {
@@ -295,6 +299,7 @@ final class GroovePlayer: ObservableObject {
     }
 
     private var trimmed: [String: AVAudioPCMBuffer] = [:]
+    private var volumeObserver: AnyCancellable?
 
     // A hit longer than the step would push every later hit on that voice late, so cut it to fit
     private func schedule(_ name: String, on node: Int, at when: AVAudioTime) {

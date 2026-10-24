@@ -154,6 +154,10 @@ final class ClickEngine {
         }
     }
 
+    func setVolume(_ volume: Float) {
+        engine.mainMixerNode.outputVolume = volume
+    }
+
     // Lets the user hear a voice in settings without starting the metronome
     func preview() {
         queue.async { [self] in

@@ -328,6 +328,10 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             Form {
+                Section("Volume") {
+                    VolumeSlider(volume: $metronome.volume)
+                }
+
                 Section("Sound") {
                     ForEach(ClickSound.allCases) { sound in
                         Button {
@@ -693,5 +697,32 @@ struct HeaderIconButton: View {
                 )
         }
         .accessibilityLabel(label)
+    }
+}
+
+// App volume with speaker icons at both ends, a tick of haptics every tenth
+struct VolumeSlider: View {
+    @Binding var volume: Double
+    @State private var lastStep = -1
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "speaker.fill")
+                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.65))
+            Slider(value: $volume, in: 0...1)
+                .tint(Color(hex: "#F54206"))
+                .onChange(of: volume) { value in
+                    let step = Int((value * 10).rounded())
+                    if step != lastStep {
+                        lastStep = step
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    }
+                }
+            Image(systemName: "speaker.wave.3.fill")
+                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.65))
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Volume")
+        .accessibilityValue("\(Int(volume * 100)) percent")
     }
 }

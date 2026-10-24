@@ -161,6 +161,7 @@ private struct LevelBadge: View {
 struct GroovePager: View {
     @State var category: GrooveCategory
     @ObservedObject var player: GroovePlayer
+    @ObservedObject private var metronome = MetronomeManager.shared
     @State var index: Int
     @State private var direction = 1
     @State private var dragOffset: CGFloat = 0
@@ -193,6 +194,9 @@ struct GroovePager: View {
                 .offset(x: dragOffset)
 
                 BPMControl(bpm: $player.tempo, range: 10...240)
+
+                VolumeSlider(volume: $metronome.volume)
+                    .padding(.horizontal, 32)
 
                 HStack(spacing: 28) {
                     StepButton(symbol: "backward.fill", label: "Previous groove", enabled: index > 0) { step(-1) }
