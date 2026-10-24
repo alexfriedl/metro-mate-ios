@@ -98,39 +98,43 @@ struct ContentView: View {
                 Spacer()
                     .frame(height: 20)
                 
-                Button(action: {
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                    impactFeedback.impactOccurred()
-                    showQuickNoteValuePicker = true
-                }) {
-                    HStack(spacing: 8) {
-                        Text("PATTERN")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(Color.textSecondary)
+                // Undo sits beside the pattern pill so it never covers the new pattern, the pill stays centered
+                HStack(spacing: 8) {
+                    Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                    Button(action: {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                        showQuickNoteValuePicker = true
+                    }) {
+                        HStack(spacing: 8) {
+                            Text("PATTERN")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(Color.textSecondary)
                         
-                        Text(metronome.noteValue.displayName)
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(Color.textPrimary)
+                            Text(metronome.noteValue.displayName)
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(Color.textPrimary)
                         
-                        Image(systemName: "chevron.down.circle.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(Color.textSecondary)
+                            Image(systemName: "chevron.down.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(Color.textSecondary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.surface)
+                        .cornerRadius(20)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.surface)
-                    .cornerRadius(20)
-                }
-                // Undo sits beside the pattern pill so it never covers the new pattern
-                .overlay(alignment: .trailing) {
-                    if showUndo {
-                        UndoChip(action: undoShuffle)
-                            .fixedSize()
-                            .alignmentGuide(.trailing) { $0[.leading] - 8 }
-                            .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    .fixedSize()
+                    ZStack(alignment: .leading) {
+                        Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                        if showUndo {
+                            UndoChip(action: undoShuffle)
+                                .fixedSize()
+                                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                        }
                     }
                 }
-                
+
                 // Beat Pattern Grid
                 GridView(metronome: metronome)
                 

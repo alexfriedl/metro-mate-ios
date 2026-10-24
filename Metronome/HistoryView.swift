@@ -146,7 +146,7 @@ struct HistoryView: View {
 
         Section {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top, spacing: 0) {
+                HStack(alignment: .top, spacing: 8) {
                     Stat(value: Self.format(total), label: "Practice time")
                     Stat(value: "\(daysPractised)/\(days.count)", label: "Practice days")
                     Stat(value: Self.format(average), label: "Per practice day")
@@ -184,7 +184,7 @@ struct HistoryView: View {
         let progress = PracticeStats.tempoProgress(sessions)
 
         Section {
-            HStack(alignment: .top, spacing: 0) {
+            HStack(alignment: .top, spacing: 8) {
                 Stat(value: Self.format(total(sessions)), label: "Total")
                 Stat(value: "\(practiceDays(in: sessions))/\(days.count)", label: "Practice days")
                 Stat(value: PracticeStats.pluralized(streak, "day"), label: "Longest streak")
@@ -350,7 +350,7 @@ private struct Stat: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
-                .font(.system(size: 22, weight: .semibold, design: .monospaced))
+                .font(.system(size: 20, weight: .semibold, design: .monospaced))
                 .foregroundColor(Color.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
@@ -359,7 +359,8 @@ private struct Stat: View {
                 .foregroundColor(Color.textSecondary)
                 .lineLimit(2)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // A zero minimum lets long values shrink instead of running into the next column
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
     }
 }
