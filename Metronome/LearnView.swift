@@ -159,7 +159,6 @@ private struct LevelBadge: View {
 struct GroovePager: View {
     @State var category: GrooveCategory
     @ObservedObject var player: GroovePlayer
-    @ObservedObject private var metronome = MetronomeManager.shared
     @State var index: Int
     @State private var direction = 1
     @State private var dragOffset: CGFloat = 0
@@ -242,8 +241,6 @@ struct GroovePager: View {
                     StepButton(symbol: "forward.end.fill", label: "Next groove", enabled: index < grooves.count - 1) { step(1) }
                 }
 
-                VolumeSlider(volume: $metronome.volume)
-                    .padding(.horizontal, 32)
 
                 Toggle(isOn: $player.dynamics) {
                     VStack(alignment: .leading, spacing: 2) {
