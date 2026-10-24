@@ -146,7 +146,7 @@ struct HistoryView: View {
 
         Section {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .top, spacing: 16) {
                     Stat(value: Self.format(total), label: "Practice time")
                     Stat(value: "\(daysPractised)/\(days.count)", label: "Practice days")
                     Stat(value: Self.format(average), label: "Per practice day")
@@ -184,7 +184,7 @@ struct HistoryView: View {
         let progress = PracticeStats.tempoProgress(sessions)
 
         Section {
-            HStack(alignment: .top, spacing: 8) {
+            HStack(alignment: .top, spacing: 16) {
                 Stat(value: Self.format(total(sessions)), label: "Total")
                 Stat(value: "\(practiceDays(in: sessions))/\(days.count)", label: "Practice days")
                 Stat(value: PracticeStats.pluralized(streak, "day"), label: "Longest streak")
@@ -433,16 +433,19 @@ private struct MonthHeatmap: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             LazyVGrid(columns: columns, spacing: 6) {
-                ForEach(weekdayHeaders.indices, id: \.self) { index in
+                // Each group needs its own ids, plain integers would collide inside one grid
+                ForEach(weekdayHeaders.indices.map { "h\($0)" }, id: \.self) { key in
+                    let index = Int(key.dropFirst())!
                     Text(weekdayHeaders[index])
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(Color.textSecondary)
                         .frame(maxWidth: .infinity)
                 }
-                ForEach(0..<leadingBlanks, id: \.self) { _ in
+                ForEach((0..<leadingBlanks).map { "b\($0)" }, id: \.self) { _ in
                     Color.clear.aspectRatio(1, contentMode: .fit)
                 }
-                ForEach(days.indices, id: \.self) { index in
+                ForEach(days.indices.map { "d\($0)" }, id: \.self) { key in
+                    let index = Int(key.dropFirst())!
                     cell(day: days[index], seconds: seconds[index])
                 }
             }

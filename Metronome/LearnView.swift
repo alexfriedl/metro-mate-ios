@@ -103,7 +103,7 @@ struct GroovePager: View {
                 ))
                 .offset(x: dragOffset)
 
-                Legend()
+                Legend(showsHiHat: groove.uses(.hiHat))
             }
 
             Spacer(minLength: 24)
@@ -651,12 +651,19 @@ private struct NoteCell: View {
 }
 
 private struct Legend: View {
+    // Hit and open hat only mean something when the groove has a hi-hat
+    var showsHiHat = true
+
     var body: some View {
         HStack(spacing: 16) {
-            item(Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundColor(Color.textPrimary), "Hit")
+            if showsHiHat {
+                item(Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundColor(Color.textPrimary), "Hit")
+            }
             item(Circle().fill(Color.signal).frame(width: 10, height: 10), "Accent")
             item(Circle().stroke(Color.textSecondary, lineWidth: 1).frame(width: 8, height: 8), "Soft")
-            item(Circle().stroke(Color.signal, lineWidth: 1.5).frame(width: 10, height: 10), "Open hat")
+            if showsHiHat {
+                item(Circle().stroke(Color.signal, lineWidth: 1.5).frame(width: 10, height: 10), "Open hat")
+            }
         }
         .font(.caption)
         .foregroundColor(Color.textSecondary)
