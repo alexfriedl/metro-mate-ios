@@ -126,7 +126,8 @@ struct GrooveListView: View {
         .preferredColorScheme(.dark)
         .sheet(item: $selected, onDismiss: { player.stop() }) { groove in
             NavigationView {
-                GrooveDetailView(groove: groove, player: player)
+                GroovePager(category: category, player: player,
+                            index: category.grooves.firstIndex { $0.id == groove.id } ?? 0)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button("Done") { selected = nil }
@@ -156,20 +157,39 @@ private struct LevelBadge: View {
     }
 }
 
-struct GrooveDetailView: View {
-    let groove: Groove
+// Level 3: one groove at a time, swipe or step through the whole category without leaving the player
+struct GroovePager: View {
+    @State var category: GrooveCategory
     @ObservedObject var player: GroovePlayer
+    @State var index: Int
+
+    private var grooves: [Groove] { category.grooves }
+    private var groove: Groove { grooves[index] }
+    private let levels = ["Beginner", "Intermediate", "Advanced"]
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 28) {
-                Text(groove.focus)
-                    .font(.subheadline)
-                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+            VStack(spacing: 22) {
+                header
 
-                DrumGrid(groove: groove, currentStep: player.isPlaying ? player.currentStep : -1)
+                // Only the notation pages, the controls stay put underneath
+                TabView(selection: $index) {
+                    ForEach(Array(grooves.enumerated()), id: \.element.id) { position, item in
+                        VStack(spacing: 16) {
+                            Text(item.focus)
+                                .font(.subheadline)
+                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                                .padding(.horizontal, 24)
+                            DrumGrid(groove: item, currentStep: player.isPlaying && position == index ? player.currentStep : -1)
+                            Spacer(minLength: 0)
+                        }
+                        .tag(position)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(height: 210)
 
                 BPMControl(bpm: $player.tempo, range: 40...160)
 
@@ -180,27 +200,139 @@ struct GrooveDetailView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 24)
 
-                Button {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    player.isPlaying ? player.stop() : player.play(groove)
-                } label: {
-                    Image(systemName: player.isPlaying ? "stop.fill" : "play.fill")
-                        .font(.system(size: 30))
-                        .foregroundColor(Color(hex: "#DDDDDD"))
-                        .frame(width: 88, height: 88)
-                        .background(Circle().fill(player.isPlaying ? Color(hex: "#F54206") : Color(hex: "#303030")))
+                HStack(spacing: 28) {
+                    StepButton(symbol: "backward.fill", label: "Previous groove", enabled: index > 0) { step(-1) }
+
+                    Button {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        player.isPlaying ? player.stop() : player.play(groove)
+                    } label: {
+                        Image(systemName: player.isPlaying ? "stop.fill" : "play.fill")
+                            .font(.system(size: 30))
+                            .foregroundColor(Color(hex: "#DDDDDD"))
+                            .frame(width: 88, height: 88)
+                            .background(Circle().fill(player.isPlaying ? Color(hex: "#F54206") : Color(hex: "#303030")))
+                    }
+                    .accessibilityLabel(player.isPlaying ? "Stop groove" : "Play groove")
+
+                    StepButton(symbol: "forward.fill", label: "Next groove", enabled: index < grooves.count - 1) { step(1) }
                 }
-                .accessibilityLabel(player.isPlaying ? "Stop groove" : "Play groove")
 
                 Legend()
             }
-            .padding(.vertical, 24)
+            .padding(.vertical, 16)
         }
         .background(Color(hex: "#1C1C1B").ignoresSafeArea())
-        .navigationTitle(groove.title)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { player.tempo = Double(groove.tempo) }
         .onDisappear { player.stop() }
+        .onChange(of: index) { _ in
+            UISelectionFeedbackGenerator().selectionChanged()
+            player.tempo = Double(groove.tempo)
+            // Keep the music going, the next groove picks up straight away
+            if player.isPlaying { player.play(groove) }
+        }
+    }
+
+    private var header: some View {
+        VStack(spacing: 10) {
+            HStack {
+                // Jump to another category straight from the player
+                Menu {
+                    ForEach(GrooveCategory.allCases) { item in
+                        Button {
+                            switchCategory(to: item)
+                        } label: {
+                            Label(item.title, systemImage: item == category ? "checkmark" : item.symbol)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: category.symbol)
+                        Text(category.title.uppercased())
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9, weight: .bold))
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(Color(hex: "#F54206"))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(Color(hex: "#F54206").opacity(0.12)))
+                }
+                .accessibilityLabel("Category \(category.title), change category")
+                Spacer()
+                Text("\(index + 1) of \(grooves.count)")
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+            }
+
+            Text(groove.title)
+                .font(.system(size: 26, weight: .bold))
+                .foregroundColor(Color(hex: "#DDDDDD"))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .id(groove.id)
+                .transition(.opacity)
+
+            HStack(spacing: 8) {
+                LevelBadge(level: groove.level)
+                Text("\(levels[groove.level - 1]) · \(groove.tempo) BPM · \(groove.isTriplet ? "Triplets" : "Sixteenths")")
+                    .font(.caption)
+                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                Spacer()
+            }
+
+            // Where you are in the category, tap a segment to jump there
+            HStack(spacing: 3) {
+                ForEach(grooves.indices, id: \.self) { position in
+                    Capsule()
+                        .fill(position == index ? Color(hex: "#F54206") : Color(hex: "#DDDDDD").opacity(position < index ? 0.45 : 0.15))
+                        .frame(height: 4)
+                        .contentShape(Rectangle().inset(by: -10))
+                        .onTapGesture { withAnimation(.easeOut(duration: 0.2)) { index = position } }
+                }
+            }
+            .accessibilityElement()
+            .accessibilityLabel("Groove \(index + 1) of \(grooves.count)")
+        }
+        .padding(.horizontal, 20)
+        .animation(.easeOut(duration: 0.15), value: index)
+    }
+
+    private func switchCategory(to item: GrooveCategory) {
+        guard item != category else { return }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        let wasPlaying = player.isPlaying
+        category = item
+        index = 0
+        player.tempo = Double(groove.tempo)
+        if wasPlaying { player.play(groove) }
+    }
+
+    private func step(_ direction: Int) {
+        let target = index + direction
+        guard grooves.indices.contains(target) else { return }
+        withAnimation(.easeOut(duration: 0.25)) { index = target }
+    }
+}
+
+private struct StepButton: View {
+    let symbol: String
+    let label: String
+    let enabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(Color(hex: "#DDDDDD").opacity(enabled ? 1 : 0.25))
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(Color(hex: "#242424")))
+        }
+        .disabled(!enabled)
+        .accessibilityLabel(label)
     }
 }
 
@@ -220,6 +352,14 @@ private struct DrumGrid: View {
                 Text(counts[step])
                     .font(.system(size: 11, weight: step % groove.stepsPerBeat == 0 ? .bold : .regular, design: .monospaced))
                     .foregroundColor(Color(hex: "#DDDDDD").opacity(step % groove.stepsPerBeat == 0 ? 0.9 : 0.45))
+            }
+            if !groove.sticking.isEmpty {
+                row(label: "") { step in
+                    let letter = String(Array(groove.sticking)[step])
+                    Text(letter)
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundColor(letter == "K" ? Color(hex: "#F54206") : Color(hex: "#DDDDDD"))
+                }
             }
             ForEach(DrumVoice.allCases.filter { groove.uses($0) }, id: \.self) { voice in
                 row(label: voice.label) { step in

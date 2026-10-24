@@ -1,12 +1,43 @@
 // All grooves are original exercises written for Metro Mate
 extension Groove {
-    static let library: [Groove] = foundations + funk + linearGrooves + hiHatWork + kickWork + shuffles + accentStudies
+    static let library: [Groove] = classics + foundations + funk + linearGrooves + hiHatWork + kickWork + shuffles + accentStudies + chops
 
     private static let backbeat = "----X-------X---"
     private static let eighths = "x-x-x-x-x-x-x-x-"
     private static let sixteenths = "xxxxxxxxxxxxxxxx"
     private static let silent16 = "----------------"
     private static let silent12 = "------------"
+
+    // Simplified one-bar versions of famous grooves, names say whose feel they are modelled on
+    static let classics: [Groove] = [
+        Groove("funky-drummer", .classics, "Funky Drummer", level: 3, tempo: 100,
+               focus: "Clyde Stubblefield style: sixteenth hats, open barks, ghosts around the backbeat",
+               hiHat: "xxxxxxxoxxxxxxox", snare: "----X--g-g--X--g", kick: "x-x-------x--x--"),
+        Groove("purdie-shuffle", .classics, "Purdie Shuffle", level: 3, tempo: 92,
+               focus: "Bernard Purdie style half-time shuffle, ghosts on every middle triplet",
+               hiHat: "x-xx-xx-xx-x", snare: "-g--g-Xg--g-", kick: "x----x-----x"),
+        Groove("amen-break", .classics, "Amen Break", level: 3, tempo: 136,
+               focus: "G. C. Coleman style break: ride eighths, snare pushing on the a of 2 and 4",
+               hiHat: eighths, snare: "----X--X-X--X--X", kick: "x-x-------xx----"),
+        Groove("billie-jean", .classics, "Billie Jean", level: 1, tempo: 117,
+               focus: "Pop staple: dead straight eighths, kick on 1 and 3, nothing extra",
+               hiHat: eighths, snare: backbeat, kick: "x-------x-------"),
+        Groove("motown", .classics, "Motown Beat", level: 1, tempo: 120,
+               focus: "Snare on every quarter note drives the whole band",
+               hiHat: eighths, snare: "X---X---X---X---", kick: "x-------x-x-----"),
+        Groove("bossa-nova", .classics, "Bossa Nova", level: 2, tempo: 130,
+               focus: "Cross-stick clave over a steady dotted bass drum",
+               hiHat: eighths, snare: "x--x--x---x--x--", kick: "x--xx--xx--xx--x"),
+        Groove("train-beat", .classics, "Train Beat", level: 2, tempo: 110,
+               focus: "Sixteenth snare chug with the backbeat accented, country and rockabilly",
+               hiHat: silent16, snare: "ggggXgggggggXggg", kick: "x-------x-------"),
+        Groove("boom-bap", .classics, "Boom Bap", level: 1, tempo: 90,
+               focus: "Nineties hip hop: lazy kick on the a of 2, fat backbeat",
+               hiHat: eighths, snare: backbeat, kick: "x------x-x------"),
+        Groove("rosanna-feel", .classics, "Half-Time Shuffle Push", level: 3, tempo: 86,
+               focus: "Purdie shuffle variation with the kick pushing into beat 3",
+               hiHat: "x-xx-xx-xx-x", snare: "-g--g-X-g-g-", kick: "x----x-x---x")
+    ]
 
     static let foundations: [Groove] = [
         Groove("rock-eighths", .foundations, "Eighth Note Rock", level: 1, tempo: 100,
@@ -177,5 +208,53 @@ extension Groove {
         Groove("four-over-three", .hands, "Four over Three", level: 3, tempo: 66,
                focus: "Accent every fourth triplet, the accents float across the beat",
                hiHat: silent12, snare: "XxxxXxxxXxxx", kick: "x--x--x--x--")
+    ]
+
+    private static func chop(_ id: String, _ title: String, level: Int, tempo: Int, focus: String,
+                             sticking: String, accents: String) -> Groove {
+        // Hands play the snare, K in the sticking goes to the kick, accents mark the loud notes
+        let snare = String(zip(sticking, accents).map { stick, accent in
+            stick == "K" ? "-" : (accent == ">" ? "X" : "x")
+        })
+        let kick = String(sticking.map { $0 == "K" ? "x" : "-" })
+        let silent = String(repeating: "-", count: sticking.count)
+        return Groove(id, .chops, title, level: level, tempo: tempo, focus: focus,
+                      hiHat: silent, snare: snare, kick: kick, sticking: sticking)
+    }
+
+    static let chops: [Groove] = [
+        chop("singles", "Single Strokes", level: 1, tempo: 90,
+             focus: "Even singles, both hands at the same height and volume",
+             sticking: "RLRLRLRLRLRLRLRL", accents: ">---------------"),
+        chop("doubles", "Double Strokes", level: 1, tempo: 80,
+             focus: "Second stroke as strong as the first, let the stick rebound",
+             sticking: "RRLLRRLLRRLLRRLL", accents: ">---------------"),
+        chop("paradiddle", "Paradiddle", level: 1, tempo: 80,
+             focus: "Accent the first note of each group, the rest stays low",
+             sticking: "RLRRLRLLRLRRLRLL", accents: ">---->-->---->--"),
+        chop("inverted-paradiddle", "Inverted Paradiddle", level: 2, tempo: 76,
+             focus: "Double in the middle of the group, accent the lead hand",
+             sticking: "RLLRLRRLRLLRLRRL", accents: ">---->-->---->--"),
+        chop("paradiddle-diddle", "Paradiddle-diddle", level: 2, tempo: 72,
+             focus: "Six notes per beat as triplets, accent each new group",
+             sticking: "RLRRLLRLRRLL", accents: ">-->-->-->--"),
+        chop("six-stroke", "Six Stroke Roll", level: 3, tempo: 66,
+             focus: "Accented singles frame two soft doubles",
+             sticking: "RLLRRLRLLRRL", accents: ">----->-----"),
+        chop("rlk-triplets", "RLK Triplets", level: 2, tempo: 80,
+             focus: "Right, left, kick in triplets, the classic gospel chop",
+             sticking: "RLKRLKRLKRLK", accents: ">-->-->-->--"),
+        chop("rllk", "RLLK Fours", level: 2, tempo: 84,
+             focus: "Right, left, left, kick in sixteenths, accent the right hand",
+             sticking: "RLLKRLLKRLLKRLLK", accents: ">--->--->--->---"),
+        chop("rlrk", "RLRK Fours", level: 2, tempo: 84,
+             focus: "Alternating hands into the kick, keep the kick as loud as the hands",
+             sticking: "RLRKLRLKRLRKLRLK", accents: ">--->--->--->---"),
+        chop("rrlk", "RRLK Fours", level: 3, tempo: 80,
+             focus: "Right hand double, left, kick, a fast gospel fill shape",
+             sticking: "RRLKRRLKRRLKRRLK", accents: ">--->--->--->---"),
+        chop("rlkk", "RLKK Fours", level: 3, tempo: 72,
+             focus: "Two kicks after the hands, smooth and even",
+             sticking: "RLKKRLKKRLKKRLKK", accents: ">--->--->--->---")
     ]
 }

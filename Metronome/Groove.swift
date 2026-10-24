@@ -18,12 +18,13 @@ enum DrumHit {
 }
 
 enum GrooveCategory: String, CaseIterable, Identifiable {
-    case foundations, funk, linear, hiHat, kick, shuffle, hands
+    case classics, foundations, funk, linear, hiHat, kick, shuffle, hands, chops
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .classics: return "All-Time Classics"
         case .foundations: return "Foundations"
         case .funk: return "Funk & Ghost Notes"
         case .linear: return "Linear Grooves"
@@ -31,11 +32,13 @@ enum GrooveCategory: String, CaseIterable, Identifiable {
         case .kick: return "Kick Independence"
         case .shuffle: return "Shuffle & Triplets"
         case .hands: return "Accent Studies"
+        case .chops: return "Chops"
         }
     }
 
     var subtitle: String {
         switch self {
+        case .classics: return "Famous grooves in their best known form, one bar"
         case .foundations: return "Rock, pop and four on the floor"
         case .funk: return "Sixteenth feels with quiet ghost notes"
         case .linear: return "One limb at a time, never two together"
@@ -43,11 +46,13 @@ enum GrooveCategory: String, CaseIterable, Identifiable {
         case .kick: return "Kick patterns against a steady top"
         case .shuffle: return "Triplet grid, swing and half-time shuffle"
         case .hands: return "Snare accent exercises over a feathered kick"
+        case .chops: return "Rudiments and hand-foot combinations with sticking"
         }
     }
 
     var symbol: String {
         switch self {
+        case .classics: return "star"
         case .foundations: return "square.stack.3d.up"
         case .funk: return "waveform"
         case .linear: return "arrow.right"
@@ -55,6 +60,7 @@ enum GrooveCategory: String, CaseIterable, Identifiable {
         case .kick: return "circle.circle"
         case .shuffle: return "music.note"
         case .hands: return "hand.raised"
+        case .chops: return "bolt"
         }
     }
 
@@ -73,13 +79,15 @@ struct Groove: Identifiable {
     let hiHat: String
     let snare: String
     let kick: String
+    // Optional sticking line, one letter per step: R right, L left, K kick
+    let sticking: String
 
     var steps: Int { snare.count }
     var stepsPerBeat: Int { steps / 4 }
     var isTriplet: Bool { stepsPerBeat == 3 }
 
     init(_ id: String, _ category: GrooveCategory, _ title: String, level: Int, tempo: Int, focus: String,
-         hiHat: String, snare: String, kick: String) {
+         hiHat: String, snare: String, kick: String, sticking: String = "") {
         self.id = id
         self.category = category
         self.title = title
@@ -89,6 +97,7 @@ struct Groove: Identifiable {
         self.hiHat = hiHat
         self.snare = snare
         self.kick = kick
+        self.sticking = sticking
     }
 
     // Linear grooves read better as one sequence: K kick, H hat, O open hat, S snare, A accent, G ghost, - rest
