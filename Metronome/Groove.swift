@@ -176,7 +176,7 @@ final class GroovePlayer: ObservableObject {
     @Published var tempo: Double = 88 {
         didSet {
             queue.async { [self] in pendingTempo = tempo }
-            if isPlaying { PracticeLog.shared.updateTempo(Int(tempo)) }
+            if isPlaying && logsPractice { PracticeLog.shared.updateTempo(Int(tempo)) }
         }
     }
     private let engine = AVAudioEngine()
@@ -194,28 +194,20 @@ final class GroovePlayer: ObservableObject {
     private var generation = 0
     private var interruptionObserver: NSObjectProtocol?
 
-    init() {
-        let sampled: [String: AVAudioPCMBuffer?] = [
-            // Each dynamic is its own recorded stroke, so accents sound harder, not just louder
-            "hat": Synth.sample("hihat", gain: 0.45, format: format),
-            "hatAccent": Synth.sample("hihat-accent", gain: 0.8, format: format),
-            "open": Synth.sample("hihat-open", gain: 0.55, format: format),
-            "snare": Synth.sample("snare", gain: 0.55, format: format),
-            "snareAccent": Synth.sample("snare-accent", gain: 1.0, format: format),
-            "ghost": Synth.sample("snare-ghost", gain: 0.3, format: format),
-            "kick": Synth.sample("kick", gain: 0.85, format: format),
-            "kickAccent": Synth.sample("kick-accent", gain: 1.0, format: format),
-            "kickSoft": Synth.sample("kick-soft", gain: 0.6, format: format),
-            "hatSoft": Synth.sample("hihat-soft", gain: 0.3, format: format),
-            "kickFeather": Synth.sample("kick-soft", gain: 0.45, format: format),
-            // Hand exercises sound like a practice pad, the left hand a touch lower so both hands are told apart
-            "right": Synth.sample("pad-right", gain: 0.42, format: format),
-            "rightAccent": Synth.sample("pad-right-accent", gain: 0.9, format: format),
-            "left": Synth.sample("pad-left", gain: 0.42, format: format),
-            "leftAccent": Synth.sample("pad-left-accent", gain: 0.9, format: format),
-            "kickTight": Synth.sample("kick-tight", gain: 0.9, format: format)
-        ]
-        buffers = sampled.compactMapValues { $0 }
+    // Sound previews in settings play without counting as practice
+    private let logsPractice: Bool
+
+    init(logsPractice: Bool = true) {
+        self.logsPractice = logsPractice
+        buffers = Self.loadBuffers(format: format)
+        kitObserver = DrumKit.shared.$selection.dropFirst().sink { [weak self] _ in
+            guard let self else { return }
+            let fresh = Self.loadBuffers(format: self.format)
+            self.queue.async {
+                self.buffers = fresh
+                self.trimmed.removeAll()
+            }
+        }
         // One node per voice so overlapping hits never queue behind each other
         for _ in 0..<4 {
             let player = AVAudioPlayerNode()
@@ -243,7 +235,7 @@ final class GroovePlayer: ObservableObject {
 
     func play(_ groove: Groove, from index: Int = 0) {
         MetronomeManager.shared.stopIfPlaying()
-        PracticeLog.shared.begin(.groove, title: groove.title, detail: groove.category.title, bpm: Int(tempo))
+        if logsPractice { PracticeLog.shared.begin(.groove, title: groove.title, detail: groove.category.title, bpm: Int(tempo)) }
         isPlaying = true
         currentStep = -1
         queue.async { [self] in
@@ -302,7 +294,7 @@ final class GroovePlayer: ObservableObject {
     }
 
     func stop() {
-        if isPlaying { PracticeLog.shared.end() }
+        if isPlaying && logsPractice { PracticeLog.shared.end() }
         isPlaying = false
         currentStep = -1
         queue.async { [self] in
@@ -312,6 +304,24 @@ final class GroovePlayer: ObservableObject {
             players.forEach { $0.stop() }
             engine.pause()
         }
+    }
+
+    // Every playable voice comes from the kit picked in settings, plus the fixed kicks for hand exercises
+    private static func loadBuffers(format: AVAudioFormat) -> [String: AVAudioPCMBuffer] {
+        let kit = DrumKit.shared
+        let snare = kit.sound(for: .snare), kick = kit.sound(for: .kick), hat = kit.sound(for: .hiHat)
+        let open = kit.sound(for: .openHat), pad = kit.sound(for: .pad)
+        let entries: [String: (file: String, gain: Float)] = [
+            "hat": hat.normal, "hatAccent": hat.accent, "hatSoft": hat.ghost,
+            "open": open.normal,
+            "snare": snare.normal, "snareAccent": snare.accent, "ghost": snare.ghost,
+            "kick": kick.normal, "kickAccent": kick.accent, "kickSoft": kick.ghost,
+            "right": pad.normal, "rightAccent": pad.accent,
+            "left": pad.left ?? pad.normal, "leftAccent": pad.leftAccent ?? pad.accent,
+            "kickFeather": ("kick-soft", 0.45),
+            "kickTight": ("kick-tight", 0.9)
+        ]
+        return entries.compactMapValues { Synth.sample($0.file, gain: $0.gain, format: format) }
     }
 
     // Which recorded voice plays on which node for one step of a groove
@@ -412,6 +422,7 @@ final class GroovePlayer: ObservableObject {
 
     private var trimmed: [String: AVAudioPCMBuffer] = [:]
     private var volumeObserver: AnyCancellable?
+    private var kitObserver: AnyCancellable?
     private var auditionPlayers: [AVAudioPlayerNode] = []
     private var pendingLoop: ClosedRange<Int>?
     private var pendingDynamics = UserDefaults.standard.object(forKey: "grooveDynamics") as? Bool ?? true

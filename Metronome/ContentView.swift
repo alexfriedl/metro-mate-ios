@@ -363,6 +363,7 @@ private struct AccentDot: View {
 
 struct SettingsView: View {
     @ObservedObject var metronome: MetronomeManager
+    @ObservedObject private var kit = DrumKit.shared
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -373,32 +374,29 @@ struct SettingsView: View {
                         .listRowBackground(Color.surface)
                 }
 
-                Section("Click sound") {
-                    ForEach(ClickSound.allCases) { sound in
-                        Button {
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            metronome.clickSound = sound
-                            metronome.previewSound()
+                Section("Metronome") {
+                    NavigationLink {
+                        ClickSoundList(metronome: metronome)
+                    } label: {
+                        SettingRow(title: "Click", value: metronome.clickSound.title)
+                    }
+                    .listRowBackground(Color.surface)
+                }
+
+                Section {
+                    ForEach(KitVoice.allCases) { voice in
+                        NavigationLink {
+                            KitSoundList(voice: voice)
                         } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(sound.title)
-                                        .foregroundColor(Color.textPrimary)
-                                    Text(sound.subtitle)
-                                        .font(.caption)
-                                        .foregroundColor(Color.textSecondary)
-                                }
-                                Spacer()
-                                if metronome.clickSound == sound {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(Color.signal)
-                                }
-                            }
-                            .contentShape(Rectangle())
+                            SettingRow(title: voice.title, value: kit.sound(for: voice).name)
                         }
-                        .buttonStyle(.plain)
                         .listRowBackground(Color.surface)
                     }
+                } header: {
+                    Text("Learn drum kit")
+                } footer: {
+                    Text("Used for the grooves and exercises in Learn.")
+                        .foregroundColor(Color.textSecondary)
                 }
 
                 Section("Pattern") {
@@ -718,5 +716,135 @@ struct VolumeSlider: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Volume")
         .accessibilityValue("\(Int(volume * 100)) percent")
+    }
+}
+
+// Settings row with the current choice on the right
+struct SettingRow: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .foregroundColor(Color.textPrimary)
+            Spacer()
+            Text(value)
+                .foregroundColor(Color.textSecondary)
+        }
+    }
+}
+
+// Second level for the metronome click: pick a voice, hear it once
+struct ClickSoundList: View {
+    @ObservedObject var metronome: MetronomeManager
+
+    var body: some View {
+        List {
+            ForEach(ClickSound.allCases) { sound in
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    metronome.clickSound = sound
+                    metronome.previewSound()
+                } label: {
+                    SoundRow(title: sound.title, detail: sound.subtitle, isSelected: metronome.clickSound == sound)
+                }
+                .buttonStyle(.plain)
+                .listRowBackground(Color.surface)
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.ground)
+        .navigationTitle("Click")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// Second level for a kit voice: tapping a sound picks it and plays a short groove with it, no grid
+struct KitSoundList: View {
+    let voice: KitVoice
+    @ObservedObject private var kit = DrumKit.shared
+    @StateObject private var player = GroovePlayer(logsPractice: false)
+
+    // A groove that shows off this voice
+    private var example: Groove {
+        let id: String
+        switch voice {
+        case .snare: id = "ghost-pocket"
+        case .kick: id = "kick-syncopation"
+        case .hiHat: id = "foundation"
+        case .openHat: id = "open-lift"
+        case .pad: id = "paradiddle"
+        }
+        return Groove.library.first { $0.id == id } ?? Groove.library[0]
+    }
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(voice.options) { sound in
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        kit.select(sound, for: voice)
+                        playExample()
+                    } label: {
+                        SoundRow(title: sound.name, detail: sound.detail, isSelected: kit.sound(for: voice) == sound)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowBackground(Color.surface)
+                }
+            } footer: {
+                Text("Tap a sound to hear it in \(example.title).")
+                    .foregroundColor(Color.textSecondary)
+            }
+
+            Section {
+                Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    player.isPlaying ? player.stop() : playExample()
+                } label: {
+                    Label(player.isPlaying ? "Stop example" : "Play example", systemImage: player.isPlaying ? "stop.fill" : "play.fill")
+                        .foregroundColor(player.isPlaying ? Color.signal : Color.textPrimary)
+                }
+                .listRowBackground(Color.surface)
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.ground)
+        .navigationTitle(voice.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .onDisappear { player.stop() }
+    }
+
+    private func playExample() {
+        player.tempo = Double(example.tempo)
+        // The kit reloads its buffers asynchronously, start right after so the new sound is in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            player.play(example)
+        }
+    }
+}
+
+struct SoundRow: View {
+    let title: String
+    let detail: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .foregroundColor(Color.textPrimary)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundColor(Color.textSecondary)
+            }
+            Spacer()
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .foregroundColor(Color.signal)
+            }
+        }
+        .contentShape(Rectangle())
     }
 }
