@@ -653,7 +653,40 @@ class MetronomeManager: ObservableObject {
         persistPresets()
     }
     
+    // Everything the shuffle key changes, kept so one roll can be taken back, the tempo is never touched
+    private struct PatternSnapshot {
+        let noteValue: NoteValue
+        let beatsPerMeasure: Int
+        let gridPattern: [[Bool]]
+        let accentPattern: [Bool]
+        let gridDisplayMode: GridDisplayMode
+        let name: String
+    }
+
+    private var beforeRandom: PatternSnapshot?
+
+    func undoRandomize() {
+        guard let previous = beforeRandom else { return }
+        beforeRandom = nil
+        noteValue = previous.noteValue
+        beatsPerMeasure = previous.beatsPerMeasure
+        gridPattern = previous.gridPattern
+        accentPattern = previous.accentPattern
+        gridDisplayMode = previous.gridDisplayMode
+        currentBeatName = previous.name
+        restartIfPlaying()
+    }
+
     func randomizeBeat() {
+        beforeRandom = PatternSnapshot(
+            noteValue: noteValue,
+            beatsPerMeasure: beatsPerMeasure,
+            gridPattern: gridPattern,
+            accentPattern: accentPattern,
+            gridDisplayMode: gridDisplayMode,
+            name: currentBeatName
+        )
+
         // Randomize note value
         let allNoteValues = NoteValue.allCases
         let randomNoteValue = allNoteValues.randomElement()!

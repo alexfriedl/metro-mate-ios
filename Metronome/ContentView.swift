@@ -15,6 +15,8 @@ struct ContentView: View {
     @State private var showQuickNoteValuePicker = false
     @State private var showGridSettings = false
     @State private var showBeatPresets = false
+    @State private var showUndo = false
+    @State private var undoTask: Task<Void, Never>?
     
     var body: some View {
         ZStack {
@@ -155,6 +157,15 @@ struct ContentView: View {
                     .background(Color(hex: "#242424"))
                     .cornerRadius(20)
                 }
+                // Undo sits beside the pattern pill so it never covers the new pattern
+                .overlay(alignment: .trailing) {
+                    if showUndo {
+                        UndoChip(action: undoShuffle)
+                            .fixedSize()
+                            .alignmentGuide(.trailing) { $0[.leading] - 8 }
+                            .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    }
+                }
                 
                 // Beat Pattern Grid
                 GridView(metronome: metronome)
@@ -208,6 +219,7 @@ struct ContentView: View {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                         impactFeedback.impactOccurred()
                         metronome.randomizeBeat()
+                        offerUndo()
                     }) {
                         ZStack {
                             Circle()
@@ -226,11 +238,53 @@ struct ContentView: View {
             .padding()
     }
     
+    // The chip stays for five seconds after each roll, a new roll restarts the countdown
+    private func offerUndo() {
+        undoTask?.cancel()
+        withAnimation(.easeOut(duration: 0.2)) { showUndo = true }
+        undoTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.2)) { showUndo = false }
+        }
+    }
+
+    private func undoShuffle() {
+        undoTask?.cancel()
+        metronome.undoRandomize()
+        withAnimation(.easeOut(duration: 0.2)) { showUndo = false }
+    }
+
     private func playButtonPunch(at date: Date) -> CGFloat {
         guard metronome.isPlaying else { return 1 }
         let time = PulseClock.now(for: date)
         guard let hit = metronome.beatTimeline.recent(at: time, limit: 4).first(where: { $0.audible }) else { return 1 }
         return 1 + 0.07 * CGFloat(PulseClock.weight(of: hit) * PulseClock.punch(of: hit, at: time))
+    }
+}
+
+private struct UndoChip: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            action()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.uturn.backward")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Undo")
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundColor(Color(hex: "#DDDDDD"))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(Color(hex: "#303030")))
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Undo shuffle")
     }
 }
 
