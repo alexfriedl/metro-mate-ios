@@ -8,9 +8,10 @@ struct HistoryView: View {
     @State private var deleted: PracticeSession?
     @State private var undoTask: Task<Void, Never>?
 
-    enum Period: String, CaseIterable {
-        case week = "Week"
-        case month = "Month"
+    enum Period: CaseIterable {
+        case week, month
+
+        var title: String { self == .week ? String(localized: "Week") : String(localized: "Month") }
 
         var component: Calendar.Component { self == .week ? .weekOfYear : .month }
     }
@@ -30,7 +31,7 @@ struct HistoryView: View {
             List {
                 Section {
                     Picker("Period", selection: $period) {
-                        ForEach(Period.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                        ForEach(Period.allCases, id: \.self) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .listRowBackground(Color.clear)
@@ -91,7 +92,7 @@ struct HistoryView: View {
     private var periodTitle: String {
         switch period {
         case .week:
-            return "Week \(calendar.component(.weekOfYear, from: interval.start))"
+            return String(localized: "Week \(calendar.component(.weekOfYear, from: interval.start))")
         case .month:
             return interval.start.formatted(.dateTime.month(.wide).year())
         }
@@ -103,9 +104,9 @@ struct HistoryView: View {
             let last = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.start
             let sameMonth = calendar.isDate(interval.start, equalTo: last, toGranularity: .month)
             let end = sameMonth ? last.formatted(.dateTime.day()) : last.formatted(.dateTime.month(.abbreviated).day())
-            return "\(interval.start.formatted(.dateTime.month(.abbreviated).day())) to \(end)"
+            return String(localized: "\(interval.start.formatted(.dateTime.month(.abbreviated).day())) to \(end)")
         case .month:
-            return isCurrentPeriod ? "This month" : PracticeStats.pluralized(practiceDays(in: sessions), "practice day")
+            return isCurrentPeriod ? String(localized: "This month") : PracticeStats.practiceDays(practiceDays(in: sessions))
         }
     }
 
@@ -172,8 +173,11 @@ struct HistoryView: View {
         let before = log.total(in: previous)
         guard before > 0 || total > 0 else { return nil }
         let difference = total - before
-        if abs(difference) < 60 { return "Same as the week before" }
-        return "\(Self.format(abs(difference))) \(difference > 0 ? "more" : "less") than the week before"
+        if abs(difference) < 60 { return String(localized: "Same as the week before") }
+        let amount = Self.format(abs(difference))
+        return difference > 0
+            ? String(localized: "\(amount) more than the week before")
+            : String(localized: "\(amount) less than the week before")
     }
 
     // MARK: - Month
@@ -187,7 +191,7 @@ struct HistoryView: View {
             HStack(alignment: .top, spacing: 16) {
                 Stat(value: Self.format(total(sessions)), label: "Total")
                 Stat(value: "\(practiceDays(in: sessions))/\(days.count)", label: "Practice days")
-                Stat(value: PracticeStats.pluralized(streak, "day"), label: "Longest streak")
+                Stat(value: PracticeStats.days(streak), label: "Longest streak")
             }
             .padding(.vertical, 8)
             .listRowBackground(Color.surface)
@@ -212,7 +216,7 @@ struct HistoryView: View {
                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
                             .foregroundColor(Color.textSecondary)
                             .frame(width: 16, alignment: .leading)
-                        Text(change.title)
+                        Text(change.title.localizedForDisplay)
                             .foregroundColor(Color.textPrimary)
                             .lineLimit(1)
                         Spacer()
@@ -272,8 +276,8 @@ struct HistoryView: View {
     }
 
     private func dayTitle(_ day: Date) -> String {
-        if calendar.isDateInToday(day) { return "Today" }
-        if calendar.isDateInYesterday(day) { return "Yesterday" }
+        if calendar.isDateInToday(day) { return String(localized: "Today") }
+        if calendar.isDateInYesterday(day) { return String(localized: "Yesterday") }
         return day.formatted(.dateTime.weekday(.wide).day().month(.wide))
     }
 
@@ -329,7 +333,7 @@ private struct PeriodNavigator: View {
         }
     }
 
-    private func arrow(_ symbol: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+    private func arrow(_ symbol: String, label: LocalizedStringKey, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .semibold))
@@ -345,7 +349,7 @@ private struct PeriodNavigator: View {
 
 private struct Stat: View {
     let value: String
-    let label: String
+    let label: LocalizedStringKey
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -393,7 +397,7 @@ private struct WeekBars: View {
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(day.formatted(.dateTime.weekday(.wide)))\(isToday ? ", today" : ""), \(minutes) min")
+                .accessibilityLabel(Self.dayLabel(day.formatted(.dateTime.weekday(.wide)), isToday: isToday, minutes: minutes))
             }
         }
         .frame(height: maxBar + 48, alignment: .bottom)
@@ -414,6 +418,11 @@ private struct WeekBars: View {
 
     private func weekday(_ day: Date) -> String {
         calendar.shortWeekdaySymbols[calendar.component(.weekday, from: day) - 1]
+    }
+
+    // Spoken label for one day, shared with the month grid
+    static func dayLabel(_ day: String, isToday: Bool, minutes: Int) -> String {
+        isToday ? String(localized: "\(day), today, \(minutes) min") : String(localized: "\(day), \(minutes) min")
     }
 
     // Anything played counts as at least one minute on the bar label
@@ -495,7 +504,7 @@ private struct MonthHeatmap: View {
             )
             .opacity(isFuture ? 0.35 : 1)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(day.formatted(.dateTime.day().month(.wide)))\(isToday ? ", today" : ""), \(WeekBars.minutes(seconds)) min")
+            .accessibilityLabel(WeekBars.dayLabel(day.formatted(.dateTime.day().month(.wide)), isToday: isToday, minutes: WeekBars.minutes(seconds)))
     }
 
     // Neutral grey steps on the row surface, no orange because brightness alone carries the amount
@@ -515,7 +524,7 @@ private struct TempoProgressRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(change.title)
+            Text(change.title.localizedForDisplay)
                 .foregroundColor(Color.textPrimary)
                 .lineLimit(1)
             Spacer()
@@ -534,8 +543,8 @@ private struct TempoProgressRow: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(change.first == change.last
-            ? "\(change.title), \(change.last) BPM"
-            : "\(change.title), from \(change.first) to \(change.last) BPM")
+            ? "\(change.title.localizedForDisplay), \(change.last) BPM"
+            : "\(change.title.localizedForDisplay), from \(change.first) to \(change.last) BPM")
     }
 }
 
@@ -550,7 +559,7 @@ private struct LiveRow: View {
                 .frame(width: 30, height: 30)
                 .background(Circle().fill(Color.surfaceRaised))
             VStack(alignment: .leading, spacing: 2) {
-                Text(session.title)
+                Text(session.title.localizedForDisplay)
                     .foregroundColor(Color.textPrimary)
                 Text(session.duration < 60 ? "Playing now, under a minute" : "Playing now, \(Int(session.duration / 60)) min")
                     .font(.caption)
@@ -578,9 +587,9 @@ private struct SessionRow: View {
                 .frame(width: 30, height: 30)
                 .background(Circle().fill(Color.surfaceRaised))
             VStack(alignment: .leading, spacing: 2) {
-                Text(session.title)
+                Text(session.title.localizedForDisplay)
                     .foregroundColor(Color.textPrimary)
-                Text("\(session.start.formatted(date: .omitted, time: .shortened)) · \(session.detail) · \(session.bpm) BPM")
+                Text("\(session.start.formatted(date: .omitted, time: .shortened)) · \(session.detail.localizedForDisplay) · \(session.bpm) BPM")
                     .font(.caption)
                     .foregroundColor(Color.textSecondary)
                     .lineLimit(1)
@@ -595,7 +604,7 @@ private struct SessionRow: View {
 }
 
 private struct UndoBar: View {
-    let text: String
+    let text: LocalizedStringKey
     let action: () -> Void
 
     var body: some View {

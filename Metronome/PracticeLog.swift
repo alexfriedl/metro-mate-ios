@@ -177,7 +177,12 @@ enum PracticeStats {
             .map { $0 }
     }
 
-    static func pluralized(_ count: Int, _ word: String) -> String {
-        "\(count) \(word)\(count == 1 ? "" : "s")"
+    // Plural forms come from the string catalog, tests pass a language bundle to stay independent of the device language
+    static func days(_ count: Int, bundle: Bundle = .main) -> String {
+        String(localized: "\(count) days", bundle: bundle)
+    }
+
+    static func practiceDays(_ count: Int, bundle: Bundle = .main) -> String {
+        String(localized: "\(count) practice days", bundle: bundle)
     }
 }

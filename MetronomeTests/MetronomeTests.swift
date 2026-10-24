@@ -53,10 +53,23 @@ struct PracticeStatsTests {
         #expect(progress[1].first == progress[1].last)
     }
 
+    private func language(_ code: String) -> Bundle {
+        Bundle(path: Bundle(for: PracticeLog.self).path(forResource: code, ofType: "lproj")!)!
+    }
+
     @Test func pluralUsesSingularForOne() {
-        #expect(PracticeStats.pluralized(1, "day") == "1 day")
-        #expect(PracticeStats.pluralized(2, "day") == "2 days")
-        #expect(PracticeStats.pluralized(0, "day") == "0 days")
+        let english = language("en")
+        #expect(PracticeStats.days(1, bundle: english) == "1 day")
+        #expect(PracticeStats.days(2, bundle: english) == "2 days")
+        #expect(PracticeStats.days(0, bundle: english) == "0 days")
+        #expect(PracticeStats.practiceDays(1, bundle: english) == "1 practice day")
+    }
+
+    @Test func germanPluralFromTheCatalog() {
+        let german = language("de")
+        #expect(PracticeStats.days(1, bundle: german) == "1 Tag")
+        #expect(PracticeStats.days(3, bundle: german) == "3 Tage")
+        #expect(PracticeStats.practiceDays(2, bundle: german) == "2 Übungstage")
     }
 }
 

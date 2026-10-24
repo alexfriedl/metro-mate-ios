@@ -16,8 +16,9 @@ struct KitSound: Identifiable, Equatable {
 
     static func == (lhs: KitSound, rhs: KitSound) -> Bool { lhs.id == rhs.id }
 
-    static func single(_ id: String, _ name: String, _ detail: String, file: String, normal: Float, ghost: Float) -> KitSound {
-        KitSound(id: id, name: name, detail: detail, accent: (file, 1), normal: (file, normal), ghost: (file, ghost))
+    // Built-in sound recorded once and played at three levels, name and detail come from the string catalog
+    static func single(_ id: String, _ name: LocalizedStringResource, _ detail: LocalizedStringResource, file: String, normal: Float, ghost: Float) -> KitSound {
+        KitSound(id: id, name: String(localized: name), detail: String(localized: detail), accent: (file, 1), normal: (file, normal), ghost: (file, ghost))
     }
 }
 
@@ -28,11 +29,11 @@ enum KitVoice: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .snare: return "Snare"
-        case .kick: return "Kick"
-        case .hiHat: return "Hi-hat"
-        case .openHat: return "Open hi-hat"
-        case .pad: return "Practice pad"
+        case .snare: return String(localized: "Snare")
+        case .kick: return String(localized: "Kick")
+        case .hiHat: return String(localized: "Hi-hat")
+        case .openHat: return String(localized: "Open hi-hat")
+        case .pad: return String(localized: "Practice pad")
         }
     }
 
@@ -41,7 +42,7 @@ enum KitVoice: String, CaseIterable, Identifiable {
         case .snare:
             return [
                 .single("snare-14maple5", "14x5 Maple", "Warm classic funk snare", file: "snare-14maple5", normal: 0.62, ghost: 0.18),
-                KitSound(id: "snare-alu", name: "14x8 Aluminium", detail: "Bright and crisp, rimshot accents",
+                KitSound(id: "snare-alu", name: String(localized: "14x8 Aluminium"), detail: String(localized: "Bright and crisp, rimshot accents"),
                          accent: ("snare-accent", 1), normal: ("snare", 0.55), ghost: ("snare-ghost", 0.3)),
                 .single("snare-14maple65", "14x6.5 Maple", "Fuller body, round crack", file: "snare-14maple65", normal: 0.62, ghost: 0.18),
                 .single("snare-14birch", "14x8 Birch", "Deep and punchy", file: "snare-14birch", normal: 0.62, ghost: 0.18),
@@ -52,30 +53,30 @@ enum KitVoice: String, CaseIterable, Identifiable {
             ]
         case .kick:
             return [
-                KitSound(id: "kick-felt", name: "Felt", detail: "Dry and short, soft felt beater",
+                KitSound(id: "kick-felt", name: String(localized: "Felt"), detail: String(localized: "Dry and short, soft felt beater"),
                          accent: ("kick-felt", 1), normal: ("kick-felt", 0.85), ghost: ("kick-felt-soft", 0.7)),
-                KitSound(id: "kick-funk", name: "Funk", detail: "Full and punchy",
+                KitSound(id: "kick-funk", name: String(localized: "Funk"), detail: String(localized: "Full and punchy"),
                          accent: ("kick-accent", 1), normal: ("kick", 0.85), ghost: ("kick-soft", 0.6)),
-                KitSound(id: "kick-natural", name: "Natural", detail: "Close and inside mics, unprocessed",
+                KitSound(id: "kick-natural", name: String(localized: "Natural"), detail: String(localized: "Close and inside mics, unprocessed"),
                          accent: ("kick-natural-accent", 1), normal: ("kick-natural", 0.85), ghost: ("kick-natural-soft", 0.7)),
-                KitSound(id: "kick-room", name: "Room", detail: "Kick heard from the room",
+                KitSound(id: "kick-room", name: String(localized: "Room"), detail: String(localized: "Kick heard from the room"),
                          accent: ("kick-room-accent", 1), normal: ("kick-room", 0.85), ghost: ("kick-room-soft", 0.7)),
-                KitSound(id: "kick-boom", name: "Boom", detail: "Big and open, longer tail",
+                KitSound(id: "kick-boom", name: String(localized: "Boom"), detail: String(localized: "Big and open, longer tail"),
                          accent: ("kick-boom-accent", 1), normal: ("kick-boom", 0.85), ghost: ("kick-boom-soft", 0.7)),
-                KitSound(id: "kick-metal", name: "Tight", detail: "Short with a hard beater click",
+                KitSound(id: "kick-metal", name: String(localized: "Tight"), detail: String(localized: "Short with a hard beater click"),
                          accent: ("kick-tight", 1), normal: ("kick-tight", 0.85), ghost: ("kick-tight", 0.6))
             ]
         case .hiHat:
             return [
-                KitSound(id: "hat-tight", name: "Tight", detail: "Short and clean, played on the side",
+                KitSound(id: "hat-tight", name: String(localized: "Tight"), detail: String(localized: "Short and clean, played on the side"),
                          accent: ("hihat-tight-accent", 0.8), normal: ("hihat-tight", 0.5), ghost: ("hihat-tight-soft", 0.32)),
-                KitSound(id: "hat-bright", name: "Bright", detail: "Tight closed hats in three strengths",
+                KitSound(id: "hat-bright", name: String(localized: "Bright"), detail: String(localized: "Tight closed hats in three strengths"),
                          accent: ("hihat-accent", 0.8), normal: ("hihat", 0.45), ghost: ("hihat-soft", 0.3)),
-                KitSound(id: "hat-overhead", name: "Overhead", detail: "Closed hat with some air around it",
+                KitSound(id: "hat-overhead", name: String(localized: "Overhead"), detail: String(localized: "Closed hat with some air around it"),
                          accent: ("hihat-overhead-accent", 0.8), normal: ("hihat-overhead", 0.5), ghost: ("hihat-overhead-soft", 0.32)),
-                KitSound(id: "hat-half", name: "Half open", detail: "A little wash on every note",
+                KitSound(id: "hat-half", name: String(localized: "Half open"), detail: String(localized: "A little wash on every note"),
                          accent: ("hihat-half-accent", 0.75), normal: ("hihat-half", 0.45), ghost: ("hihat-half-soft", 0.3)),
-                KitSound(id: "hat-sloshy", name: "Sloshy", detail: "Loose and trashy, rock feel",
+                KitSound(id: "hat-sloshy", name: String(localized: "Sloshy"), detail: String(localized: "Loose and trashy, rock feel"),
                          accent: ("hihat-sloshy-accent", 0.7), normal: ("hihat-sloshy", 0.42), ghost: ("hihat-sloshy-soft", 0.28))
             ]
         case .openHat:
@@ -87,12 +88,12 @@ enum KitVoice: String, CaseIterable, Identifiable {
             ]
         case .pad:
             return [
-                KitSound(id: "pad-rubber", name: "Practice pad", detail: "Rubber pad, left hand a touch lower",
+                KitSound(id: "pad-rubber", name: String(localized: "Practice pad"), detail: String(localized: "Rubber pad, left hand a touch lower"),
                          accent: ("pad-right-accent", 0.9), normal: ("pad-right", 0.42), ghost: ("pad-right", 0.3),
                          leftAccent: ("pad-left-accent", 0.9), left: ("pad-left", 0.42)),
-                KitSound(id: "pad-wood", name: "Woodblock", detail: "Clear wooden knock",
+                KitSound(id: "pad-wood", name: String(localized: "Woodblock"), detail: String(localized: "Clear wooden knock"),
                          accent: ("woodblock-accent", 0.9), normal: ("woodblock", 0.5), ghost: ("woodblock", 0.35)),
-                KitSound(id: "pad-claves", name: "Claves", detail: "Bright hardwood click",
+                KitSound(id: "pad-claves", name: String(localized: "Claves"), detail: String(localized: "Bright hardwood click"),
                          accent: ("claves-accent", 0.9), normal: ("claves", 0.5), ghost: ("claves", 0.35))
             ]
         }
@@ -120,7 +121,9 @@ final class DrumKit: ObservableObject {
     func importedSounds(for voice: KitVoice) -> [KitSound] {
         let ghost: Float = voice == .snare ? 0.2 : 0.35
         return (imported[voice] ?? []).map {
-            .single($0.id, $0.name, "Your sound", file: UserSounds.prefix + $0.file, normal: 0.65, ghost: ghost)
+            let file = UserSounds.prefix + $0.file
+            return KitSound(id: $0.id, name: $0.name, detail: String(localized: "Your sound"),
+                            accent: (file, 1), normal: (file, 0.65), ghost: (file, ghost))
         }
     }
 
