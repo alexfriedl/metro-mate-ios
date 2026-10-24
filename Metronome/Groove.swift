@@ -145,7 +145,9 @@ struct Groove: Identifiable {
 
 // Plays a groove sample accurately, drums only
 final class GroovePlayer: ObservableObject {
-    @Published private(set) var isPlaying = false
+    @Published private(set) var isPlaying = false {
+        didSet { ScreenAwake.set("groove", playing: isPlaying) }
+    }
     @Published private(set) var currentStep = -1
     @Published var tempo: Double = 88 {
         didSet {
@@ -166,6 +168,7 @@ final class GroovePlayer: ObservableObject {
     private var nextSample: Double = 0
     private var step = 0
     private var generation = 0
+    private var interruptionObserver: NSObjectProtocol?
 
     init() {
         let sampled: [String: AVAudioPCMBuffer?] = [
@@ -193,6 +196,11 @@ final class GroovePlayer: ObservableObject {
             players.append(player)
         }
         engine.prepare()
+        interruptionObserver = observeAudioInterruptions { [weak self] in self?.stop() }
+    }
+
+    deinit {
+        if let interruptionObserver { NotificationCenter.default.removeObserver(interruptionObserver) }
     }
 
     func play(_ groove: Groove) {
@@ -207,6 +215,8 @@ final class GroovePlayer: ObservableObject {
                 if !engine.isRunning { try engine.start() }
             } catch {
                 print("Failed to start groove engine: \(error)")
+                // Fall back to stopped so the play key and the practice log match what is heard
+                DispatchQueue.main.async { [weak self] in self?.stop() }
                 return
             }
             generation += 1

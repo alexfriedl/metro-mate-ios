@@ -156,7 +156,9 @@ struct BeatPreset: Identifiable, Codable {
 
 class MetronomeManager: ObservableObject {
     static let shared = MetronomeManager()
-    @Published var isPlaying = false
+    @Published var isPlaying = false {
+        didSet { ScreenAwake.set("metronome", playing: isPlaying) }
+    }
     @Published var bpm: Double = 60 {
         didSet {
             syncPattern()
@@ -187,6 +189,7 @@ class MetronomeManager: ObservableObject {
     
     private var clicks: ClickEngine?
     private var isConfigured = false
+    private var interruptionObserver: NSObjectProtocol?
 
     // Beats stamped with the time they are heard, the visuals render from this instead of @Published ticks
     var beatTimeline: BeatTimeline { clicks!.timeline }
@@ -214,6 +217,9 @@ class MetronomeManager: ObservableObject {
         clicks?.onBeat = { [weak self] event in
             self?.currentBeat = event.index
         }
+        // A failed start or a phone call leaves the metronome stopped and closes the practice session
+        clicks?.onStartFailed = { [weak self] in self?.stopIfPlaying() }
+        interruptionObserver = observeAudioInterruptions { [weak self] in self?.stopIfPlaying() }
         isConfigured = true
 
         // Save shortly after the last change, ticks while playing just keep pushing it back
