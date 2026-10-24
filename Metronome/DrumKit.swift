@@ -55,6 +55,12 @@ enum KitVoice: String, CaseIterable, Identifiable {
                          accent: ("kick-felt", 1), normal: ("kick-felt", 0.85), ghost: ("kick-felt-soft", 0.7)),
                 KitSound(id: "kick-funk", name: "Funk", detail: "Full and punchy",
                          accent: ("kick-accent", 1), normal: ("kick", 0.85), ghost: ("kick-soft", 0.6)),
+                KitSound(id: "kick-natural", name: "Natural", detail: "Close and inside mics, unprocessed",
+                         accent: ("kick-natural-accent", 1), normal: ("kick-natural", 0.85), ghost: ("kick-natural-soft", 0.7)),
+                KitSound(id: "kick-room", name: "Room", detail: "Kick heard from the room",
+                         accent: ("kick-room-accent", 1), normal: ("kick-room", 0.85), ghost: ("kick-room-soft", 0.7)),
+                KitSound(id: "kick-boom", name: "Boom", detail: "Big and open, longer tail",
+                         accent: ("kick-boom-accent", 1), normal: ("kick-boom", 0.85), ghost: ("kick-boom-soft", 0.7)),
                 KitSound(id: "kick-metal", name: "Tight", detail: "Short with a hard beater click",
                          accent: ("kick-tight", 1), normal: ("kick-tight", 0.85), ghost: ("kick-tight", 0.6))
             ]
@@ -63,12 +69,20 @@ enum KitVoice: String, CaseIterable, Identifiable {
                 KitSound(id: "hat-tight", name: "Tight", detail: "Short and clean, played on the side",
                          accent: ("hihat-tight-accent", 0.8), normal: ("hihat-tight", 0.5), ghost: ("hihat-tight-soft", 0.32)),
                 KitSound(id: "hat-bright", name: "Bright", detail: "Tight closed hats in three strengths",
-                         accent: ("hihat-accent", 0.8), normal: ("hihat", 0.45), ghost: ("hihat-soft", 0.3))
+                         accent: ("hihat-accent", 0.8), normal: ("hihat", 0.45), ghost: ("hihat-soft", 0.3)),
+                KitSound(id: "hat-overhead", name: "Overhead", detail: "Closed hat with some air around it",
+                         accent: ("hihat-overhead-accent", 0.8), normal: ("hihat-overhead", 0.5), ghost: ("hihat-overhead-soft", 0.32)),
+                KitSound(id: "hat-half", name: "Half open", detail: "A little wash on every note",
+                         accent: ("hihat-half-accent", 0.75), normal: ("hihat-half", 0.45), ghost: ("hihat-half-soft", 0.3)),
+                KitSound(id: "hat-sloshy", name: "Sloshy", detail: "Loose and trashy, rock feel",
+                         accent: ("hihat-sloshy-accent", 0.7), normal: ("hihat-sloshy", 0.42), ghost: ("hihat-sloshy-soft", 0.28))
             ]
         case .openHat:
             return [
                 .single("open-room", "Room", "Open hat with natural room sound", file: "hihat-open-room", normal: 0.55, ghost: 0.45),
-                .single("open-wash", "Wash", "Open hat with a short sizzle", file: "hihat-open", normal: 0.55, ghost: 0.45)
+                .single("open-wash", "Wash", "Open hat with a short sizzle", file: "hihat-open", normal: 0.55, ghost: 0.45),
+                .single("open-long", "Long", "Fully open, long ring", file: "hihat-open-long", normal: 0.5, ghost: 0.4),
+                .single("open-classic", "Classic", "Bright open hat, orchestral recording", file: "hihat-open-classic", normal: 0.55, ghost: 0.45)
             ]
         case .pad:
             return [
@@ -76,7 +90,9 @@ enum KitVoice: String, CaseIterable, Identifiable {
                          accent: ("pad-right-accent", 0.9), normal: ("pad-right", 0.42), ghost: ("pad-right", 0.3),
                          leftAccent: ("pad-left-accent", 0.9), left: ("pad-left", 0.42)),
                 KitSound(id: "pad-wood", name: "Woodblock", detail: "Clear wooden knock",
-                         accent: ("woodblock-accent", 0.9), normal: ("woodblock", 0.5), ghost: ("woodblock", 0.35))
+                         accent: ("woodblock-accent", 0.9), normal: ("woodblock", 0.5), ghost: ("woodblock", 0.35)),
+                KitSound(id: "pad-claves", name: "Claves", detail: "Bright hardwood click",
+                         accent: ("claves-accent", 0.9), normal: ("claves", 0.5), ghost: ("claves", 0.35))
             ]
         }
     }

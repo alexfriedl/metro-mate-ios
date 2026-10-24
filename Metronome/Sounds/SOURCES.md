@@ -8,4 +8,5 @@ All samples in this folder are public domain (CC0 1.0). They were trimmed, faded
 - Kick and hi-hat (`kick*.wav`, `hihat*.wav`, kick EQed and shortened for a tight punchy attack): Virtuosity Drums by Versilian Studios and Karoryfer Samples. https://github.com/sfzinstruments/virtuosity_drums
 - Felt kick (`kick-felt*.wav`): Virtuosity Drums kick and close microphones, shortened and EQed toward a dry felt beater sound.
 - Tight hi-hat (`hihat-tight*.wav`): Versilian Community Sample Library hi-hat, shortened. Room open hat (`hihat-open-room.wav`): Virtuosity Drums overhead microphone.
+- More kicks and hi-hats (`kick-natural*`, `kick-room*`, `kick-boom*`, `hihat-overhead*`, `hihat-half*`, `hihat-sloshy*`, `hihat-open-long`): Virtuosity Drums, separate recordings per strength. `hihat-open-classic`: Versilian Community Sample Library.
 - Woodblock, claves, cowbell, shaker: Versilian Community Sample Library (VCSL) by Versilian Studios. https://github.com/sgossner/VCSL

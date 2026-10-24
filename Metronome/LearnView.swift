@@ -109,14 +109,14 @@ struct GroovePager: View {
             Spacer(minLength: 24)
 
             VStack(spacing: 22) {
-                // Tempo is secondary here, one slim row with the target chip beside it
-                HStack(spacing: 12) {
+                // Tempo is secondary here, a slim row; the target only shows up once you move away from it
+                VStack(spacing: 6) {
                     BPMControl(bpm: $player.tempo, range: 10...240, compact: true)
                     TargetTempoChip(target: groove.tempo, current: Int(player.tempo.rounded())) {
                         player.tempo = Double(groove.tempo)
                     }
+                    .opacity(Int(player.tempo.rounded()) == groove.tempo ? 0 : 1)
                 }
-                .padding(.horizontal, 20)
 
                 HStack(spacing: 20) {
                     StepButton(symbol: "backward.end.fill", label: "Previous groove", enabled: index > 0) { step(-1) }
@@ -442,23 +442,16 @@ private struct TargetTempoChip: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             action()
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: current == target ? "checkmark" : "arrow.uturn.backward")
-                    .font(.system(size: 11, weight: .semibold))
-                Text("Target \(target) BPM")
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-            }
-            .foregroundColor(current == target ? Color.textSecondary : Color.textPrimary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Capsule().fill(Color.surface))
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
+            Text("Target \(target) · Reset")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color.textSecondary)
+                .frame(minHeight: 28)
+                .padding(.horizontal, 12)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(current == target)
-        .accessibilityLabel("Target \(target) BPM")
-        .accessibilityHint(current == target ? "" : "Sets the tempo back to the target")
+        .accessibilityLabel("Back to target tempo \(target) BPM")
     }
 }
 

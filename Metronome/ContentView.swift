@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 struct ContentView: View {
     @StateObject private var metronome = MetronomeManager.shared
@@ -786,7 +787,9 @@ struct KitSoundList: View {
                     Button {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         kit.select(sound, for: voice)
-                        playExample()
+                        // Tap plays the single hit, the example button below plays it in a groove
+                        player.stop()
+                        previewHit(sound)
                     } label: {
                         SoundRow(title: sound.name, detail: sound.detail, isSelected: kit.sound(for: voice) == sound)
                     }
@@ -794,7 +797,7 @@ struct KitSoundList: View {
                     .listRowBackground(Color.surface)
                 }
             } footer: {
-                Text("Tap a sound to hear it in \(example.title).")
+                Text("Tap a sound to hear it, play the example to hear it in \(example.title).")
                     .foregroundColor(Color.textSecondary)
             }
 
@@ -814,6 +817,16 @@ struct KitSoundList: View {
         .navigationTitle(voice.title)
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear { player.stop() }
+    }
+
+    @State private var hitPlayer: AVAudioPlayer?
+
+    private func previewHit(_ sound: KitSound) {
+        guard let url = Bundle.main.url(forResource: sound.accent.file, withExtension: "wav") else { return }
+        try? AVAudioSession.sharedInstance().setActive(true)
+        hitPlayer = try? AVAudioPlayer(contentsOf: url)
+        hitPlayer?.volume = sound.accent.gain * Float(MetronomeManager.shared.volume)
+        hitPlayer?.play()
     }
 
     private func playExample() {
