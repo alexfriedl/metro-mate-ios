@@ -1,77 +1,23 @@
 import SwiftUI
 
-// Level 1: categories, each opens the groove player for that category in its own sheet
+// Learn opens straight into the groove player at the last groove, the title opens the picker
 struct LearnView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var player = GroovePlayer()
-    @State private var category: GrooveCategory?
 
     var body: some View {
+        let category = GroovePager.lastCategory
         NavigationView {
-            List {
-                Section {
-                    ForEach(GrooveCategory.allCases) { item in
-                        Button {
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            category = item
-                        } label: {
-                            HStack(spacing: 14) {
-                                Image(systemName: item.symbol)
-                                    .font(.system(size: 17, weight: .medium))
-                                    .foregroundColor(Color.textPrimary)
-                                    .frame(width: 36, height: 36)
-                                    .background(Circle().fill(Color.surfaceRaised))
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(item.title)
-                                        .foregroundColor(Color.textPrimary)
-                                    Text(item.subtitle)
-                                        .font(.caption)
-                                        .foregroundColor(Color.textSecondary)
-                                        .lineLimit(2)
-                                }
-                                Spacer()
-                                Text("\(item.grooves.count)")
-                                    .font(.system(size: 13, weight: .medium, design: .monospaced))
-                                    .foregroundColor(Color.textSecondary)
-                            }
-                            .padding(.vertical, 4)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .listRowBackground(Color.surface)
+            GroovePager(category: category, player: player, index: GroovePager.lastIndex(in: category))
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") { dismiss() }
+                            .foregroundColor(Color.textPrimary)
                     }
-                } footer: {
-                    Text("\(Groove.library.count) grooves and exercises. Start slow, speed up only when it feels effortless.")
-                        .foregroundColor(Color.textSecondary)
                 }
-            }
-            .scrollContentBackground(.hidden)
-            .background(Color.ground)
-            .navigationTitle("Learn")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(Color.textPrimary)
-                }
-            }
         }
         .navigationViewStyle(.stack)
         .preferredColorScheme(.dark)
-        .sheet(item: $category, onDismiss: { player.stop() }) { item in
-            NavigationView {
-                GroovePager(category: item, player: player, index: GroovePager.lastIndex(in: item))
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("Done") { category = nil }
-                                .foregroundColor(Color.textPrimary)
-                        }
-                    }
-            }
-            .navigationViewStyle(.stack)
-            .preferredColorScheme(.dark)
-        }
         .onDisappear { player.stop() }
     }
 }
@@ -102,6 +48,7 @@ struct GroovePager: View {
     @State private var cursor: Int?
     @State private var isScrubbing = false
     @State private var resumeAfterScrub = false
+    @State private var showPicker = false
     @State private var loopRange: ClosedRange<Int>?
     @State private var loopOn = false
 
@@ -234,6 +181,12 @@ struct GroovePager: View {
         .onChange(of: player.tempo) { tempo in
             GrooveTempos.save(tempo, for: groove)
         }
+        .sheet(isPresented: $showPicker) {
+            GroovePicker(category: category, groove: groove) { item, position in
+                showPicker = false
+                select(category: item, index: position)
+            }
+        }
         .onChange(of: index) { _ in
             rememberPosition()
             cursor = nil
@@ -248,15 +201,10 @@ struct GroovePager: View {
     private var header: some View {
         VStack(spacing: 10) {
             HStack {
-                // Jump to another category straight from the player
-                Menu {
-                    ForEach(GrooveCategory.allCases) { item in
-                        Button {
-                            switchCategory(to: item)
-                        } label: {
-                            Label(item.title, systemImage: item == category ? "checkmark" : item.symbol)
-                        }
-                    }
+                // Category and groove are picked in one sheet
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    showPicker = true
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: category.symbol)
@@ -272,34 +220,17 @@ struct GroovePager: View {
                     .padding(.vertical, 6)
                     .background(Capsule().fill(Color.signal.opacity(0.12)))
                 }
-                .accessibilityLabel("Category \(category.title), change category")
+                .accessibilityLabel("Category \(category.title), choose category and groove")
                 Spacer()
                 Text("\(index + 1) of \(grooves.count)")
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
                     .foregroundColor(Color.textSecondary)
             }
 
-            // The title doubles as the groove list of this category
-            Menu {
-                ForEach(1...3, id: \.self) { level in
-                    let items = grooves.enumerated().filter { $0.element.level == level }
-                    if !items.isEmpty {
-                        Section(levels[level - 1]) {
-                            ForEach(items, id: \.element.id) { position, item in
-                                Button {
-                                    direction = position > index ? 1 : -1
-                                    withAnimation(.easeOut(duration: 0.25)) { index = position }
-                                } label: {
-                                    if position == index {
-                                        Label("\(item.title) · \(item.tempo) BPM", systemImage: "checkmark")
-                                    } else {
-                                        Text("\(item.title) · \(item.tempo) BPM")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+            // Tapping the title opens the picker with every category and groove
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                showPicker = true
             } label: {
                 HStack(spacing: 8) {
                     Text(groove.title)
@@ -347,18 +278,24 @@ struct GroovePager: View {
         .animation(.easeOut(duration: 0.15), value: index)
     }
 
-    private func switchCategory(to item: GrooveCategory) {
-        guard item != category else { return }
+    private func select(category item: GrooveCategory, index position: Int) {
+        guard item != category || position != index else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         let wasPlaying = player.isPlaying
-        direction = 1
+        let sameCategory = item == category
+        direction = position >= index || !sameCategory ? 1 : -1
         withAnimation(.easeOut(duration: 0.25)) {
             category = item
-            index = Self.lastIndex(in: item)
+            index = position
         }
-        rememberPosition()
-        player.tempo = savedTempo(for: groove)
-        if wasPlaying { player.play(groove) }
+        if !sameCategory {
+            // Index may not change when the category does, so do the groove change work here
+            rememberPosition()
+            cursor = nil
+            restoreLoop()
+            player.tempo = savedTempo(for: groove)
+            if wasPlaying { player.play(groove) }
+        }
     }
 
     // Loop part and switch are remembered per groove; a change restarts playback from the left edge of the loop
@@ -419,6 +356,10 @@ struct GroovePager: View {
         GrooveTempos.saved(for: groove) ?? Double(groove.tempo)
     }
 
+    static var lastCategory: GrooveCategory {
+        GrooveCategory(rawValue: UserDefaults.standard.string(forKey: "lastCategory") ?? "") ?? .classics
+    }
+
     static func lastIndex(in category: GrooveCategory) -> Int {
         let last = UserDefaults.standard.dictionary(forKey: "lastGroove") as? [String: String] ?? [:]
         return category.grooves.firstIndex { $0.id == last[category.rawValue] } ?? 0
@@ -428,6 +369,7 @@ struct GroovePager: View {
         var last = UserDefaults.standard.dictionary(forKey: "lastGroove") as? [String: String] ?? [:]
         last[category.rawValue] = groove.id
         UserDefaults.standard.set(last, forKey: "lastGroove")
+        UserDefaults.standard.set(category.rawValue, forKey: "lastCategory")
     }
 
     private func step(_ delta: Int) {
@@ -794,5 +736,74 @@ private struct LoopControl: View {
             .fill(Color.textPrimary)
             .frame(width: 28, height: 28)
             .overlay(Circle().stroke(Color.signal, lineWidth: 2))
+    }
+}
+
+// One list of every category and groove, opened from the player title, scrolled to the current groove
+private struct GroovePicker: View {
+    let category: GrooveCategory
+    let groove: Groove
+    let onSelect: (GrooveCategory, Int) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            ScrollViewReader { proxy in
+                List {
+                    ForEach(GrooveCategory.allCases) { item in
+                        Section {
+                            ForEach(Array(item.grooves.enumerated()), id: \.element.id) { position, entry in
+                                Button {
+                                    onSelect(item, position)
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        LevelBadge(level: entry.level)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(entry.title)
+                                                .foregroundColor(Color.textPrimary)
+                                            Text(entry.focus)
+                                                .font(.caption)
+                                                .foregroundColor(Color.textSecondary)
+                                                .lineLimit(1)
+                                        }
+                                        Spacer()
+                                        if entry.id == groove.id {
+                                            Image(systemName: "checkmark")
+                                                .foregroundColor(Color.signal)
+                                        } else {
+                                            Text("\(entry.tempo) BPM")
+                                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                                .foregroundColor(Color.textSecondary)
+                                        }
+                                    }
+                                    .padding(.vertical, 2)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .listRowBackground(Color.surface)
+                                .id(entry.id)
+                            }
+                        } header: {
+                            Label(item.title, systemImage: item.symbol)
+                        }
+                    }
+                }
+                .scrollContentBackground(.hidden)
+                .background(Color.ground)
+                .onAppear { proxy.scrollTo(groove.id, anchor: .center) }
+            }
+            .navigationTitle("Choose a groove")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(Color.textPrimary)
+                }
+            }
+        }
+        .navigationViewStyle(.stack)
+        .preferredColorScheme(.dark)
     }
 }
