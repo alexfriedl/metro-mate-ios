@@ -165,6 +165,7 @@ struct GroovePager: View {
     @State private var dragOffset: CGFloat = 0
     @State private var cursor: Int?
     @State private var isScrubbing = false
+    @State private var resumeAfterScrub = false
     @State private var loopRange: ClosedRange<Int>?
     @State private var loopOn = false
 
@@ -194,7 +195,7 @@ struct GroovePager: View {
                         cursor: cursor,
                         loop: loop,
                         onScrub: scrub,
-                        onScrubEnd: { DispatchQueue.main.async { isScrubbing = false } }
+                        onScrubEnd: endScrub
                     )
 
                     LoopControl(groove: groove, range: $loopRange, isOn: $loopOn, cursor: cursor,
@@ -418,11 +419,33 @@ struct GroovePager: View {
     }
 
     private func scrub(to step: Int) {
-        isScrubbing = true
+        if !isScrubbing {
+            // Touching the grid freezes a running groove, releasing picks it up at that column
+            isScrubbing = true
+            resumeAfterScrub = player.isPlaying
+            player.freeze()
+            cursor = step
+            UISelectionFeedbackGenerator().selectionChanged()
+            player.audition(groove, step: step)
+            return
+        }
         guard step != cursor else { return }
         cursor = step
         UISelectionFeedbackGenerator().selectionChanged()
         player.audition(groove, step: step)
+    }
+
+    private func endScrub() {
+        if let cursor {
+            // Releasing always plays on from this column, a stopped groove starts here
+            if resumeAfterScrub {
+                player.resume(from: cursor)
+            } else {
+                player.play(groove, from: cursor)
+            }
+        }
+        resumeAfterScrub = false
+        DispatchQueue.main.async { isScrubbing = false }
     }
 
     private func savedTempo(for groove: Groove) -> Double {

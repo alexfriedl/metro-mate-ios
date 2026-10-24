@@ -241,7 +241,7 @@ final class GroovePlayer: ObservableObject {
         if let interruptionObserver { NotificationCenter.default.removeObserver(interruptionObserver) }
     }
 
-    func play(_ groove: Groove) {
+    func play(_ groove: Groove, from index: Int = 0) {
         MetronomeManager.shared.stopIfPlaying()
         PracticeLog.shared.begin(.groove, title: groove.title, detail: groove.category.title, bpm: Int(tempo))
         isPlaying = true
@@ -257,18 +257,48 @@ final class GroovePlayer: ObservableObject {
                 DispatchQueue.main.async { [weak self] in self?.stop() }
                 return
             }
-            generation += 1
-            players.forEach { $0.stop(); $0.play() }
-            nextSample = 0.05 * format.sampleRate
-            step = 0
-            scheduleAhead()
-            let source = DispatchSource.makeTimerSource(queue: queue)
-            source.schedule(deadline: .now() + .milliseconds(20), repeating: .milliseconds(20), leeway: .milliseconds(5))
-            source.setEventHandler { [weak self] in self?.scheduleAhead() }
-            source.resume()
-            timer?.cancel()
-            timer = source
+            startTransport(from: index)
         }
+    }
+
+    // Holds the groove still while scrubbing, the practice session keeps running
+    func freeze() {
+        guard isPlaying else { return }
+        queue.async { [self] in
+            generation += 1
+            timer?.cancel()
+            timer = nil
+            players.forEach { $0.stop() }
+        }
+    }
+
+    // Picks the groove up again at a column, inside the loop when one is set
+    func resume(from index: Int) {
+        guard isPlaying else { return }
+        currentStep = index
+        queue.async { [self] in
+            if !engine.isRunning { try? engine.start() }
+            startTransport(from: index)
+        }
+    }
+
+    // Only call on `queue`
+    private func startTransport(from index: Int) {
+        generation += 1
+        players.forEach { $0.stop(); $0.play() }
+        nextSample = 0.03 * format.sampleRate
+        if let loop = pendingLoop {
+            step = loop.contains(index) ? index - loop.lowerBound : 0
+        } else {
+            step = index
+        }
+        scheduleAhead()
+        let source = DispatchSource.makeTimerSource(queue: queue)
+        source.schedule(deadline: .now() + .milliseconds(20), repeating: .milliseconds(20), leeway: .milliseconds(5))
+        source.setEventHandler { [weak self] in self?.scheduleAhead() }
+        source.resume()
+        timer?.cancel()
+        timer = source
     }
 
     func stop() {
