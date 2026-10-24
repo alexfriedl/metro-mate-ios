@@ -162,6 +162,8 @@ struct GroovePager: View {
     @State var category: GrooveCategory
     @ObservedObject var player: GroovePlayer
     @State var index: Int
+    @State private var direction = 1
+    @State private var dragOffset: CGFloat = 0
 
     private var grooves: [Groove] { category.grooves }
     private var groove: Groove { grooves[index] }
@@ -172,33 +174,25 @@ struct GroovePager: View {
             VStack(spacing: 22) {
                 header
 
-                // Only the notation pages, the controls stay put underneath
-                TabView(selection: $index) {
-                    ForEach(Array(grooves.enumerated()), id: \.element.id) { position, item in
-                        VStack(spacing: 16) {
-                            Text(item.focus)
-                                .font(.subheadline)
-                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
-                                .multilineTextAlignment(.center)
-                                .frame(maxWidth: .infinity)
-                                .padding(.horizontal, 24)
-                            DrumGrid(groove: item, currentStep: player.isPlaying && position == index ? player.currentStep : -1)
-                            Spacer(minLength: 0)
-                        }
-                        .tag(position)
-                    }
+                // The notation follows the finger while swiping and slides out in the swipe direction
+                VStack(spacing: 16) {
+                    Text(groove.focus)
+                        .font(.subheadline)
+                        .foregroundColor(Color(hex: "#DDDDDD").opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 24)
+                    DrumGrid(groove: groove, currentStep: player.isPlaying ? player.currentStep : -1)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(height: 210)
+                .frame(minHeight: 190, alignment: .top)
+                .id(groove.id)
+                .transition(.asymmetric(
+                    insertion: .move(edge: direction > 0 ? .trailing : .leading).combined(with: .opacity),
+                    removal: .move(edge: direction > 0 ? .leading : .trailing).combined(with: .opacity)
+                ))
+                .offset(x: dragOffset)
 
                 BPMControl(bpm: $player.tempo, range: 10...240)
-
-                Picker("Click", selection: $player.clickInBackground) {
-                    Text("Click in background").tag(true)
-                    Text("Click off").tag(false)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 24)
 
                 HStack(spacing: 28) {
                     StepButton(symbol: "backward.fill", label: "Previous groove", enabled: index > 0) { step(-1) }
@@ -223,6 +217,28 @@ struct GroovePager: View {
             .padding(.vertical, 16)
         }
         .background(Color(hex: "#1C1C1B").ignoresSafeArea())
+        .clipped()
+        // Swipe anywhere in the sheet, horizontal only so the tempo wheel and scrolling keep working
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 20)
+                .onChanged { value in
+                    let horizontal = value.translation.width
+                    guard abs(horizontal) > abs(value.translation.height) * 1.3 else { return }
+                    let atEdge = (horizontal > 0 && index == 0) || (horizontal < 0 && index == grooves.count - 1)
+                    dragOffset = atEdge ? horizontal * 0.25 : horizontal * 0.6
+                }
+                .onEnded { value in
+                    let horizontal = value.translation.width
+                    let predicted = value.predictedEndTranslation.width
+                    let isSwipe = abs(horizontal) > abs(value.translation.height) * 1.3 && (abs(horizontal) > 70 || abs(predicted) > 160)
+                    if isSwipe {
+                        dragOffset = 0
+                        step(horizontal < 0 ? 1 : -1)
+                    } else {
+                        withAnimation(.interpolatingSpring(stiffness: 300, damping: 26)) { dragOffset = 0 }
+                    }
+                }
+        )
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { player.tempo = savedTempo(for: groove) }
         .onDisappear { player.stop() }
@@ -296,7 +312,10 @@ struct GroovePager: View {
                         .fill(position == index ? Color(hex: "#F54206") : Color(hex: "#DDDDDD").opacity(position < index ? 0.45 : 0.15))
                         .frame(height: 4)
                         .contentShape(Rectangle().inset(by: -10))
-                        .onTapGesture { withAnimation(.easeOut(duration: 0.2)) { index = position } }
+                        .onTapGesture {
+                            direction = position > index ? 1 : -1
+                            withAnimation(.easeOut(duration: 0.2)) { index = position }
+                        }
                 }
             }
             .accessibilityElement()
@@ -310,8 +329,11 @@ struct GroovePager: View {
         guard item != category else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         let wasPlaying = player.isPlaying
-        category = item
-        index = 0
+        direction = 1
+        withAnimation(.easeOut(duration: 0.25)) {
+            category = item
+            index = 0
+        }
         player.tempo = savedTempo(for: groove)
         if wasPlaying { player.play(groove) }
     }
@@ -321,9 +343,13 @@ struct GroovePager: View {
         return tempos[groove.id] ?? Double(groove.tempo)
     }
 
-    private func step(_ direction: Int) {
-        let target = index + direction
-        guard grooves.indices.contains(target) else { return }
+    private func step(_ delta: Int) {
+        let target = index + delta
+        guard grooves.indices.contains(target) else {
+            UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.5)
+            return
+        }
+        direction = delta
         withAnimation(.easeOut(duration: 0.25)) { index = target }
     }
 }
@@ -364,17 +390,24 @@ private struct DrumGrid: View {
                     .font(.system(size: 11, weight: step % groove.stepsPerBeat == 0 ? .bold : .regular, design: .monospaced))
                     .foregroundColor(Color(hex: "#DDDDDD").opacity(step % groove.stepsPerBeat == 0 ? 0.9 : 0.45))
             }
-            if !groove.sticking.isEmpty {
-                row(label: "") { step in
-                    let letter = String(Array(groove.sticking)[step])
-                    Text(letter)
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundColor(letter == "K" ? Color(hex: "#F54206") : Color(hex: "#DDDDDD"))
+            if groove.sticking.isEmpty {
+                ForEach(DrumVoice.allCases.filter { groove.uses($0) }, id: \.self) { voice in
+                    row(label: voice.label) { step in
+                        NoteCell(hit: groove.hit(voice, at: step), voice: voice, isCurrent: step == currentStep)
+                    }
                 }
-            }
-            ForEach(DrumVoice.allCases.filter { groove.uses($0) }, id: \.self) { voice in
-                row(label: voice.label) { step in
-                    NoteCell(hit: groove.hit(voice, at: step), voice: voice, isCurrent: step == currentStep)
+            } else {
+                // Sticking exercises get one row per hand, so you see at a glance which hand plays
+                ForEach(["R", "L"], id: \.self) { hand in
+                    row(label: hand) { step in
+                        NoteCell(hit: groove.hand(at: step) == Character(hand) ? groove.hit(.snare, at: step) : nil,
+                                 voice: .snare, isCurrent: step == currentStep)
+                    }
+                }
+                if groove.uses(.kick) {
+                    row(label: "K") { step in
+                        NoteCell(hit: groove.hit(.kick, at: step), voice: .kick, isCurrent: step == currentStep)
+                    }
                 }
             }
         }

@@ -119,6 +119,13 @@ struct Groove: Identifiable {
         }
     }
 
+    // R or L when the step is played by a hand in a sticking exercise
+    func hand(at step: Int) -> Character? {
+        guard !sticking.isEmpty, step < sticking.count else { return nil }
+        let letter = Array(sticking)[step]
+        return letter == "R" || letter == "L" ? letter : nil
+    }
+
     func uses(_ voice: DrumVoice) -> Bool {
         line(for: voice).contains { $0 != "-" }
     }
@@ -136,7 +143,7 @@ struct Groove: Identifiable {
     }
 }
 
-// Plays a groove sample accurately, with the metronome click quietly underneath or muted
+// Plays a groove sample accurately, drums only
 final class GroovePlayer: ObservableObject {
     @Published private(set) var isPlaying = false
     @Published private(set) var currentStep = -1
@@ -146,13 +153,6 @@ final class GroovePlayer: ObservableObject {
             if isPlaying { PracticeLog.shared.updateTempo(Int(tempo)) }
         }
     }
-    @Published var clickInBackground = UserDefaults.standard.bool(forKey: "learnClick") {
-        didSet {
-            UserDefaults.standard.set(clickInBackground, forKey: "learnClick")
-            queue.async { [self] in pendingClick = clickInBackground }
-        }
-    }
-
     private let engine = AVAudioEngine()
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2)!
     private var players: [AVAudioPlayerNode] = []
@@ -162,17 +162,12 @@ final class GroovePlayer: ObservableObject {
     // Scheduler state, only touched on `queue`
     private var groove: Groove?
     private var pendingTempo: Double = 88
-    private var pendingClick = UserDefaults.standard.bool(forKey: "learnClick")
     private var timer: DispatchSourceTimer?
     private var nextSample: Double = 0
     private var step = 0
     private var generation = 0
 
     init() {
-        let synthesized: [String: AVAudioPCMBuffer] = [
-            "click": Synth.beep(frequency: 1320, gain: 0.22, format: format),
-            "clickOne": Synth.beep(frequency: 1760, gain: 0.3, format: format)
-        ]
         let sampled: [String: AVAudioPCMBuffer?] = [
             // Each dynamic is its own recorded stroke, so accents sound harder, not just louder
             "hat": Synth.sample("hihat", gain: 0.45, format: format),
@@ -182,9 +177,14 @@ final class GroovePlayer: ObservableObject {
             "snareAccent": Synth.sample("snare-accent", gain: 1.0, format: format),
             "ghost": Synth.sample("snare-ghost", gain: 0.3, format: format),
             "kick": Synth.sample("kick", gain: 1.0, format: format),
-            "kickFeather": Synth.sample("kick-soft", gain: 0.45, format: format)
+            "kickFeather": Synth.sample("kick-soft", gain: 0.45, format: format),
+            // Hand exercises sound like a practice pad, the left hand a touch lower so both hands are told apart
+            "right": Synth.sample("pad-right", gain: 0.45, format: format),
+            "rightAccent": Synth.sample("pad-right", gain: 1.0, format: format),
+            "left": Synth.sample("pad-left", gain: 0.45, format: format),
+            "leftAccent": Synth.sample("pad-left", gain: 1.0, format: format)
         ]
-        buffers = synthesized.merging(sampled.compactMapValues { $0 }) { first, _ in first }
+        buffers = sampled.compactMapValues { $0 }
         // One node per voice so overlapping hits never queue behind each other
         for _ in 0..<4 {
             let player = AVAudioPlayerNode()
@@ -260,16 +260,20 @@ final class GroovePlayer: ObservableObject {
             case .some: schedule("hat", on: 0, at: when)
             case nil: break
             }
+            if let hand = groove.hand(at: index) {
+                let accented = groove.hit(.snare, at: index) == .accent
+                schedule(hand == "R" ? (accented ? "rightAccent" : "right") : (accented ? "leftAccent" : "left"), on: 1, at: when)
+            } else {
             switch groove.hit(.snare, at: index) {
             case .ghost: schedule("ghost", on: 1, at: when)
             case .accent: schedule("snareAccent", on: 1, at: when)
             case .some: schedule("snare", on: 1, at: when)
             case nil: break
             }
+            }
             if groove.hit(.kick, at: index) != nil {
                 schedule(groove.category == .hands ? "kickFeather" : "kick", on: 2, at: when)
             }
-            if pendingClick && index % groove.stepsPerBeat == 0 { schedule(index == 0 ? "clickOne" : "click", on: 3, at: when) }
 
             let host: CFTimeInterval
             if let nodeTime = reference.nodeTime(forPlayerTime: when), nodeTime.isHostTimeValid {
