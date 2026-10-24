@@ -4,7 +4,7 @@ import UIKit
 // Tempo wheel: drag the number like a detented dial, one BPM per notch, with stepper buttons either side
 struct BPMControl: View {
     @Binding var bpm: Double
-    var range: ClosedRange<Int> = 40...200
+    var range: ClosedRange<Int> = 1...300
 
     @State private var dragStart: Double?
     @State private var dragValue: Double?

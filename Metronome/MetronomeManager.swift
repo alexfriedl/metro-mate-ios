@@ -493,7 +493,7 @@ class MetronomeManager: ObservableObject {
             let newBPM = 60.0 / averageInterval
             
             // Clamp BPM to reasonable range
-            bpm = min(max(newBPM, 40), 200)
+            bpm = min(max(newBPM, 1), 300)
         }
         
         // Clear tap count after 3 seconds of no tapping

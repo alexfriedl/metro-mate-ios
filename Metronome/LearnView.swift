@@ -191,7 +191,7 @@ struct GroovePager: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .frame(height: 210)
 
-                BPMControl(bpm: $player.tempo, range: 40...160)
+                BPMControl(bpm: $player.tempo, range: 10...240)
 
                 Picker("Click", selection: $player.clickInBackground) {
                     Text("Click in background").tag(true)
