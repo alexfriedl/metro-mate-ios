@@ -180,6 +180,13 @@ class MetronomeManager: ObservableObject {
     @Published var accentPattern: [Bool] = Array(repeating: false, count: 16) { didSet { syncPattern() } }
     @Published var gridSize = 4
     @Published var noteValue: NoteValue = .eighth { didSet { syncPattern() } }
+    // App volume on top of the system volume, shared by metronome and learn player
+    @Published var volume: Double = UserDefaults.standard.object(forKey: "volume") as? Double ?? 1 {
+        didSet {
+            UserDefaults.standard.set(volume, forKey: "volume")
+            clicks?.setVolume(Float(volume))
+        }
+    }
     @Published var clickSound: ClickSound = ClickSound(rawValue: UserDefaults.standard.string(forKey: "clickSound") ?? "") ?? .classic {
         didSet {
             UserDefaults.standard.set(clickSound.rawValue, forKey: "clickSound")
@@ -223,6 +230,7 @@ class MetronomeManager: ObservableObject {
         restorePresets()
         restoreState()
         clicks = ClickEngine(pattern: clickPattern, sound: clickSound)
+        clicks?.setVolume(Float(volume))
         clicks?.onBeat = { [weak self] event in
             self?.currentBeat = event.index
         }
