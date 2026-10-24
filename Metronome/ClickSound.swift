@@ -81,7 +81,10 @@ enum Synth {
         guard let url, let file = try? AVAudioFile(forReading: url),
               file.processingFormat.sampleRate == format.sampleRate,
               let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(file.length)),
-              (try? file.read(into: buffer)) != nil else { return nil }
+              (try? file.read(into: buffer)) != nil else {
+            assertionFailure("Sample \(name) could not be loaded")
+            return nil
+        }
         for channel in 0..<Int(format.channelCount) {
             guard let data = buffer.floatChannelData?[channel] else { continue }
             for frame in 0..<Int(buffer.frameLength) { data[frame] *= gain }

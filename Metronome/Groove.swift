@@ -17,29 +17,107 @@ enum DrumHit {
     case normal, accent, ghost, open
 }
 
-// Original funk exercises written for Metro Mate, one bar of sixteenths each
+enum GrooveCategory: String, CaseIterable, Identifiable {
+    case foundations, funk, linear, hiHat, kick, shuffle, hands
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .foundations: return "Foundations"
+        case .funk: return "Funk & Ghost Notes"
+        case .linear: return "Linear Grooves"
+        case .hiHat: return "Hi-Hat Work"
+        case .kick: return "Kick Independence"
+        case .shuffle: return "Shuffle & Triplets"
+        case .hands: return "Accent Studies"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .foundations: return "Rock, pop and four on the floor"
+        case .funk: return "Sixteenth feels with quiet ghost notes"
+        case .linear: return "One limb at a time, never two together"
+        case .hiHat: return "Accents and open hats on the right hand"
+        case .kick: return "Kick patterns against a steady top"
+        case .shuffle: return "Triplet grid, swing and half-time shuffle"
+        case .hands: return "Snare accent exercises over a feathered kick"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .foundations: return "square.stack.3d.up"
+        case .funk: return "waveform"
+        case .linear: return "arrow.right"
+        case .hiHat: return "sparkles"
+        case .kick: return "circle.circle"
+        case .shuffle: return "music.note"
+        case .hands: return "hand.raised"
+        }
+    }
+
+    var grooves: [Groove] { Groove.library.filter { $0.category == self } }
+}
+
+// Original grooves and exercises written for Metro Mate, one bar each
 struct Groove: Identifiable {
     let id: String
+    let category: GrooveCategory
     let title: String
     let level: Int
     let focus: String
     let tempo: Int
-    // One character per sixteenth: x hit, X accent, g ghost, o open hi-hat, - rest
+    // One character per step: x hit, X accent, g ghost, o open hi-hat, - rest; 16 steps for sixteenths, 12 for triplets
     let hiHat: String
     let snare: String
     let kick: String
 
-    static let steps = 16
+    var steps: Int { snare.count }
+    var stepsPerBeat: Int { steps / 4 }
+    var isTriplet: Bool { stepsPerBeat == 3 }
+
+    init(_ id: String, _ category: GrooveCategory, _ title: String, level: Int, tempo: Int, focus: String,
+         hiHat: String, snare: String, kick: String) {
+        self.id = id
+        self.category = category
+        self.title = title
+        self.level = level
+        self.tempo = tempo
+        self.focus = focus
+        self.hiHat = hiHat
+        self.snare = snare
+        self.kick = kick
+    }
+
+    // Linear grooves read better as one sequence: K kick, H hat, O open hat, S snare, A accent, G ghost, - rest
+    static func linear(_ id: String, _ title: String, level: Int, tempo: Int, focus: String, sequence: String) -> Groove {
+        func line(_ map: [Character: Character]) -> String {
+            String(sequence.map { map[$0] ?? "-" })
+        }
+        return Groove(id, .linear, title, level: level, tempo: tempo, focus: focus,
+                      hiHat: line(["H": "x", "O": "o"]),
+                      snare: line(["S": "x", "A": "X", "G": "g"]),
+                      kick: line(["K": "x"]))
+    }
+
+    func line(for voice: DrumVoice) -> String {
+        switch voice {
+        case .hiHat: return hiHat
+        case .snare: return snare
+        case .kick: return kick
+        }
+    }
+
+    func uses(_ voice: DrumVoice) -> Bool {
+        line(for: voice).contains { $0 != "-" }
+    }
 
     func hit(_ voice: DrumVoice, at step: Int) -> DrumHit? {
-        let line: String
-        switch voice {
-        case .hiHat: line = hiHat
-        case .snare: line = snare
-        case .kick: line = kick
-        }
-        let index = line.index(line.startIndex, offsetBy: step)
-        switch line[index] {
+        let line = line(for: voice)
+        guard step < line.count else { return nil }
+        switch line[line.index(line.startIndex, offsetBy: step)] {
         case "x": return .normal
         case "X": return .accent
         case "g": return .ghost
@@ -47,45 +125,6 @@ struct Groove: Identifiable {
         default: return nil
         }
     }
-
-    static let library: [Groove] = [
-        Groove(id: "foundation", title: "Sixteenth Foundation", level: 1,
-               focus: "Even sixteenths on the hat, backbeat on 2 and 4",
-               tempo: 84,
-               hiHat: "xxxxxxxxxxxxxxxx",
-               snare: "----X-------X---",
-               kick:  "x-----x---x-----"),
-        Groove(id: "ghost-pocket", title: "Ghost Note Pocket", level: 1,
-               focus: "Quiet ghost notes around a solid backbeat",
-               tempo: 88,
-               hiHat: "x-x-x-x-x-x-x-x-",
-               snare: "--g-X--g-g-gX--g",
-               kick:  "x-----x-x-----x-"),
-        Groove(id: "open-lift", title: "Open Hat Lift", level: 2,
-               focus: "Open the hat on the & of 2 and the a of 4",
-               tempo: 92,
-               hiHat: "xxxxxxoxxxxxxxox",
-               snare: "----X-------X---",
-               kick:  "x-x------xx-----"),
-        Groove(id: "kick-syncopation", title: "Kick Syncopation", level: 2,
-               focus: "Sixteenth note kicks between the hats",
-               tempo: 86,
-               hiHat: "x-x-x-x-x-x-x-x-",
-               snare: "----X--g-g--X--g",
-               kick:  "x--x-xx---x-x--x"),
-        Groove(id: "linear-one", title: "Linear Sixteenths", level: 3,
-               focus: "Never two limbs at once, every note on its own",
-               tempo: 80,
-               hiHat: "-x-x-x--x-x--x--",
-               snare: "--g-X--g---gX--g",
-               kick:  "x-----x--x----x-"),
-        Groove(id: "displaced", title: "Displaced Backbeat", level: 3,
-               focus: "Snare moves off 4 to the a of 3, the bar leans forward",
-               tempo: 90,
-               hiHat: "xxxxxxxxxxxxxxxx",
-               snare: "-g--X-g---gX--g-",
-               kick:  "x--x--x---x--x--")
-    ]
 }
 
 // Plays a groove sample accurately, with the metronome click quietly underneath or muted
@@ -182,14 +221,14 @@ final class GroovePlayer: ObservableObject {
            let playerTime = reference.playerTime(forNodeTime: nodeTime) {
             current = Double(playerTime.sampleTime)
         }
-        let interval = 60.0 / pendingTempo / 4
+        let interval = 60.0 / pendingTempo / Double(groove.stepsPerBeat)
         let latency = engine.outputNode.presentationLatency
         while nextSample < current {
             nextSample += interval * rate
             step += 1
         }
         while nextSample < current + 0.12 * rate {
-            let index = step % Groove.steps
+            let index = step % groove.steps
             let when = AVAudioTime(sampleTime: AVAudioFramePosition(nextSample.rounded()), atRate: rate)
 
             switch groove.hit(.hiHat, at: index) {
@@ -205,7 +244,7 @@ final class GroovePlayer: ObservableObject {
             case nil: break
             }
             if groove.hit(.kick, at: index) != nil { schedule("kick", on: 2, at: when) }
-            if pendingClick && index % 4 == 0 { schedule(index == 0 ? "clickOne" : "click", on: 3, at: when) }
+            if pendingClick && index % groove.stepsPerBeat == 0 { schedule(index == 0 ? "clickOne" : "click", on: 3, at: when) }
 
             let host: CFTimeInterval
             if let nodeTime = reference.nodeTime(forPlayerTime: when), nodeTime.isHostTimeValid {
@@ -229,7 +268,7 @@ final class GroovePlayer: ObservableObject {
     // A hit longer than the step would push every later hit on that voice late, so cut it to fit
     private func schedule(_ name: String, on node: Int, at when: AVAudioTime) {
         guard let source = buffers[name] else { return }
-        let limit = AVAudioFrameCount(60.0 / pendingTempo / 4 * format.sampleRate * 0.95)
+        let limit = AVAudioFrameCount(60.0 / pendingTempo / Double(groove?.stepsPerBeat ?? 4) * format.sampleRate * 0.95)
         var buffer = source
         if source.frameLength > limit {
             let key = "\(name)-\(limit)"

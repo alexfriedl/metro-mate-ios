@@ -1,33 +1,38 @@
 import SwiftUI
 
+// Level 1: categories, each opens its own sheet with the grooves
 struct LearnView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var player = GroovePlayer()
-    @State private var selected: Groove?
+    @State private var category: GrooveCategory?
 
     var body: some View {
         NavigationView {
             List {
                 Section {
-                    ForEach(Groove.library) { groove in
+                    ForEach(GrooveCategory.allCases) { item in
                         Button {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            selected = groove
+                            category = item
                         } label: {
-                            HStack(spacing: 12) {
-                                LevelBadge(level: groove.level)
+                            HStack(spacing: 14) {
+                                Image(systemName: item.symbol)
+                                    .font(.system(size: 17, weight: .medium))
+                                    .foregroundColor(Color(hex: "#F54206"))
+                                    .frame(width: 36, height: 36)
+                                    .background(Circle().fill(Color(hex: "#303030")))
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(groove.title)
+                                    Text(item.title)
                                         .foregroundColor(Color(hex: "#DDDDDD"))
-                                    Text(groove.focus)
+                                    Text(item.subtitle)
                                         .font(.caption)
                                         .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
                                         .lineLimit(2)
                                 }
                                 Spacer()
-                                Image(systemName: "chevron.up")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.4))
+                                Text("\(item.grooves.count)")
+                                    .font(.system(size: 13, weight: .medium, design: .monospaced))
+                                    .foregroundColor(Color(hex: "#DDDDDD").opacity(0.5))
                             }
                             .padding(.vertical, 4)
                             .contentShape(Rectangle())
@@ -36,7 +41,7 @@ struct LearnView: View {
                         .listRowBackground(Color(hex: "#242424"))
                     }
                 } footer: {
-                    Text("Funk grooves for building pocket, ghost notes and linear coordination. Start slow, speed up only when it feels effortless.")
+                    Text("\(Groove.library.count) grooves and exercises. Start slow, speed up only when it feels effortless.")
                         .foregroundColor(Color(hex: "#DDDDDD").opacity(0.5))
                 }
             }
@@ -54,7 +59,71 @@ struct LearnView: View {
         }
         .navigationViewStyle(.stack)
         .preferredColorScheme(.dark)
-        // Each groove opens as its own sheet stacked on top of the list
+        .sheet(item: $category) { item in
+            GrooveListView(category: item, player: player)
+        }
+        .onDisappear { player.stop() }
+    }
+}
+
+// Level 2: all grooves of one category grouped by level, each opens the player sheet
+struct GrooveListView: View {
+    let category: GrooveCategory
+    @ObservedObject var player: GroovePlayer
+    @Environment(\.dismiss) private var dismiss
+    @State private var selected: Groove?
+
+    var body: some View {
+        NavigationView {
+            List {
+                ForEach(1...3, id: \.self) { level in
+                    let grooves = category.grooves.filter { $0.level == level }
+                    if !grooves.isEmpty {
+                        Section(header: Text(["Beginner", "Intermediate", "Advanced"][level - 1])) {
+                            ForEach(grooves) { groove in
+                                Button {
+                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                    selected = groove
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        LevelBadge(level: groove.level)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(groove.title)
+                                                .foregroundColor(Color(hex: "#DDDDDD"))
+                                            Text(groove.focus)
+                                                .font(.caption)
+                                                .foregroundColor(Color(hex: "#DDDDDD").opacity(0.6))
+                                                .lineLimit(2)
+                                        }
+                                        Spacer()
+                                        Text("\(groove.tempo)")
+                                            .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                            .foregroundColor(Color(hex: "#DDDDDD").opacity(0.45))
+                                    }
+                                    .padding(.vertical, 4)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .listRowBackground(Color(hex: "#242424"))
+                            }
+                        }
+                    }
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Color(hex: "#1C1C1B"))
+            .navigationTitle(category.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(Color(hex: "#DDDDDD"))
+                }
+            }
+        }
+        .navigationViewStyle(.stack)
+        .preferredColorScheme(.dark)
         .sheet(item: $selected, onDismiss: { player.stop() }) { groove in
             NavigationView {
                 GrooveDetailView(groove: groove, player: player)
@@ -68,7 +137,6 @@ struct LearnView: View {
             .navigationViewStyle(.stack)
             .preferredColorScheme(.dark)
         }
-        .onDisappear { player.stop() }
     }
 }
 
@@ -141,16 +209,19 @@ private struct DrumGrid: View {
     let groove: Groove
     let currentStep: Int
 
-    private let counts = ["1", "e", "&", "a", "2", "e", "&", "a", "3", "e", "&", "a", "4", "e", "&", "a"]
+    private var counts: [String] {
+        let sub = groove.isTriplet ? ["&", "a"] : ["e", "&", "a"]
+        return (1...4).flatMap { ["\($0)"] + sub }
+    }
 
     var body: some View {
         VStack(spacing: 6) {
             row(label: "") { step in
                 Text(counts[step])
-                    .font(.system(size: 11, weight: step % 4 == 0 ? .bold : .regular, design: .monospaced))
-                    .foregroundColor(Color(hex: "#DDDDDD").opacity(step % 4 == 0 ? 0.9 : 0.45))
+                    .font(.system(size: 11, weight: step % groove.stepsPerBeat == 0 ? .bold : .regular, design: .monospaced))
+                    .foregroundColor(Color(hex: "#DDDDDD").opacity(step % groove.stepsPerBeat == 0 ? 0.9 : 0.45))
             }
-            ForEach(DrumVoice.allCases, id: \.self) { voice in
+            ForEach(DrumVoice.allCases.filter { groove.uses($0) }, id: \.self) { voice in
                 row(label: voice.label) { step in
                     NoteCell(hit: groove.hit(voice, at: step), voice: voice, isCurrent: step == currentStep)
                 }
@@ -165,10 +236,10 @@ private struct DrumGrid: View {
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
                 .foregroundColor(Color(hex: "#DDDDDD").opacity(0.5))
                 .frame(width: 26, alignment: .leading)
-            ForEach(0..<Groove.steps, id: \.self) { step in
+            ForEach(0..<groove.steps, id: \.self) { step in
                 cell(step)
                     .frame(maxWidth: .infinity)
-                    .padding(.leading, step % 4 == 0 && step > 0 ? 4 : 0)
+                    .padding(.leading, step % groove.stepsPerBeat == 0 && step > 0 ? 4 : 0)
             }
         }
     }
