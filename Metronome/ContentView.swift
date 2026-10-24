@@ -340,11 +340,13 @@ struct GridView: View {
                                 impactFeedback.impactOccurred()
                                 metronome.toggleAccentCell(col: beat)
                             }) {
-                                Circle()
-                                    .fill(getAccentColor(for: beat))
-                                    .frame(width: 10, height: 10)
-                                    .frame(width: 40, height: 16) // Same width as tiles
+                                AccentDot(isOn: isAccent(beat), isCurrent: beat == metronome.currentBeat && metronome.isPlaying)
+                                    .frame(width: BeatTile.size, height: 24)
+                                    .contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Accent on step \(beat + 1)")
+                            .accessibilityValue(isAccent(beat) ? "On" : "Off")
                         }
                     }
                 }
@@ -368,15 +370,25 @@ struct GridView: View {
     
     
     
-    private func getAccentColor(for beat: Int) -> Color {
-        if beat < metronome.accentPattern.count && metronome.accentPattern[beat] {
-            if beat == metronome.currentBeat && metronome.isPlaying {
-                return Color.signal // Orange when playing accent
-            } else {
-                return Color.surfaceRaised // Gray accent dots
-            }
+    private func isAccent(_ beat: Int) -> Bool {
+        beat < metronome.accentPattern.count && metronome.accentPattern[beat]
+    }
+}
+
+// Filled when the step is accented, an outline shows where an accent can go
+private struct AccentDot: View {
+    let isOn: Bool
+    let isCurrent: Bool
+
+    var body: some View {
+        if isOn {
+            Circle()
+                .fill(isCurrent ? Color.signal : Color.textSecondary)
+                .frame(width: 10, height: 10)
         } else {
-            return Color.clear
+            Circle()
+                .stroke(Color.textSecondary, lineWidth: 1)
+                .frame(width: 10, height: 10)
         }
     }
 }
@@ -390,6 +402,7 @@ struct SettingsView: View {
             Form {
                 Section("Volume") {
                     VolumeSlider(volume: $metronome.volume)
+                        .listRowBackground(Color.surface)
                 }
 
                 Section("Sound") {
@@ -416,6 +429,7 @@ struct SettingsView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .listRowBackground(Color.surface)
                     }
                 }
 
@@ -428,6 +442,7 @@ struct SettingsView: View {
                     }
                     .foregroundColor(Color.textPrimary)
                     .accentColor(Color.signal)
+                    .listRowBackground(Color.surface)
                 }
             }
             .background(Color.ground)

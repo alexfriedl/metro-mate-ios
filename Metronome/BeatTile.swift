@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct BeatTile: View {
+    static let size: CGFloat = 44
+
     let beat: Int
     @ObservedObject var metronome: MetronomeManager
     let isActive: Bool
@@ -17,7 +19,7 @@ struct BeatTile: View {
             ZStack {
                 Rectangle()
                     .fill(tileColor)
-                    .frame(width: 40, height: 40)
+                    .frame(width: Self.size, height: Self.size)
                     .cornerRadius(4)
                     .scaleEffect(isPressed ? 0.9 : 1.0)
                     .animation(.easeOut(duration: 0.1), value: isPressed)
