@@ -179,10 +179,10 @@ final class GroovePlayer: ObservableObject {
             "kick": Synth.sample("kick", gain: 1.0, format: format),
             "kickFeather": Synth.sample("kick-soft", gain: 0.45, format: format),
             // Hand exercises sound like a practice pad, the left hand a touch lower so both hands are told apart
-            "right": Synth.sample("pad-right", gain: 0.38, format: format),
-            "rightAccent": Synth.sample("pad-right-accent", gain: 1.0, format: format),
-            "left": Synth.sample("pad-left", gain: 0.38, format: format),
-            "leftAccent": Synth.sample("pad-left-accent", gain: 1.0, format: format),
+            "right": Synth.sample("pad-right", gain: 0.42, format: format),
+            "rightAccent": Synth.sample("pad-right-accent", gain: 0.9, format: format),
+            "left": Synth.sample("pad-left", gain: 0.42, format: format),
+            "leftAccent": Synth.sample("pad-left-accent", gain: 0.9, format: format),
             "kickTight": Synth.sample("kick-tight", gain: 0.9, format: format)
         ]
         buffers = sampled.compactMapValues { $0 }
