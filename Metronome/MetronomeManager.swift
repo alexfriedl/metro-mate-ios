@@ -152,6 +152,15 @@ struct BeatPreset: Identifiable, Codable {
     let gridPattern: [Bool]
     let accentPattern: [Bool]
     let gridDisplayMode: GridDisplayMode
+
+    // Loaded means the same pattern by value, the name may differ and the tempo may have moved since
+    func matches(noteValue: NoteValue, beatsPerMeasure: Int, grid: [Bool], accents: [Bool]) -> Bool {
+        guard noteValue == self.noteValue, beatsPerMeasure == self.beatsPerMeasure else { return false }
+        func steps(_ cells: [Bool]) -> [Bool] {
+            (0..<beatsPerMeasure).map { $0 < cells.count && cells[$0] }
+        }
+        return steps(grid) == steps(gridPattern) && steps(accents) == steps(accentPattern)
+    }
 }
 
 class MetronomeManager: ObservableObject {
@@ -645,6 +654,10 @@ class MetronomeManager: ObservableObject {
         restartIfPlaying()
     }
     
+    func isLoaded(_ preset: BeatPreset) -> Bool {
+        preset.matches(noteValue: noteValue, beatsPerMeasure: beatsPerMeasure, grid: gridPattern.first ?? [], accents: accentPattern)
+    }
+
     func deleteBeatPreset(_ preset: BeatPreset) {
         savedBeats.removeAll { $0.id == preset.id }
         if currentBeatName == preset.name {

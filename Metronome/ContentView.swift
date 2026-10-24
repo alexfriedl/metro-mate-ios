@@ -510,88 +510,52 @@ struct BeatPresetsView: View {
     @ObservedObject var metronome: MetronomeManager
     @Environment(\.dismiss) var dismiss
     @State private var showSaveDialog = false
+    @State private var showResetConfirmation = false
     @State private var newBeatName = ""
-    
+
     var body: some View {
         NavigationView {
             List {
-                Section("Current Beat") {
+                Section("Current") {
                     HStack {
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text(metronome.currentBeatName)
                                 .font(.headline)
                                 .foregroundColor(Color.textPrimary)
-                            Text("\(metronome.noteValue.displayName) • \(Int(metronome.bpm)) BPM • \(metronome.beatsPerMeasure) beats")
+                            Text("\(metronome.noteValue.displayName) · \(Int(metronome.bpm)) BPM · \(metronome.beatsPerMeasure) beats")
                                 .font(.caption)
                                 .foregroundColor(Color.textSecondary)
                         }
-                        
+
                         Spacer()
-                        
-                        Button("Save As...") {
+
+                        Button("Save") {
                             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                             impactFeedback.impactOccurred()
                             newBeatName = metronome.currentBeatName
                             showSaveDialog = true
                         }
+                        .buttonStyle(.borderless)
                         .foregroundColor(Color.signal)
                     }
-                    .listRowBackground(Color.surfaceRaised)
+                    .listRowBackground(Color.surface)
                 }
-                
-                Section("Presets") {
+
+                Section("Built-in") {
                     ForEach(defaultPresets(), id: \.noteValue) { preset in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(preset.name)
-                                    .font(.headline)
-                                    .foregroundColor(Color.textPrimary)
-                                Text("\(preset.noteValue.displayName) • \(Int(preset.bpm)) BPM • \(preset.beatsPerMeasure) beats")
-                                    .font(.caption)
-                                    .foregroundColor(Color.textSecondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Button("Load") {
-                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                impactFeedback.impactOccurred()
-                                metronome.loadBeatPreset(preset)
-                                dismiss()
-                            }
-                            .foregroundColor(Color.signal)
-                            .disabled(preset.name == metronome.currentBeatName)
-                            .opacity(preset.name == metronome.currentBeatName ? 0.5 : 1.0)
-                        }
-                        .listRowBackground(Color.surfaceRaised)
+                        PresetRow(preset: preset, isActive: metronome.isLoaded(preset)) { load(preset) }
                     }
                 }
-                
-                Section("Saved Beats") {
+
+                Section("Saved presets") {
+                    if metronome.savedBeats.isEmpty {
+                        Text("No saved presets yet. Tap Save to keep the current pattern and tempo.")
+                            .font(.subheadline)
+                            .foregroundColor(Color.textSecondary)
+                            .listRowBackground(Color.surface)
+                    }
                     ForEach(metronome.savedBeats) { preset in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(preset.name)
-                                    .font(.headline)
-                                    .foregroundColor(Color.textPrimary)
-                                Text("\(preset.noteValue.displayName) • \(Int(preset.bpm)) BPM • \(preset.beatsPerMeasure) beats")
-                                    .font(.caption)
-                                    .foregroundColor(Color.textSecondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Button("Load") {
-                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                impactFeedback.impactOccurred()
-                                metronome.loadBeatPreset(preset)
-                                dismiss()
-                            }
-                            .foregroundColor(Color.signal)
-                            .disabled(preset.name == metronome.currentBeatName)
-                            .opacity(preset.name == metronome.currentBeatName ? 0.5 : 1.0)
-                        }
-                        .listRowBackground(Color.surfaceRaised)
+                        PresetRow(preset: preset, isActive: metronome.isLoaded(preset)) { load(preset) }
                     }
                     .onDelete { indexSet in
                         for index in indexSet {
@@ -603,7 +567,7 @@ struct BeatPresetsView: View {
             .background(Color.ground)
             .scrollContentBackground(.hidden)
             .foregroundColor(Color.textPrimary)
-            .navigationTitle("Beat Presets")
+            .navigationTitle("Presets")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark)
             .toolbar {
@@ -611,12 +575,11 @@ struct BeatPresetsView: View {
                     Button("Reset") {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                         impactFeedback.impactOccurred()
-                        metronome.resetToBasicBeat()
-                        dismiss()
+                        showResetConfirmation = true
                     }
                     .foregroundColor(Color.textPrimary)
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -626,12 +589,20 @@ struct BeatPresetsView: View {
                     .foregroundColor(Color.textPrimary)
                 }
             }
+            .confirmationDialog("Reset to the basic pattern?", isPresented: $showResetConfirmation, titleVisibility: .visible) {
+                Button("Reset", role: .destructive) {
+                    metronome.resetToBasicBeat()
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Eighth notes at 80 BPM. Your saved presets stay.")
+            }
         }
         .background(Color.ground)
         .preferredColorScheme(.dark)
-        .alert("Save Beat Preset", isPresented: $showSaveDialog) {
-            TextField("Beat Name", text: $newBeatName)
-                .foregroundColor(.black)
+        .alert("Save Preset", isPresented: $showSaveDialog) {
+            TextField("Preset name", text: $newBeatName)
             Button("Save") {
                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                 impactFeedback.impactOccurred()
@@ -641,10 +612,16 @@ struct BeatPresetsView: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Enter a name for this beat configuration")
+            Text("Saves the current pattern, accents and tempo")
         }
     }
-    
+
+    private func load(_ preset: BeatPreset) {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        metronome.loadBeatPreset(preset)
+        dismiss()
+    }
+
     func defaultPresets() -> [BeatPreset] {
         let presets: [(NoteValue, String)] = [
             (.quarter, "Quarter"),
@@ -724,6 +701,38 @@ struct BeatPresetsView: View {
                 gridDisplayMode: displayMode
             )
         }
+    }
+}
+
+// Whole row loads the preset, the checkmark shows which one matches what is set right now
+private struct PresetRow: View {
+    let preset: BeatPreset
+    let isActive: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(preset.name)
+                        .font(.headline)
+                        .foregroundColor(Color.textPrimary)
+                    Text("\(preset.noteValue.displayName) · \(Int(preset.bpm)) BPM · \(preset.beatsPerMeasure) beats")
+                        .font(.caption)
+                        .foregroundColor(Color.textSecondary)
+                }
+                Spacer()
+                if isActive {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(Color.signal)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isActive ? .isSelected : [])
+        .listRowBackground(Color.surface)
     }
 }
 
