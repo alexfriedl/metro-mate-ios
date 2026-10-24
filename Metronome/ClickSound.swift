@@ -2,11 +2,11 @@ import AVFoundation
 
 // Click voices, synthesized at launch so they stay tight, royalty free and tiny
 enum ClickSound: String, CaseIterable, Identifiable, Codable {
+    case cowbell
     case classic
     case clean
     case claves
     case pocket
-    case cowbell
     case punch
     case deep
 

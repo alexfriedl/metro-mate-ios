@@ -39,9 +39,9 @@ enum KitVoice: String, CaseIterable, Identifiable {
         switch self {
         case .snare:
             return [
+                .single("snare-14maple5", "14x5 Maple", "Warm classic funk snare", file: "snare-14maple5", normal: 0.62, ghost: 0.18),
                 KitSound(id: "snare-alu", name: "14x8 Aluminium", detail: "Bright and crisp, rimshot accents",
                          accent: ("snare-accent", 1), normal: ("snare", 0.55), ghost: ("snare-ghost", 0.3)),
-                .single("snare-14maple5", "14x5 Maple", "Warm classic funk snare", file: "snare-14maple5", normal: 0.62, ghost: 0.18),
                 .single("snare-14maple65", "14x6.5 Maple", "Fuller body, round crack", file: "snare-14maple65", normal: 0.62, ghost: 0.18),
                 .single("snare-14birch", "14x8 Birch", "Deep and punchy", file: "snare-14birch", normal: 0.62, ghost: 0.18),
                 .single("snare-14mystery", "14x5 Vintage", "Dry and woody", file: "snare-14mystery", normal: 0.62, ghost: 0.18),
@@ -51,6 +51,8 @@ enum KitVoice: String, CaseIterable, Identifiable {
             ]
         case .kick:
             return [
+                KitSound(id: "kick-felt", name: "Felt", detail: "Dry and short, soft felt beater",
+                         accent: ("kick-felt", 1), normal: ("kick-felt", 0.85), ghost: ("kick-felt-soft", 0.7)),
                 KitSound(id: "kick-funk", name: "Funk", detail: "Full and punchy",
                          accent: ("kick-accent", 1), normal: ("kick", 0.85), ghost: ("kick-soft", 0.6)),
                 KitSound(id: "kick-metal", name: "Tight", detail: "Short with a hard beater click",
@@ -58,11 +60,14 @@ enum KitVoice: String, CaseIterable, Identifiable {
             ]
         case .hiHat:
             return [
+                KitSound(id: "hat-tight", name: "Tight", detail: "Short and clean, played on the side",
+                         accent: ("hihat-tight-accent", 0.8), normal: ("hihat-tight", 0.5), ghost: ("hihat-tight-soft", 0.32)),
                 KitSound(id: "hat-bright", name: "Bright", detail: "Tight closed hats in three strengths",
                          accent: ("hihat-accent", 0.8), normal: ("hihat", 0.45), ghost: ("hihat-soft", 0.3))
             ]
         case .openHat:
             return [
+                .single("open-room", "Room", "Open hat with natural room sound", file: "hihat-open-room", normal: 0.55, ghost: 0.45),
                 .single("open-wash", "Wash", "Open hat with a short sizzle", file: "hihat-open", normal: 0.55, ghost: 0.45)
             ]
         case .pad:

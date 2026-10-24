@@ -187,7 +187,7 @@ class MetronomeManager: ObservableObject {
             clicks?.setVolume(Float(volume))
         }
     }
-    @Published var clickSound: ClickSound = ClickSound(rawValue: UserDefaults.standard.string(forKey: "clickSound") ?? "") ?? .classic {
+    @Published var clickSound: ClickSound = ClickSound(rawValue: UserDefaults.standard.string(forKey: "clickSound") ?? "") ?? .cowbell {
         didSet {
             UserDefaults.standard.set(clickSound.rawValue, forKey: "clickSound")
             clicks?.setSound(clickSound)
