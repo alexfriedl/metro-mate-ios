@@ -220,6 +220,13 @@ final class GroovePlayer: ObservableObject {
             engine.connect(player, to: engine.mainMixerNode, format: format)
             players.append(player)
         }
+        // Separate nodes for scrubbing, so auditioning never disturbs the running timeline
+        for _ in 0..<3 {
+            let player = AVAudioPlayerNode()
+            engine.attach(player)
+            engine.connect(player, to: engine.mainMixerNode, format: format)
+            auditionPlayers.append(player)
+        }
         engine.prepare()
         volumeObserver = MetronomeManager.shared.$volume.sink { [weak self] volume in
             self?.engine.mainMixerNode.outputVolume = Float(volume)
@@ -267,6 +274,63 @@ final class GroovePlayer: ObservableObject {
         }
     }
 
+    // Which recorded voice plays on which node for one step of a groove
+    private func voices(of groove: Groove, at index: Int, dynamic: Bool) -> [(String, Int)] {
+        var result: [(String, Int)] = []
+        switch groove.played(.hiHat, at: index, dynamic: dynamic) {
+        case .open: result.append(("open", 0))
+        case .accent: result.append(("hatAccent", 0))
+        case .ghost: result.append(("hatSoft", 0))
+        case .some: result.append(("hat", 0))
+        case nil: break
+        }
+        if let hand = groove.hand(at: index) {
+            let accented = groove.played(.snare, at: index, dynamic: dynamic) == .accent
+            result.append((hand == "R" ? (accented ? "rightAccent" : "right") : (accented ? "leftAccent" : "left"), 1))
+        } else {
+            switch groove.played(.snare, at: index, dynamic: dynamic) {
+            case .ghost: result.append(("ghost", 1))
+            case .accent: result.append(("snareAccent", 1))
+            case .some: result.append(("snare", 1))
+            case nil: break
+            }
+        }
+        if let kickHit = groove.played(.kick, at: index, dynamic: dynamic) {
+            if groove.category == .hands {
+                result.append(("kickFeather", 2))
+            } else if !groove.sticking.isEmpty {
+                result.append(("kickTight", 2))
+            } else {
+                result.append((kickHit == .accent ? "kickAccent" : (kickHit == .ghost ? "kickSoft" : "kick"), 2))
+            }
+        }
+        return result
+    }
+
+    // Plays one step on its own right now, for scrubbing through the grid
+    func audition(_ groove: Groove, step: Int) {
+        let dynamic = dynamics
+        queue.async { [self] in
+            do {
+                try AVAudioSession.sharedInstance().setActive(true)
+                if !engine.isRunning { try engine.start() }
+            } catch {
+                return
+            }
+            for (name, node) in voices(of: groove, at: step, dynamic: dynamic) {
+                guard let buffer = buffers[name] else { continue }
+                let player = auditionPlayers[node]
+                player.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
+                if !player.isPlaying { player.play() }
+            }
+        }
+    }
+
+    // Loop only part of the bar, nil plays the whole bar
+    func setLoop(_ range: ClosedRange<Int>?) {
+        queue.async { [self] in pendingLoop = range }
+    }
+
     private func scheduleAhead() {
         guard let groove, let reference = players.first else { return }
         let rate = format.sampleRate
@@ -282,38 +346,11 @@ final class GroovePlayer: ObservableObject {
             step += 1
         }
         while nextSample < current + 0.12 * rate {
-            let index = step % groove.steps
+            let index = pendingLoop.map { $0.lowerBound + step % $0.count } ?? step % groove.steps
             let when = AVAudioTime(sampleTime: AVAudioFramePosition(nextSample.rounded()), atRate: rate)
 
-            let dynamic = pendingDynamics
-            switch groove.played(.hiHat, at: index, dynamic: dynamic) {
-            case .open: schedule("open", on: 0, at: when)
-            case .accent: schedule("hatAccent", on: 0, at: when)
-            case .ghost: schedule("hatSoft", on: 0, at: when)
-            case .some: schedule("hat", on: 0, at: when)
-            case nil: break
-            }
-            if let hand = groove.hand(at: index) {
-                let accented = groove.played(.snare, at: index, dynamic: dynamic) == .accent
-                schedule(hand == "R" ? (accented ? "rightAccent" : "right") : (accented ? "leftAccent" : "left"), on: 1, at: when)
-            } else {
-            switch groove.played(.snare, at: index, dynamic: dynamic) {
-            case .ghost: schedule("ghost", on: 1, at: when)
-            case .accent: schedule("snareAccent", on: 1, at: when)
-            case .some: schedule("snare", on: 1, at: when)
-            case nil: break
-            }
-            }
-            if let kickHit = groove.played(.kick, at: index, dynamic: dynamic) {
-                let kick: String
-                if groove.category == .hands {
-                    kick = "kickFeather"
-                } else if !groove.sticking.isEmpty {
-                    kick = "kickTight"
-                } else {
-                    kick = kickHit == .accent ? "kickAccent" : (kickHit == .ghost ? "kickSoft" : "kick")
-                }
-                schedule(kick, on: 2, at: when)
+            for (name, node) in voices(of: groove, at: index, dynamic: pendingDynamics) {
+                schedule(name, on: node, at: when)
             }
 
             let host: CFTimeInterval
@@ -335,6 +372,8 @@ final class GroovePlayer: ObservableObject {
 
     private var trimmed: [String: AVAudioPCMBuffer] = [:]
     private var volumeObserver: AnyCancellable?
+    private var auditionPlayers: [AVAudioPlayerNode] = []
+    private var pendingLoop: ClosedRange<Int>?
     private var pendingDynamics = UserDefaults.standard.object(forKey: "grooveDynamics") as? Bool ?? true
 
     // Dynamics on gives accents and soft notes, off plays everything at one level
