@@ -15,7 +15,6 @@ struct ContentView: View {
     @State private var showQuickNoteValuePicker = false
     @State private var showGridSettings = false
     @State private var showBeatPresets = false
-    @State private var isPlayButtonPressed = false
     
     var body: some View {
         ZStack {
@@ -193,32 +192,16 @@ struct ContentView: View {
                     }
                     
                     // Central Play Button
-                    ZStack {
-                        // Beat punch is read from the audio clock every frame, no implicit animation lag
-                        TimelineView(.animation(minimumInterval: nil, paused: !metronome.isPlaying)) { context in
-                            Circle()
-                                .fill(metronome.isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
-                                .frame(width: 96, height: 96)
-                                .scaleEffect((isPlayButtonPressed ? 0.95 : 1.0) * playButtonPunch(at: context.date))
-                        }
-                        .animation(.easeInOut(duration: 0.1), value: isPlayButtonPressed)
-                        
-                        Image(systemName: metronome.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(Color(hex: "#DDDDDD"))
-                            .scaleEffect(isPlayButtonPressed ? 0.95 : 1.0)
-                            .animation(.easeInOut(duration: 0.1), value: isPlayButtonPressed)
-                    }
-                    .onTapGesture {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
+                    Button {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         metronome.togglePlayback()
+                    } label: {
+                        Image(systemName: metronome.isPlaying ? "stop.fill" : "play.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(metronome.isPlaying ? Color(hex: "#1C1C1B") : Color(hex: "#DDDDDD"))
                     }
-                    .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity) {
-                        // Never triggers
-                    } onPressingChanged: { pressing in
-                        isPlayButtonPressed = pressing
-                    }
+                    .buttonStyle(PlayKeyStyle(isPlaying: metronome.isPlaying, punch: playButtonPunch))
+                    .accessibilityLabel(metronome.isPlaying ? "Stop" : "Start")
                     
                     // Randomize Beat Button
                     Button(action: {
@@ -248,6 +231,29 @@ struct ContentView: View {
         let time = PulseClock.now(for: date)
         guard let hit = metronome.beatTimeline.recent(at: time, limit: 4).first(where: { $0.audible }) else { return 1 }
         return 1 + 0.07 * CGFloat(PulseClock.weight(of: hit) * PulseClock.punch(of: hit, at: time))
+    }
+}
+
+// Round play key: pressed state from the button itself, beat punch read from the audio clock every frame
+private struct PlayKeyStyle: ButtonStyle {
+    let isPlaying: Bool
+    let punch: (Date) -> CGFloat
+
+    func makeBody(configuration: Configuration) -> some View {
+        let pressScale: CGFloat = configuration.isPressed ? 0.95 : 1.0
+        return ZStack {
+            TimelineView(.animation(minimumInterval: nil, paused: !isPlaying)) { context in
+                Circle()
+                    .fill(isPlaying ? Color(hex: "#F54206") : Color(hex: "#242424"))
+                    .frame(width: 96, height: 96)
+                    .scaleEffect(pressScale * punch(context.date))
+            }
+            configuration.label
+                .scaleEffect(pressScale)
+        }
+        .frame(width: 96, height: 96)
+        .contentShape(Circle())
+        .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
