@@ -57,7 +57,7 @@ struct GroovePager: View {
 
     private var grooves: [Groove] { category.grooves }
     private var groove: Groove { grooves[index] }
-    private let levels = ["Beginner", "Intermediate", "Advanced"]
+    private let levels = [String(localized: "Beginner"), String(localized: "Intermediate"), String(localized: "Advanced")]
 
     var body: some View {
         GeometryReader { geometry in
@@ -231,7 +231,7 @@ struct GroovePager: View {
                     HStack(spacing: 6) {
                         Image(systemName: category.symbol)
                             .foregroundColor(Color.signal)
-                        Text(category.title.uppercased())
+                        Text(category.title.localizedForDisplay.uppercased())
                             .foregroundColor(Color.textPrimary)
                         Image(systemName: "chevron.down")
                             .font(.system(size: 9, weight: .bold))
@@ -242,7 +242,7 @@ struct GroovePager: View {
                     .padding(.vertical, 6)
                     .background(Capsule().fill(Color.signal.opacity(0.12)))
                 }
-                .accessibilityLabel("Category \(category.title), choose category")
+                .accessibilityLabel("Category \(category.title.localizedForDisplay), choose category")
                 Spacer()
                 Text("\(index + 1) of \(grooves.count)")
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
@@ -274,7 +274,7 @@ struct GroovePager: View {
 
             HStack(spacing: 8) {
                 LevelBadge(level: groove.level)
-                Text("\(levels[groove.level - 1]) · \(groove.tempo) BPM · \(groove.isTriplet ? "Triplets" : "Sixteenths")")
+                Text("\(levels[groove.level - 1]) · \(groove.tempo) BPM · \(groove.isTriplet ? String(localized: "Triplets") : String(localized: "Sixteenths"))")
                     .font(.caption)
                     .foregroundColor(Color.textSecondary)
                 Spacer()
@@ -457,7 +457,7 @@ private struct TargetTempoChip: View {
 
 private struct StepButton: View {
     let symbol: String
-    let label: String
+    let label: LocalizedStringKey
     let enabled: Bool
     let action: () -> Void
 
@@ -662,7 +662,7 @@ private struct Legend: View {
         .foregroundColor(Color.textSecondary)
     }
 
-    private func item<Mark: View>(_ mark: Mark, _ text: String) -> some View {
+    private func item<Mark: View>(_ mark: Mark, _ text: LocalizedStringKey) -> some View {
         HStack(spacing: 6) {
             mark
             Text(text)
@@ -830,7 +830,7 @@ private struct GroovePicker: View {
                                 .id(entry.id)
                             }
                         } header: {
-                            Label(item.title, systemImage: item.symbol)
+                            Label(item.title.localizedForDisplay, systemImage: item.symbol)
                         }
                     }
                 }
@@ -874,7 +874,7 @@ private struct CategoryPicker: View {
                                 .frame(width: 36, height: 36)
                                 .background(Circle().fill(Color.surfaceRaised))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(item.title)
+                                Text(item.title.localizedForDisplay)
                                     .foregroundColor(Color.textPrimary)
                                 Text(item.subtitle)
                                     .font(.caption)

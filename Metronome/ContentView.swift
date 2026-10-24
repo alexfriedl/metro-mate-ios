@@ -66,7 +66,7 @@ struct ContentView: View {
                                 .font(.system(size: 10, weight: .semibold))
                                 .foregroundColor(Color.textSecondary)
                             
-                            Text(metronome.currentBeatName.uppercased())
+                            Text(metronome.currentBeatName.localizedForDisplay.uppercased())
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(Color.textPrimary)
                         }
@@ -447,7 +447,7 @@ struct BeatPresetsView: View {
                 Section("Current") {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(metronome.currentBeatName)
+                            Text(metronome.currentBeatName.localizedForDisplay)
                                 .font(.headline)
                                 .foregroundColor(Color.textPrimary)
                             Text("\(metronome.noteValue.displayName) · \(Int(metronome.bpm)) BPM · \(metronome.beatsPerMeasure) beats")
@@ -460,7 +460,7 @@ struct BeatPresetsView: View {
                         Button("Save") {
                             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                             impactFeedback.impactOccurred()
-                            newBeatName = metronome.currentBeatName
+                            newBeatName = metronome.currentBeatName.localizedForDisplay
                             showSaveDialog = true
                         }
                         .buttonStyle(.borderless)
@@ -642,7 +642,7 @@ private struct PresetRow: View {
         Button(action: action) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(preset.name)
+                    Text(preset.name.localizedForDisplay)
                         .font(.headline)
                         .foregroundColor(Color.textPrimary)
                     Text("\(preset.noteValue.displayName) · \(Int(preset.bpm)) BPM · \(preset.beatsPerMeasure) beats")
@@ -671,7 +671,7 @@ private struct PresetRow: View {
 // Round header control used for history, learn and sound
 struct HeaderIconButton: View {
     let symbol: String
-    let label: String
+    let label: LocalizedStringKey
     let action: () -> Void
 
     var body: some View {
@@ -831,7 +831,7 @@ struct KitSoundList: View {
             } header: {
                 Text("Your sounds")
             } footer: {
-                Text(importMessage ?? "Add a one-shot from Files, for example an export from your DAW. WAV, AIFF, M4A or MP3. It stays on this device.")
+                Text(importMessage ?? String(localized: "Add a one-shot from Files, for example an export from your DAW. WAV, AIFF, M4A or MP3. It stays on this device."))
                     .foregroundColor(Color.textSecondary)
             }
 
@@ -854,7 +854,7 @@ struct KitSoundList: View {
         .fileImporter(isPresented: $showImporter, allowedContentTypes: [.audio], allowsMultipleSelection: true) { result in
             guard case .success(let urls) = result else { return }
             let added = kit.importSounds(urls, for: voice)
-            importMessage = added == urls.count ? nil : "\(urls.count - added) file(s) could not be read as audio."
+            importMessage = added == urls.count ? nil : String(localized: "\(urls.count - added) files could not be read as audio.")
             if let sound = kit.importedSounds(for: voice).last, added > 0 { previewHit(sound) }
         }
     }

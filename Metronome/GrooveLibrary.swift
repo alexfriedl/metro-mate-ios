@@ -1,3 +1,5 @@
+import Foundation
+
 // All grooves are original exercises written for Metro Mate
 extension Groove {
     static let library: [Groove] = classics + foundations + funk + linearGrooves + hiHatWork + kickWork + shuffles + accentStudies + chops
@@ -210,7 +212,7 @@ extension Groove {
                hiHat: silent12, snare: "XxxxXxxxXxxx", kick: "x--x--x--x--")
     ]
 
-    private static func chop(_ id: String, _ title: String, level: Int, tempo: Int, focus: String,
+    private static func chop(_ id: String, _ title: String, level: Int, tempo: Int, focus: LocalizedStringResource,
                              sticking: String, accents: String) -> Groove {
         // Hands play the snare, K in the sticking goes to the kick, accents mark the loud notes
         let snare = String(zip(sticking, accents).map { stick, accent in

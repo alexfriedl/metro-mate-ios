@@ -23,6 +23,7 @@ enum GrooveCategory: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    // Stays English because the practice log stores it, views show it through localizedForDisplay
     var title: String {
         switch self {
         case .classics: return "All-Time Classics"
@@ -39,15 +40,15 @@ enum GrooveCategory: String, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .classics: return "Famous grooves in their best known form, one bar"
-        case .foundations: return "Rock, pop and four on the floor"
-        case .funk: return "Sixteenth feels with quiet ghost notes"
-        case .linear: return "One limb at a time, never two together"
-        case .hiHat: return "Accents and open hats on the right hand"
-        case .kick: return "Kick patterns against a steady top"
-        case .shuffle: return "Triplet grid, swing and half-time shuffle"
-        case .hands: return "Snare accent exercises over a feathered kick"
-        case .chops: return "Rudiments and hand-foot combinations with sticking"
+        case .classics: return String(localized: "Famous grooves in their best known form, one bar")
+        case .foundations: return String(localized: "Rock, pop and four on the floor")
+        case .funk: return String(localized: "Sixteenth feels with quiet ghost notes")
+        case .linear: return String(localized: "One limb at a time, never two together")
+        case .hiHat: return String(localized: "Accents and open hats on the right hand")
+        case .kick: return String(localized: "Kick patterns against a steady top")
+        case .shuffle: return String(localized: "Triplet grid, swing and half-time shuffle")
+        case .hands: return String(localized: "Snare accent exercises over a feathered kick")
+        case .chops: return String(localized: "Rudiments and hand-foot combinations with sticking")
         }
     }
 
@@ -87,14 +88,14 @@ struct Groove: Identifiable {
     var stepsPerBeat: Int { steps / 4 }
     var isTriplet: Bool { stepsPerBeat == 3 }
 
-    init(_ id: String, _ category: GrooveCategory, _ title: String, level: Int, tempo: Int, focus: String,
+    init(_ id: String, _ category: GrooveCategory, _ title: String, level: Int, tempo: Int, focus: LocalizedStringResource,
          hiHat: String, snare: String, kick: String, sticking: String = "") {
         self.id = id
         self.category = category
         self.title = title
         self.level = level
         self.tempo = tempo
-        self.focus = focus
+        self.focus = String(localized: focus)
         self.hiHat = hiHat
         self.snare = snare
         self.kick = kick
@@ -102,7 +103,7 @@ struct Groove: Identifiable {
     }
 
     // Linear grooves read better as one sequence: K kick, H hat, O open hat, S snare, A accent, G ghost, - rest
-    static func linear(_ id: String, _ title: String, level: Int, tempo: Int, focus: String, sequence: String) -> Groove {
+    static func linear(_ id: String, _ title: String, level: Int, tempo: Int, focus: LocalizedStringResource, sequence: String) -> Groove {
         func line(_ map: [Character: Character]) -> String {
             String(sequence.map { map[$0] ?? "-" })
         }

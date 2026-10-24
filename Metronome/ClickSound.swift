@@ -26,13 +26,13 @@ enum ClickSound: String, CaseIterable, Identifiable, Codable {
 
     var subtitle: String {
         switch self {
-        case .clean: return "Pure tone, high on accents"
-        case .classic: return "Wooden block, the classic metronome knock"
-        case .claves: return "Bright hardwood claves"
-        case .pocket: return "Snare on accents, hi-hat in between"
-        case .cowbell: return "Open bell on accents, muted in between"
-        case .punch: return "Bass drum on accents, hi-hat in between"
-        case .deep: return "Bass drum on accents, soft shaker in between"
+        case .clean: return String(localized: "Pure tone, high on accents")
+        case .classic: return String(localized: "Wooden block, the classic metronome knock")
+        case .claves: return String(localized: "Bright hardwood claves")
+        case .pocket: return String(localized: "Snare on accents, hi-hat in between")
+        case .cowbell: return String(localized: "Open bell on accents, muted in between")
+        case .punch: return String(localized: "Bass drum on accents, hi-hat in between")
+        case .deep: return String(localized: "Bass drum on accents, soft shaker in between")
         }
     }
 

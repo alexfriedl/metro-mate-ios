@@ -1,12 +1,3058 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    " " : {
+      "shouldTranslate" : false
+    },
+    "%@ less than the week before" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ weniger als in der Vorwoche"
+          }
+        }
+      }
+    },
+    "%@ more than the week before" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ mehr als in der Vorwoche"
+          }
+        }
+      }
+    },
+    "%@ to %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ bis %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ · %lld BPM" : {
+      "shouldTranslate" : false
+    },
+    "%@ · %lld BPM · %@" : {
+      "shouldTranslate" : false
+    },
+    "%@ · %lld BPM · %lld beats" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld BPM · %#@beats@"
+          },
+          "substitutions" : {
+            "beats" : {
+              "argNum" : 3,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg beat"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg beats"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$lld BPM · %#@beats@"
+          },
+          "substitutions" : {
+            "beats" : {
+              "argNum" : 3,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Schlag"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Schläge"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%@, %lld BPM" : {
+      "shouldTranslate" : false
+    },
+    "%@, %lld min" : {
+      "shouldTranslate" : false
+    },
+    "%@, choose another groove" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, anderen Groove wählen"
+          }
+        }
+      }
+    },
+    "%@, from %lld to %lld BPM" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, von %2$lld auf %3$lld BPM"
+          }
+        }
+      }
+    },
+    "%@, today, %lld min" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, heute, %2$lld min"
+          }
+        }
+      }
+    },
+    "%lld" : {
+      "shouldTranslate" : false
+    },
+    "%lld BPM" : {
+      "shouldTranslate" : false
+    },
+    "%lld days" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld days"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Tag"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Tage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld files could not be read as audio." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld file could not be read as audio."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld files could not be read as audio."
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Datei konnte nicht als Audio gelesen werden."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Dateien konnten nicht als Audio gelesen werden."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld of %lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld von %2$lld"
+          }
+        }
+      }
+    },
+    "%lld percent" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Prozent"
+          }
+        }
+      }
+    },
+    "%lld practice days" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld practice day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld practice days"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Übungstag"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Übungstage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "10 inch" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 Zoll"
+          }
+        }
+      }
+    },
+    "100" : {
+      "shouldTranslate" : false
+    },
+    "110" : {
+      "shouldTranslate" : false
+    },
+    "120" : {
+      "shouldTranslate" : false
+    },
+    "12x5 Steel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12x5 Stahl"
+          }
+        }
+      }
+    },
+    "130" : {
+      "shouldTranslate" : false
+    },
+    "13x9 Birch" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "13x9 Birke"
+          }
+        }
+      }
+    },
+    "140" : {
+      "shouldTranslate" : false
+    },
+    "14x5 Maple" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "14x5 Ahorn"
+          }
+        }
+      }
+    },
+    "14x5 Vintage" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "14x5 Vintage"
+          }
+        }
+      }
+    },
+    "14x6.5 Maple" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "14x6,5 Ahorn"
+          }
+        }
+      }
+    },
+    "14x8 Aluminium" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "14x8 Aluminium"
+          }
+        }
+      }
+    },
+    "14x8 Birch" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "14x8 Birke"
+          }
+        }
+      }
+    },
+    "150" : {
+      "shouldTranslate" : false
+    },
+    "160" : {
+      "shouldTranslate" : false
+    },
+    "180" : {
+      "shouldTranslate" : false
+    },
+    "200" : {
+      "shouldTranslate" : false
+    },
+    "60" : {
+      "shouldTranslate" : false
+    },
+    "70" : {
+      "shouldTranslate" : false
+    },
+    "80" : {
+      "shouldTranslate" : false
+    },
+    "90" : {
+      "shouldTranslate" : false
+    },
+    "A little wash on every note" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas Wash auf jeder Note"
+          }
+        }
+      }
+    },
+    "Accent" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akzent"
+          }
+        }
+      }
+    },
+    "Accent Studies" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akzentstudien"
+          }
+        }
+      }
+    },
+    "Accent every & on the hat, a classic disco lift" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jedes & auf der Hi-Hat betonen, klassischer Disco-Lift"
+          }
+        }
+      }
+    },
+    "Accent every downbeat, the taps stay low and even" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jede Zählzeit betonen, die Taps leise und gleichmäßig"
+          }
+        }
+      }
+    },
+    "Accent every fourth triplet, the accents float across the beat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jede vierte Note betonen, die Akzente wandern über den Schlag"
+          }
+        }
+      }
+    },
+    "Accent on step %lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akzent auf Schritt %lld"
+          }
+        }
+      }
+    },
+    "Accent the first note of each group, the rest stays low" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erste Note jeder Gruppe betonen, der Rest bleibt leise"
+          }
+        }
+      }
+    },
+    "Accent the first note of each triplet" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die erste Note jeder Triole betonen"
+          }
+        }
+      }
+    },
+    "Accent the last sixteenth before each beat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die letzte 16tel vor jedem Schlag betonen"
+          }
+        }
+      }
+    },
+    "Accent the middle of each beat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Mitte jedes Schlags betonen"
+          }
+        }
+      }
+    },
+    "Accent the quarter notes on the hat, eighths stay soft" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viertel auf der Hi-Hat betonen, Achtel bleiben leise"
+          }
+        }
+      }
+    },
+    "Accented singles frame two soft doubles" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Betonte Singles umrahmen zwei leise Doubles"
+          }
+        }
+      }
+    },
+    "Accents and open hats on the right hand" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akzente und offene Hi-Hats mit der rechten Hand"
+          }
+        }
+      }
+    },
+    "Accents and soft notes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akzente und leise Noten"
+          }
+        }
+      }
+    },
+    "Add a one-shot from Files, for example an export from your DAW. WAV, AIFF, M4A or MP3. It stays on this device." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge einen One-Shot aus Dateien hinzu, zum Beispiel einen Export aus deiner DAW. WAV, AIFF, M4A oder MP3. Er bleibt auf diesem Gerät."
+          }
+        }
+      }
+    },
+    "Advanced" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortgeschritten"
+          }
+        }
+      }
+    },
+    "All-Time Classics" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klassiker"
+          }
+        }
+      }
+    },
+    "Alternating hands into the kick, keep the kick as loud as the hands" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hände im Wechsel in die Kick, Kick so laut wie die Hände"
+          }
+        }
+      }
+    },
+    "BPM" : {
+      "shouldTranslate" : false
+    },
+    "Back to target tempo %lld BPM" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurück zum Zieltempo %lld BPM"
+          }
+        }
+      }
+    },
+    "Backbeat on the e of 2, ghosts keep the time solid" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backbeat auf dem e der 2, Ghosts halten das Timing stabil"
+          }
+        }
+      }
+    },
+    "Basic" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basis"
+          }
+        }
+      }
+    },
+    "Bass drum on accents, hi-hat in between" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bassdrum auf Akzenten, Hi-Hat dazwischen"
+          }
+        }
+      }
+    },
+    "Bass drum on accents, soft shaker in between" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bassdrum auf Akzenten, leiser Shaker dazwischen"
+          }
+        }
+      }
+    },
+    "Beats per bar: %lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schläge pro Takt: %lld"
+          }
+        }
+      }
+    },
+    "Beginner" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einsteiger"
+          }
+        }
+      }
+    },
+    "Bernard Purdie style half-time shuffle, ghosts on every middle triplet" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bernard Purdie: Half-Time Shuffle, Ghosts auf der mittleren Triole"
+          }
+        }
+      }
+    },
+    "Big and open, longer tail" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groß und offen, längerer Ausklang"
+          }
+        }
+      }
+    },
+    "Boom" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boom"
+          }
+        }
+      }
+    },
+    "Bright" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bright"
+          }
+        }
+      }
+    },
+    "Bright and crisp, rimshot accents" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hell und knackig, Rimshot-Akzente"
+          }
+        }
+      }
+    },
+    "Bright hardwood claves" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helle Claves aus Hartholz"
+          }
+        }
+      }
+    },
+    "Bright hardwood click" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heller Hartholz-Klick"
+          }
+        }
+      }
+    },
+    "Bright open hat, orchestral recording" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helle offene Hi-Hat, Orchesteraufnahme"
+          }
+        }
+      }
+    },
+    "Built-in" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitgeliefert"
+          }
+        }
+      }
+    },
+    "Busy kick line under a simple top, keep the hats even" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dichte Kick-Linie, einfache Hände, Hats gleichmäßig halten"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        }
+      }
+    },
+    "Categories" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kategorien"
+          }
+        }
+      }
+    },
+    "Category %@, choose category" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kategorie %@, Kategorie wählen"
+          }
+        }
+      }
+    },
+    "Choose a groove" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groove wählen"
+          }
+        }
+      }
+    },
+    "Chops" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chops"
+          }
+        }
+      }
+    },
+    "Classic" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classic"
+          }
+        }
+      }
+    },
+    "Claves" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claves"
+          }
+        }
+      }
+    },
+    "Clear wooden knock" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klares Holzklopfen"
+          }
+        }
+      }
+    },
+    "Click" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click"
+          }
+        }
+      }
+    },
     "Close" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Beenden"
+          }
+        }
+      }
+    },
+    "Close and inside mics, unprocessed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nah- und Innenmikro, unbearbeitet"
+          }
+        }
+      }
+    },
+    "Closed hat with some air around it" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschlossene Hi-Hat mit etwas Raum"
+          }
+        }
+      }
+    },
+    "Clyde Stubblefield style: sixteenth hats, open barks, ghosts around the backbeat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clyde Stubblefield: 16tel-Hats, offene Barks, Ghosts am Backbeat"
+          }
+        }
+      }
+    },
+    "Cross-stick clave over a steady dotted bass drum" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cross-Stick-Clave über ruhiger punktierter Bassdrum"
+          }
+        }
+      }
+    },
+    "Current" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuell"
+          }
+        }
+      }
+    },
+    "Custom Beat" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eigener Beat"
+          }
+        }
+      }
+    },
+    "Decrease tempo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tempo verringern"
+          }
+        }
+      }
+    },
+    "Deep and punchy" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tief und druckvoll"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löschen"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fertig"
+          }
+        }
+      }
+    },
+    "Double in the middle of the group, accent the lead hand" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doppelschlag in der Mitte, die führende Hand betonen"
+          }
+        }
+      }
+    },
+    "Dry and short, soft felt beater" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trocken und kurz, weicher Filzschlägel"
+          }
+        }
+      }
+    },
+    "Dry and woody" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trocken und holzig"
+          }
+        }
+      }
+    },
+    "Dynamics" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dynamik"
+          }
+        }
+      }
+    },
+    "Eighth" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Achtel"
+          }
+        }
+      }
+    },
+    "Eighth Triplet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Achteltriolen"
+          }
+        }
+      }
+    },
+    "Eighth notes at 80 BPM. Your saved presets stay." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Achtel bei 80 BPM. Deine gespeicherten Presets bleiben."
+          }
+        }
+      }
+    },
+    "Even singles, both hands at the same height and volume" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gleichmäßige Singles, beide Hände gleich hoch und gleich laut"
+          }
+        }
+      }
+    },
+    "Even sixteenths on the hat, backbeat on 2 and 4" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gleichmäßige 16tel auf der Hi-Hat, Backbeat auf 2 und 4"
+          }
+        }
+      }
+    },
+    "Even sixteenths with one hand, keep the volume flat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gleichmäßige 16tel mit einer Hand, alle gleich laut"
+          }
+        }
+      }
+    },
+    "Every triplet on the hat, slow and wide" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jede Triole auf der Hi-Hat, langsam und breit"
+          }
+        }
+      }
+    },
+    "Extra kick on the & of 3 pushes into beat 4" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra-Kick auf dem & der 3 schiebt in die 4"
+          }
+        }
+      }
+    },
+    "Famous grooves in their best known form, one bar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berühmte Grooves in ihrer bekanntesten Form, ein Takt"
+          }
+        }
+      }
+    },
+    "Fast" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schnell"
+          }
+        }
+      }
+    },
+    "Felt" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filz"
+          }
+        }
+      }
+    },
+    "First backbeat lands on the e of 2" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der erste Backbeat landet auf dem e der 2"
+          }
+        }
+      }
+    },
+    "Flat, every hit at one level" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flach, jeder Schlag gleich laut"
+          }
+        }
+      }
+    },
+    "Foundations" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grundlagen"
+          }
+        }
+      }
+    },
+    "Full and punchy" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voll und druckvoll"
+          }
+        }
+      }
+    },
+    "Fuller body, round crack" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr Körper, runder Crack"
+          }
+        }
+      }
+    },
+    "Fully open, long ring" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ganz offen, langer Ausklang"
+          }
+        }
+      }
+    },
+    "Funk" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funk"
+          }
+        }
+      }
+    },
+    "Funk & Ghost Notes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funk & Ghost Notes"
+          }
+        }
+      }
+    },
+    "G. C. Coleman style break: ride eighths, snare pushing on the a of 2 and 4" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "G. C. Coleman: Ride-Achtel, Snare schiebt auf das a der 2 und 4"
+          }
+        }
+      }
+    },
+    "Ghosts after the backbeat make it lean back" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ghosts nach dem Backbeat, der Groove lehnt sich zurück"
+          }
+        }
+      }
+    },
+    "Ghosts fill the missing triplet on the snare" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ghosts füllen die fehlende Triole auf der Snare"
+          }
+        }
+      }
+    },
+    "Ghosts under a full sixteenth hat line" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ghosts unter durchgehenden 16tel-Hats"
+          }
+        }
+      }
+    },
+    "Groove %lld of %lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groove %1$lld von %2$lld"
+          }
+        }
+      }
+    },
+    "Half open" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halb offen"
+          }
+        }
+      }
+    },
+    "Hi-Hat Work" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi-Hat-Technik"
+          }
+        }
+      }
+    },
+    "Hi-hat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi-Hat"
+          }
+        }
+      }
+    },
+    "High, cutting, fusion" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoch, schneidend, Fusion"
+          }
+        }
+      }
+    },
+    "History" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf"
+          }
+        }
+      }
+    },
+    "Hit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schlag"
+          }
+        }
+      }
+    },
+    "Import sound" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sound importieren"
+          }
+        }
+      }
+    },
+    "Increase tempo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tempo erhöhen"
+          }
+        }
+      }
+    },
+    "Intermediate" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mittel"
+          }
+        }
+      }
+    },
+    "Jazz" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jazz"
+          }
+        }
+      }
+    },
+    "Kick" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick"
+          }
+        }
+      }
+    },
+    "Kick Independence" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick-Unabhängigkeit"
+          }
+        }
+      }
+    },
+    "Kick heard from the room" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick, aus dem Raum aufgenommen"
+          }
+        }
+      }
+    },
+    "Kick just before each beat, it pushes forward" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick kurz vor jedem Schlag, das treibt nach vorn"
+          }
+        }
+      }
+    },
+    "Kick on every beat, hats on the offbeats" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick auf jedem Schlag, Hats auf den Offbeats"
+          }
+        }
+      }
+    },
+    "Kick on the & of 2 and the a of 3" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick auf dem & der 2 und dem a der 3"
+          }
+        }
+      }
+    },
+    "Kick on the last triplet leads into 2 and 4" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick auf der letzten Triole führt in die 2 und 4"
+          }
+        }
+      }
+    },
+    "Kick only on the offbeats, hands stay on the grid" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick nur auf den Offbeats, die Hände bleiben im Raster"
+          }
+        }
+      }
+    },
+    "Kick patterns against a steady top" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick-Pattern unter gleichmäßigen Händen"
+          }
+        }
+      }
+    },
+    "Kick right after each beat, feel the pull" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick direkt nach jedem Schlag, spür den Zug"
+          }
+        }
+      }
+    },
+    "Kick, hat and snare take turns, nothing lands together" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kick, Hat und Snare im Wechsel, nichts fällt zusammen"
+          }
+        }
+      }
+    },
+    "Kick, hat, ghost groups run across the beat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppen aus Kick, Hat und Ghost laufen über den Schlag"
+          }
+        }
+      }
+    },
+    "Learn" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lernen"
+          }
+        }
+      }
+    },
+    "Learn drum kit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drumkit für Lernen"
+          }
+        }
+      }
+    },
+    "Leave out the middle triplet for the swing" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lass die mittlere Triole weg, das gibt den Swing"
+          }
+        }
+      }
+    },
+    "Less" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weniger"
+          }
+        }
+      }
+    },
+    "Level %lld of 3" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stufe %lld von 3"
+          }
+        }
+      }
+    },
+    "Linear Grooves" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lineare Grooves"
+          }
+        }
+      }
+    },
+    "Long" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lang"
+          }
+        }
+      }
+    },
+    "Longest streak" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Längste Serie"
+          }
+        }
+      }
+    },
+    "Loop a part" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teil loopen"
+          }
+        }
+      }
+    },
+    "Loop on, steps %lld to %lld, turn off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loop an, Schritte %1$lld bis %2$lld, ausschalten"
+          }
+        }
+      }
+    },
+    "Loose and trashy, rock feel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Locker und trashig, Rock-Feel"
+          }
+        }
+      }
+    },
+    "Loud accents, ghosts as quiet as you can play them" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laute Akzente, Ghosts so leise wie möglich"
+          }
+        }
+      }
+    },
+    "Metronome" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metronom"
+          }
+        }
+      }
+    },
+    "Metronome · 1/16" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metronom · 1/16"
+          }
+        }
+      }
+    },
+    "Metronome · 1/16T" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metronom · 1/16T"
+          }
+        }
+      }
+    },
+    "Metronome · 1/4" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metronom · 1/4"
+          }
+        }
+      }
+    },
+    "Metronome · 1/4T" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metronom · 1/4T"
+          }
+        }
+      }
+    },
+    "Metronome · 1/8" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metronom · 1/8"
+          }
+        }
+      }
+    },
+    "Metronome · 1/8T" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metronom · 1/8T"
+          }
+        }
+      }
+    },
+    "Month" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monat"
+          }
+        }
+      }
+    },
+    "More" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr"
+          }
+        }
+      }
+    },
+    "Most practised" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Am meisten geübt"
+          }
+        }
+      }
+    },
+    "Move the accent one sixteenth later" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den Akzent eine 16tel nach hinten schieben"
+          }
+        }
+      }
+    },
+    "Natural" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Natürlich"
+          }
+        }
+      }
+    },
+    "Never two limbs at once, every note on its own" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie zwei Gliedmaßen gleichzeitig, jede Note für sich"
+          }
+        }
+      }
+    },
+    "Next groove" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nächster Groove"
+          }
+        }
+      }
+    },
+    "Next period" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nächster Zeitraum"
+          }
+        }
+      }
+    },
+    "Nineties hip hop: lazy kick on the a of 2, fat backbeat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "90er Hip Hop: lässige Kick auf dem a der 2, fetter Backbeat"
+          }
+        }
+      }
+    },
+    "No practice this month." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In diesem Monat nicht geübt."
+          }
+        }
+      }
+    },
+    "No practice this week." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In dieser Woche nicht geübt."
+          }
+        }
+      }
+    },
+    "No saved presets yet. Tap Save to keep the current pattern and tempo." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine Presets gespeichert. Tippe auf Speichern, um Muster und Tempo zu behalten."
+          }
+        }
+      }
+    },
+    "Now" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus"
+          }
+        }
+      }
+    },
+    "On" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein"
+          }
+        }
+      }
+    },
+    "One ghost before each backbeat, keep it barely audible" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Ghost vor jedem Backbeat, kaum hörbar"
+          }
+        }
+      }
+    },
+    "One limb at a time, never two together" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Immer nur eine Hand oder ein Fuß, nie zwei zugleich"
+          }
+        }
+      }
+    },
+    "Open bell on accents, muted in between" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offene Glocke auf Akzenten, gedämpft dazwischen"
+          }
+        }
+      }
+    },
+    "Open hat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offen"
+          }
+        }
+      }
+    },
+    "Open hat on every &, close it exactly on the beat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi-Hat auf jedem & öffnen, genau auf dem Schlag schließen"
+          }
+        }
+      }
+    },
+    "Open hat right after each backbeat, close on the next beat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach jedem Backbeat öffnen, auf dem nächsten Schlag schließen"
+          }
+        }
+      }
+    },
+    "Open hat with a short sizzle" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offene Hi-Hat mit kurzem Zischen"
+          }
+        }
+      }
+    },
+    "Open hat with natural room sound" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offene Hi-Hat mit natürlichem Raumklang"
+          }
+        }
+      }
+    },
+    "Open hats on the a of 1 and 3 between kick and snare" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offene Hi-Hat auf dem a der 1 und 3 zwischen Kick und Snare"
+          }
+        }
+      }
+    },
+    "Open hi-hat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offene Hi-Hat"
+          }
+        }
+      }
+    },
+    "Open the hat on the & of 2 and the a of 4" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi-Hat auf dem & der 2 und dem a der 4 öffnen"
+          }
+        }
+      }
+    },
+    "Overhead" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overhead"
+          }
+        }
+      }
+    },
+    "PATTERN" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MUSTER"
+          }
+        }
+      }
+    },
+    "PRESET" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRESET"
+          }
+        }
+      }
+    },
+    "Pattern" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muster"
+          }
+        }
+      }
+    },
+    "Per practice day" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro Übungstag"
+          }
+        }
+      }
+    },
+    "Period" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeitraum"
+          }
+        }
+      }
+    },
+    "Play Metronome" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metronom abspielen"
+          }
+        }
+      }
+    },
+    "Play example" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beispiel abspielen"
+          }
+        }
+      }
+    },
+    "Play groove" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groove abspielen"
+          }
+        }
+      }
+    },
+    "Play metronome at ${bpm} BPM" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metronom mit ${bpm} BPM abspielen"
+          }
+        }
+      }
+    },
+    "Playing at %lld BPM" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Läuft mit %lld BPM"
+          }
+        }
+      }
+    },
+    "Playing now, %lld min" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Läuft gerade, %lld min"
+          }
+        }
+      }
+    },
+    "Playing now, under a minute" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Läuft gerade, unter einer Minute"
+          }
+        }
+      }
+    },
+    "Pop staple: dead straight eighths, kick on 1 and 3, nothing extra" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-Klassiker: gerade Achtel, Kick auf 1 und 3, nichts extra"
+          }
+        }
+      }
+    },
+    "Practice days" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Übungstage"
+          }
+        }
+      }
+    },
+    "Practice pad" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Übungspad"
+          }
+        }
+      }
+    },
+    "Practice time" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Übungszeit"
+          }
+        }
+      }
+    },
+    "Preset name" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name des Presets"
+          }
+        }
+      }
+    },
+    "Presets" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Presets"
+          }
+        }
+      }
+    },
+    "Previous groove" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorheriger Groove"
+          }
+        }
+      }
+    },
+    "Previous period" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorheriger Zeitraum"
+          }
+        }
+      }
+    },
+    "Purdie shuffle variation with the kick pushing into beat 3" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purdie-Shuffle-Variante, die Kick schiebt in die 3"
+          }
+        }
+      }
+    },
+    "Pure tone, high on accents" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reiner Ton, höher auf Akzenten"
+          }
+        }
+      }
+    },
+    "QUICK PRESETS" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SCHNELLWAHL"
+          }
+        }
+      }
+    },
+    "Quarter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viertel"
+          }
+        }
+      }
+    },
+    "Quarter Triplet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vierteltriolen"
+          }
+        }
+      }
+    },
+    "Quiet ghost notes around a solid backbeat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leise Ghost Notes um einen satten Backbeat"
+          }
+        }
+      }
+    },
+    "Random Beat" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zufallsbeat"
+          }
+        }
+      }
+    },
+    "Reset" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurücksetzen"
+          }
+        }
+      }
+    },
+    "Reset to the basic pattern?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf das Grundmuster zurücksetzen?"
+          }
+        }
+      }
+    },
+    "Right hand double, left, kick, a fast gospel fill shape" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechts doppelt, links, Kick, eine schnelle Gospel-Fill-Figur"
+          }
+        }
+      }
+    },
+    "Right, left, kick in triplets, the classic gospel chop" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechts, links, Kick als Triolen, der klassische Gospel-Chop"
+          }
+        }
+      }
+    },
+    "Right, left, left, kick in sixteenths, accent the right hand" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechts, links, links, Kick in 16teln, rechte Hand betonen"
+          }
+        }
+      }
+    },
+    "Rock" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rock"
+          }
+        }
+      }
+    },
+    "Rock, pop and four on the floor" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rock, Pop und Four on the Floor"
+          }
+        }
+      }
+    },
+    "Room" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raum"
+          }
+        }
+      }
+    },
+    "Rubber pad, left hand a touch lower" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gummipad, linke Hand etwas tiefer"
+          }
+        }
+      }
+    },
+    "Rudiments and hand-foot combinations with sticking" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rudiments und Hand-Fuß-Kombinationen mit Sticking"
+          }
+        }
+      }
+    },
+    "Same as the week before" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gleich viel wie in der Vorwoche"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speichern"
+          }
+        }
+      }
+    },
+    "Save Preset" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preset speichern"
+          }
+        }
+      }
+    },
+    "Saved presets" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gespeicherte Presets"
+          }
+        }
+      }
+    },
+    "Saves the current pattern, accents and tempo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speichert Muster, Akzente und Tempo"
+          }
+        }
+      }
+    },
+    "Second stroke as strong as the first, let the stick rebound" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zweiter Schlag so stark wie der erste, nutz den Rebound"
+          }
+        }
+      }
+    },
+    "Session deleted" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session gelöscht"
+          }
+        }
+      }
+    },
+    "Short and clean, played on the side" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurz und sauber, seitlich angespielt"
+          }
+        }
+      }
+    },
+    "Short open barks on the a of 1 and 3 inside sixteenths" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurze offene Barks auf dem a der 1 und 3 in den 16teln"
+          }
+        }
+      }
+    },
+    "Short with a hard beater click" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kurz, mit hartem Schlägel-Klick"
+          }
+        }
+      }
+    },
+    "Shuffle & Triplets" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shuffle & Triolen"
+          }
+        }
+      }
+    },
+    "Six notes per beat as triplets, accent each new group" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sechs Noten pro Schlag als Triolen, jede Gruppe betonen"
+          }
+        }
+      }
+    },
+    "Sixteenth" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sechzehntel"
+          }
+        }
+      }
+    },
+    "Sixteenth Triplet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sechzehnteltriolen"
+          }
+        }
+      }
+    },
+    "Sixteenth feels with quiet ghost notes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16tel-Feels mit leisen Ghost Notes"
+          }
+        }
+      }
+    },
+    "Sixteenth hats with the accent on every a" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16tel-Hats mit Akzent auf jedem a"
+          }
+        }
+      }
+    },
+    "Sixteenth hats with the accent on every e" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16tel-Hats mit Akzent auf jedem e"
+          }
+        }
+      }
+    },
+    "Sixteenth note kicks between the hats" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16tel-Kicks zwischen den Hats"
+          }
+        }
+      }
+    },
+    "Sixteenth snare chug with the backbeat accented, country and rockabilly" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16tel auf der Snare, Backbeat betont, Country und Rockabilly"
+          }
+        }
+      }
+    },
+    "Sixteenths" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sechzehntel"
+          }
+        }
+      }
+    },
+    "Sloshy" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sloshy"
+          }
+        }
+      }
+    },
+    "Snare" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snare"
+          }
+        }
+      }
+    },
+    "Snare accent exercises over a feathered kick" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Akzentübungen auf der Snare, Kick ganz leise dazu"
+          }
+        }
+      }
+    },
+    "Snare moves off 4 to the a of 3, the bar leans forward" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snare von der 4 auf das a der 3, der Takt drängt nach vorn"
+          }
+        }
+      }
+    },
+    "Snare on 3, ghosts on every middle triplet" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snare auf der 3, Ghosts auf jeder mittleren Triole"
+          }
+        }
+      }
+    },
+    "Snare on accents, hi-hat in between" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snare auf Akzenten, Hi-Hat dazwischen"
+          }
+        }
+      }
+    },
+    "Snare on every quarter note drives the whole band" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snare auf jeder Viertel treibt die ganze Band"
+          }
+        }
+      }
+    },
+    "Snare only on beat 3, the groove feels twice as wide" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snare nur auf der 3, der Groove wirkt doppelt so breit"
+          }
+        }
+      }
+    },
+    "Soft" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leise"
+          }
+        }
+      }
+    },
+    "Sound" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sound"
+          }
+        }
+      }
+    },
+    "Space between the notes, let the backbeat breathe" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platz zwischen den Noten, lass den Backbeat atmen"
+          }
+        }
+      }
+    },
+    "Start" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starten"
+          }
+        }
+      }
+    },
+    "Start Metronome" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metronom starten"
+          }
+        }
+      }
+    },
+    "Start at BPM" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit BPM starten"
+          }
+        }
+      }
+    },
+    "Steady eighths, kick on 1 and 3, snare on 2 and 4" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gleichmäßige Achtel, Kick auf 1 und 3, Snare auf 2 und 4"
+          }
+        }
+      }
+    },
+    "Stop" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stoppen"
+          }
+        }
+      }
+    },
+    "Stop example" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beispiel stoppen"
+          }
+        }
+      }
+    },
+    "Stop groove" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groove stoppen"
+          }
+        }
+      }
+    },
+    "TAP" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TAP"
+          }
+        }
+      }
+    },
+    "Tap a sound to hear it, play the example to hear it in %@." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf einen Sound, um ihn zu hören. Das Beispiel spielt ihn in %@."
+          }
+        }
+      }
+    },
+    "Target %lld · Reset" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziel %lld · Zurücksetzen"
+          }
+        }
+      }
+    },
+    "Tempo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tempo"
+          }
+        }
+      }
+    },
+    "Tempo progress" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tempoentwicklung"
+          }
+        }
+      }
+    },
+    "This month" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Monat"
+          }
+        }
+      }
+    },
+    "Three even hats per beat, backbeat on 2 and 4" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drei gleichmäßige Hats pro Schlag, Backbeat auf 2 und 4"
+          }
+        }
+      }
+    },
+    "Three kicks in a row leading into the backbeat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drei Kicks hintereinander bis in den Backbeat"
+          }
+        }
+      }
+    },
+    "Tight" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tight"
+          }
+        }
+      }
+    },
+    "Tight closed hats in three strengths" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eng geschlossene Hi-Hats in drei Stärken"
+          }
+        }
+      }
+    },
+    "Tight with long wires" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Straff, mit langem Teppich"
+          }
+        }
+      }
+    },
+    "Today" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heute"
+          }
+        }
+      }
+    },
+    "Total" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesamt"
+          }
+        }
+      }
+    },
+    "Triplet grid, swing and half-time shuffle" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Triolenraster, Swing und Half-Time Shuffle"
+          }
+        }
+      }
+    },
+    "Triplets" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Triolen"
+          }
+        }
+      }
+    },
+    "Two accents in a row, then rest the volume" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwei Akzente hintereinander, dann wieder leise"
+          }
+        }
+      }
+    },
+    "Two ghosts on either side of each backbeat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je zwei Ghosts vor und nach jedem Backbeat"
+          }
+        }
+      }
+    },
+    "Two kicks after the hands, smooth and even" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwei Kicks nach den Händen, rund und gleichmäßig"
+          }
+        }
+      }
+    },
+    "Two kicks in a row, then straight back to the hands" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwei Kicks hintereinander, dann direkt zurück zu den Händen"
+          }
+        }
+      }
+    },
+    "Two sixteenth kicks on 1 and on 3" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwei 16tel-Kicks auf der 1 und auf der 3"
+          }
+        }
+      }
+    },
+    "Undo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurück"
+          }
+        }
+      }
+    },
+    "Undo delete" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löschen widerrufen"
+          }
+        }
+      }
+    },
+    "Undo shuffle" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zufallsmuster widerrufen"
+          }
+        }
+      }
+    },
+    "Used for the grooves and exercises in Learn." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für die Grooves und Übungen unter Lernen."
+          }
+        }
+      }
+    },
+    "Very high, poppy" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sehr hoch, poppig"
+          }
+        }
+      }
+    },
+    "Volume" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lautstärke"
+          }
+        }
+      }
+    },
+    "Warm classic funk snare" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warme klassische Funk-Snare"
+          }
+        }
+      }
+    },
+    "Wash" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wash"
+          }
+        }
+      }
+    },
+    "Week" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Woche"
+          }
+        }
+      }
+    },
+    "Week %lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KW %lld"
+          }
+        }
+      }
+    },
+    "Woodblock" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Woodblock"
+          }
+        }
+      }
+    },
+    "Wooden block, the classic metronome knock" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Holzblock, das klassische Metronom-Klopfen"
+          }
+        }
+      }
+    },
+    "Yesterday" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestern"
+          }
+        }
+      }
+    },
+    "Your practice shows up here once you have played for 30 seconds. Short pauses of up to 3 minutes stay in the same session. Stored on this device only." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Übungszeit erscheint hier, sobald du 30 Sekunden gespielt hast. Pausen bis 3 Minuten zählen zur selben Session. Nur auf diesem Gerät gespeichert."
+          }
+        }
+      }
+    },
+    "Your sound" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Sound"
+          }
+        }
+      }
+    },
+    "Your sounds" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Sounds"
           }
         }
       }

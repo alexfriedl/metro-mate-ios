@@ -123,7 +123,7 @@ struct NoteValueButton: View {
 }
 
 struct PresetButton: View {
-    let title: String
+    let title: LocalizedStringResource
     let bpm: Int
     let noteValue: NoteValue
     @ObservedObject var metronome: MetronomeManager
@@ -143,7 +143,7 @@ struct PresetButton: View {
             }
         }) {
             VStack(spacing: 6) {
-                Text(title.uppercased())
+                Text(String(localized: title).uppercased())
                     .font(.system(size: 11, weight: .bold))
                     .foregroundColor(Color.textPrimary)
                 
