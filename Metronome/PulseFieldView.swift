@@ -56,10 +56,10 @@ final class DeviceTilt {
                 self.baseY = rawY
             }
             // The resting position follows slowly, so a new grip re-centres after a few seconds
-            self.baseX! += (rawX - self.baseX!) * 0.006
-            self.baseY += (rawY - self.baseY) * 0.006
-            let targetX = max(-1, min(1, (rawX - self.baseX!) * 2.5))
-            let targetY = max(-1, min(1, (rawY - self.baseY) * 2.5))
+            self.baseX! += (rawX - self.baseX!) * 0.0011
+            self.baseY += (rawY - self.baseY) * 0.0011
+            let targetX = max(-1, min(1, (rawX - self.baseX!) * 3.5))
+            let targetY = max(-1, min(1, (rawY - self.baseY) * 3.5))
             self.x += (targetX - self.x) * 0.2
             self.y += (targetY - self.y) * 0.2
         }
@@ -208,9 +208,9 @@ struct WaveMesh {
         let focal = size.width * 0.95
         // Tilting the phone moves the camera: sideways shifts it, forward and back raise or lower it
         let tilt = DeviceTilt.shared
-        let cameraX = tilt.x * 1.4
-        let cameraHeight = max(0.7, Self.cameraHeight - tilt.y * 0.5)
-        let horizon = size.height * (0.30 + tilt.y * 0.05)
+        let cameraX = tilt.x * 2.6
+        let cameraHeight = max(0.6, Self.cameraHeight - tilt.y * 0.8)
+        let horizon = size.height * (0.30 + tilt.y * 0.08)
         let centerX = size.width / 2
         let fraction = flowRows - floor(flowRows)
         let columns = Self.columns
