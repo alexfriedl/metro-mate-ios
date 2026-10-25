@@ -31,8 +31,12 @@ enum PulseClock {
 }
 
 // How the phone is held, used to move the camera over the wave field like looking through a window
-final class DeviceTilt {
+final class DeviceTilt: ObservableObject {
     static let shared = DeviceTilt()
+
+    // True while the phone is being moved, wakes the field up even when nothing plays
+    @Published private(set) var isMoving = false
+    private var lastMove: TimeInterval = 0
 
     // Smoothed offset from the resting position, roughly -1...1 on each axis
     private(set) var x: Double = 0
@@ -41,11 +45,11 @@ final class DeviceTilt {
     private let motion = CMMotionManager()
     private var baseX: Double?
     private var baseY: Double = 0
-    private var users = 0
+    private var running = false
 
     func start() {
-        users += 1
-        guard users == 1, motion.isDeviceMotionAvailable, !UIAccessibility.isReduceMotionEnabled else { return }
+        guard !running, motion.isDeviceMotionAvailable, !UIAccessibility.isReduceMotionEnabled else { return }
+        running = true
         motion.deviceMotionUpdateInterval = 1.0 / 60.0
         motion.startDeviceMotionUpdates(to: .main) { [weak self] data, _ in
             guard let self, let gravity = data?.gravity else { return }
@@ -60,18 +64,27 @@ final class DeviceTilt {
             self.baseY += (rawY - self.baseY) * 0.0011
             let targetX = max(-1, min(1, (rawX - self.baseX!) * 3.5))
             let targetY = max(-1, min(1, (rawY - self.baseY) * 3.5))
+            let previousX = self.x, previousY = self.y
             self.x += (targetX - self.x) * 0.2
             self.y += (targetY - self.y) * 0.2
+            let now = ProcessInfo.processInfo.systemUptime
+            if abs(self.x - previousX) + abs(self.y - previousY) > 0.0015 {
+                self.lastMove = now
+                if !self.isMoving { self.isMoving = true }
+            } else if self.isMoving && now - self.lastMove > 0.6 {
+                self.isMoving = false
+            }
         }
     }
 
     func stop() {
-        users = max(0, users - 1)
-        guard users == 0 else { return }
+        guard running else { return }
+        running = false
         motion.stopDeviceMotionUpdates()
         baseX = nil
         x = 0
         y = 0
+        isMoving = false
     }
 }
 
@@ -90,10 +103,14 @@ struct PulseFieldView: View {
     @State private var lingering = false
     @State private var lingerTask: Task<Void, Never>?
     @State private var flow = FlowMemory()
+    @ObservedObject private var tilt = DeviceTilt.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         // Paused whenever nothing moves, so an idle screen costs no frames at all
-        TimelineView(.animation(minimumInterval: nil, paused: !(isPlaying || lingering))) { context in
+        // Also wakes up while the phone is tilted, at a lower frame rate when nothing plays
+        TimelineView(.animation(minimumInterval: isPlaying || lingering ? nil : 1.0 / 30.0,
+                                paused: !(isPlaying || lingering || tilt.isMoving))) { context in
             let time = PulseClock.now(for: context.date)
             Canvas { canvas, size in
                 WaveMesh(timeline: timeline, time: time, flow: flow).draw(in: &canvas, size: size)
@@ -105,11 +122,12 @@ struct PulseFieldView: View {
         .onChange(of: isPlaying) { playing in
             if !playing { linger() }
         }
-        // The motion sensor only runs while the field animates
-        .onChange(of: isPlaying || lingering) { running in
-            running ? DeviceTilt.shared.start() : DeviceTilt.shared.stop()
+        // The motion sensor runs while the app is in front, so tilting moves the field at any time
+        .onAppear { DeviceTilt.shared.start() }
+        .onDisappear { DeviceTilt.shared.stop() }
+        .onChange(of: scenePhase) { phase in
+            phase == .active ? DeviceTilt.shared.start() : DeviceTilt.shared.stop()
         }
-        .onDisappear { if isPlaying || lingering { DeviceTilt.shared.stop() } }
         .onChange(of: tapCount) { count in
             if count > 0 { linger() }
         }
