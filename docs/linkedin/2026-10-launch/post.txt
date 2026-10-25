@@ -1,24 +1,24 @@
-Ein Metronom, das nichts verkaufen will.
+Mein Metronom hat mein Handy heiß gemacht.
 
-Metro Mate ist mein kleines Nebenprojekt: ein kostenloses Metronom für Drummer. Seit diesem Wochenende ist Version 2.1 im App Store, auf Deutsch und Englisch.
+Metro Mate ist mein kleines Nebenprojekt. Ein kostenloses Metronom für Drummer, ohne Werbung, ohne Abo, ohne Account. Gibt es schon länger im App Store, nur war die alte Version halt zäh. Der Puls im Hintergrund hat gelaggt und das Handy wurde beim Üben richtig warm.
 
-Warum noch ein Metronom? Wer im App Store nach Metronom sucht, findet vor allem Werbung zwischen den Übungen oder Abos für einen Klick, den es seit 1815 gibt. Ich wollte etwas, das sofort startet, sauber im Takt bleibt und beim Üben nicht stört. Also habe ich es gebaut, als Open Source, damit jeder nachsehen kann, dass nichts getrackt wird.
+Also nochmal ran. Seit diesem Wochenende ist Version 2.1 draußen, auf Deutsch und Englisch.
 
-Was in 2.1 drin ist:
+Was neu ist:
 
-1. Ein Klick, den man sieht: Punkte-Netz im Tempo.
-2. 70 Grooves und Übungen zum Anhören.
-3. Loops für die schwierige Stelle im Takt.
-4. Eigenes Drum-Kit, auch mit eigenen Sounds.
-5. Übungsverlauf nach Woche und Monat.
+1. Klick sample-genau, kein Laggen mehr.
+2. Punkte-Netz, das im Takt mitspringt.
+3. 70 Grooves und Übungen zum Anhören.
+4. Loops für die Stelle, an der man hängt.
+5. Eigenes Drum-Kit, auch mit eigenen Sounds.
+6. Übungsverlauf nach Woche und Monat.
 
-Die Sounds sind echte Aufnahmen unter CC0, die Grooves habe ich selbst geschrieben. Ehrlich gesagt ist noch nicht alles fertig: Auf dem iPad sieht manches noch nicht so aus, wie ich es will. Das kommt mit den nächsten Updates.
+Am längsten gebraucht haben ehrlich gesagt die Sounds. Die ersten Versuche waren schrecklich. Jetzt sind es echte Aufnahmen unter CC0. Auf dem iPad passt auch noch nicht alles, kommt mit den nächsten Updates.
 
-Wer Schlagzeug spielt oder unterrichtet, probiert es gern aus. Kostenlos, ohne Account, ohne Werbung:
+Ist Open Source, wer reinschauen will gerne. Wer Schlagzeug spielt oder unterrichtet, probiert es aus:
 
 https://apps.apple.com/app/id6747667519
 
-Der Code liegt hier:
 https://github.com/alexfriedl/metro-mate-ios
 
 Fragen, Ideen oder Kritik gerne direkt an mich.
