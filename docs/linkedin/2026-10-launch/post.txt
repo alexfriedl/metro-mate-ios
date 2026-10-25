@@ -1,0 +1,29 @@
+Ein Metronom, das nichts verkaufen will.
+
+Metro Mate ist mein kleines Nebenprojekt: ein kostenloses Metronom für Drummer. Seit diesem Wochenende ist Version 2.1 im App Store, auf Deutsch und Englisch.
+
+Warum noch ein Metronom? Wer im App Store nach Metronom sucht, findet vor allem Werbung zwischen den Übungen oder Abos für einen Klick, den es seit 1815 gibt. Ich wollte etwas, das sofort startet, sauber im Takt bleibt und beim Üben nicht stört. Also habe ich es gebaut, als Open Source, damit jeder nachsehen kann, dass nichts getrackt wird.
+
+Was in 2.1 drin ist:
+
+1. Ein Klick, den man sieht: Punkte-Netz im Tempo.
+2. 70 Grooves und Übungen zum Anhören.
+3. Loops für die schwierige Stelle im Takt.
+4. Eigenes Drum-Kit, auch mit eigenen Sounds.
+5. Übungsverlauf nach Woche und Monat.
+
+Die Sounds sind echte Aufnahmen unter CC0, die Grooves habe ich selbst geschrieben. Ehrlich gesagt ist noch nicht alles fertig: Auf dem iPad sieht manches noch nicht so aus, wie ich es will. Das kommt mit den nächsten Updates.
+
+Wer Schlagzeug spielt oder unterrichtet, probiert es gern aus. Kostenlos, ohne Account, ohne Werbung:
+
+https://apps.apple.com/app/id6747667519
+
+Der Code liegt hier:
+https://github.com/alexfriedl/metro-mate-ios
+
+Fragen, Ideen oder Kritik gerne direkt an mich.
+
+VG,
+Alex
+
+#Schlagzeug #Drums #Metronom #OpenSource #iOS #SwiftUI #Musik #Drummer
