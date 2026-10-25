@@ -1,29 +1,28 @@
-Mein Metronom hat mein Handy heiß gemacht.
+Beim Üben spielt man den Groove meistens wieder von vorn.
 
-Metro Mate ist mein kleines Nebenprojekt. Ein kostenloses Metronom für Drummer, ohne Werbung, ohne Abo, ohne Account. Gibt es schon länger im App Store, nur war die alte Version halt zäh. Der Puls im Hintergrund hat gelaggt und das Handy wurde beim Üben richtig warm.
+Vier Takte durch, an der gleichen Stelle raus, nochmal von vorn. Die eine Stelle, an der es hakt, kommt dabei nur einmal pro Durchgang dran.
 
-Also nochmal ran. Seit diesem Wochenende ist Version 2.1 draußen, auf Deutsch und Englisch.
+Dazu gibt es eine schöne Studie von der University of Texas. 17 Klavierstudierende sollten eine schwere Passage aus einem Schostakowitsch-Konzert üben. Am nächsten Tag wurde vorgespielt.
 
-Was neu ist:
+Wie lange jemand geübt hat, war egal. Wie oft jemand die Passage durchgespielt hat, auch.
 
-1. Klick sample-genau, kein Laggen mehr.
-2. Punkte-Netz, das im Takt mitspringt.
-3. 70 Grooves und Übungen zum Anhören.
-4. Loops für die Stelle, an der man hängt.
-5. Eigenes Drum-Kit, auch mit eigenen Sounds.
-6. Übungsverlauf nach Woche und Monat.
+Gut gespielt haben die, die sich die schwere Stelle rausgepickt, langsamer gemacht und so lange wiederholt haben, bis sie sauber war.
 
-Am längsten gebraucht haben ehrlich gesagt die Sounds. Die ersten Versuche waren schrecklich. Jetzt sind es echte Aufnahmen unter CC0. Auf dem iPad passt auch noch nicht alles, kommt mit den nächsten Updates.
+Fürs Schlagzeug heißt das: Nicht den ganzen Groove 30 Mal spielen. Die zwei Zählzeiten nehmen, an denen es hängt. Tempo runter, bis es fünf Mal sauber kommt. Dann ein paar BPM hoch.
 
-Ist Open Source, wer reinschauen will gerne. Wer Schlagzeug spielt oder unterrichtet, probiert es aus:
+Geht mit jedem Metronom.
 
-https://apps.apple.com/app/id6747667519
+Ich hab mir dafür Metro Mate gebaut, ein kostenloses Metronom für Drummer. Da markiert man im Groove genau die Stelle und loopt sie. Das Tempo merkt sich die App pro Groove und im Verlauf sieht man, wie es über die Wochen hochgeht. 70 Grooves sind schon drin, von Funky Drummer bis Paradiddle.
 
-https://github.com/alexfriedl/metro-mate-ios
+Kostenlos, ohne Werbung, ohne Account: https://apps.apple.com/app/id6747667519
+
+Der Code liegt offen auf GitHub: https://github.com/alexfriedl/metro-mate-ios
 
 Fragen, Ideen oder Kritik gerne direkt an mich.
 
 VG,
 Alex
 
-#Schlagzeug #Drums #Metronom #OpenSource #iOS #SwiftUI #Musik #Drummer
+Quelle: Duke, Simmons, Cash (2009). It's not how much; it's how. Journal of Research in Music Education 56(4), S. 310 bis 321.
+
+#Schlagzeug #Drums #Üben #Musik #Metronom #Musikpädagogik #OpenSource #Drummer
