@@ -30,22 +30,39 @@ enum PulseClock {
     }
 }
 
-// How the phone is held: the field behaves like a place behind the screen, its horizon stays level with the real world
+// How the phone moves: turning it stirs a current through the dots like a hand through water,
+// the forward tilt moves the horizon
 final class DeviceTilt: ObservableObject {
     static let shared = DeviceTilt()
 
-    // True while the phone is being moved, wakes the field up even when nothing plays
+    // True while the phone moves or the water still settles, wakes the field up even when nothing plays
     @Published private(set) var isMoving = false
 
-    // Sideways lean in radians, 0 when the phone is held upright
-    private(set) var roll: Double = 0
-    // Forward and back tilt relative to how the phone is usually held
+    // Forward and back tilt relative to how the phone is usually held, in radians
     private(set) var pitch: Double = 0
 
     private let motion = CMMotionManager()
     private var basePitch: Double?
-    private var lastMove: TimeInterval = 0
+    private var lastRoll: Double?
+    private var lastPitch: Double?
     private var running = false
+
+    // Current as a damped spring per axis, pushed by how fast the phone turns
+    private var current = (x: 0.0, y: 0.0)
+    private var velocity = (x: 0.0, y: 0.0)
+    // The last second of the current, so each dot can follow it a little later
+    private var history = [(x: Double, y: Double)](repeating: (0, 0), count: 64)
+    private var head = 0
+    private var calmSince: TimeInterval = 0
+
+    // Current as it was `delay` seconds ago
+    func flow(delay: Double) -> (x: Double, y: Double) {
+        let steps = min(history.count - 1, max(0, Int(delay * 60)))
+        return history[(head - steps + history.count) % history.count]
+    }
+
+    // How much is going on right now, used for the gentle swirl
+    var energy: Double { min(1, abs(current.x) + abs(current.y) + (abs(velocity.x) + abs(velocity.y)) * 0.1) }
 
     func start() {
         guard !running, motion.isDeviceMotionAvailable, !UIAccessibility.isReduceMotionEnabled else { return }
@@ -53,21 +70,36 @@ final class DeviceTilt: ObservableObject {
         motion.deviceMotionUpdateInterval = 1.0 / 60.0
         motion.startDeviceMotionUpdates(to: .main) { [weak self] data, _ in
             guard let self, let gravity = data?.gravity else { return }
-            let rawRoll = atan2(gravity.x, -gravity.y)
-            let rawPitch = asin(max(-1, min(1, gravity.z)))
-            if self.basePitch == nil { self.basePitch = rawPitch }
-            // Only the forward tilt adapts to the grip, very slowly; the sideways lean stays absolute
-            self.basePitch! += (rawPitch - self.basePitch!) * 0.0008
-            let previousRoll = self.roll, previousPitch = self.pitch
-            self.roll += (rawRoll - self.roll) * 0.35
-            self.pitch += ((rawPitch - self.basePitch!) - self.pitch) * 0.35
-            let now = ProcessInfo.processInfo.systemUptime
-            if abs(self.roll - previousRoll) + abs(self.pitch - previousPitch) > 0.002 {
-                self.lastMove = now
-                if !self.isMoving { self.isMoving = true }
-            } else if self.isMoving && now - self.lastMove > 0.6 {
-                self.isMoving = false
-            }
+            self.step(roll: atan2(gravity.x, -gravity.y), pitch: asin(max(-1, min(1, gravity.z))))
+        }
+    }
+
+    private func step(roll: Double, pitch rawPitch: Double) {
+        let dt = 1.0 / 60.0
+        if basePitch == nil { basePitch = rawPitch }
+        basePitch! += (rawPitch - basePitch!) * 0.0008
+        pitch += ((rawPitch - basePitch!) - pitch) * 0.25
+
+        // Turning speed pushes the water, a soft spring pulls it back and lets it sway out
+        let turnX = (roll - (lastRoll ?? roll)) / dt
+        let turnY = (rawPitch - (lastPitch ?? rawPitch)) / dt
+        lastRoll = roll
+        lastPitch = rawPitch
+        let push = 9.0, stiffness = 9.0, damping = 3.2
+        velocity.x += (turnX * push - stiffness * current.x - damping * velocity.x) * dt
+        velocity.y += (turnY * push - stiffness * current.y - damping * velocity.y) * dt
+        current.x = max(-1.5, min(1.5, current.x + velocity.x * dt))
+        current.y = max(-1.5, min(1.5, current.y + velocity.y * dt))
+        head = (head + 1) % history.count
+        history[head] = current
+
+        let now = ProcessInfo.processInfo.systemUptime
+        let active = energy > 0.01 || abs(turnX) + abs(turnY) > 0.05
+        if active {
+            calmSince = now
+            if !isMoving { isMoving = true }
+        } else if isMoving && now - calmSince > 0.8 {
+            isMoving = false
         }
     }
 
@@ -76,8 +108,12 @@ final class DeviceTilt: ObservableObject {
         running = false
         motion.stopDeviceMotionUpdates()
         basePitch = nil
-        roll = 0
+        lastRoll = nil
+        lastPitch = nil
         pitch = 0
+        current = (0, 0)
+        velocity = (0, 0)
+        history = history.map { _ in (0, 0) }
         isMoving = false
     }
 }
@@ -218,15 +254,11 @@ struct WaveMesh {
 
     func draw(in canvas: inout GraphicsContext, size: CGSize) {
         let focal = size.width * 0.95
-        // The horizon counter-rotates against the lean, damped, and moves with the forward tilt
+        // Top of the phone toward you moves the field further down, like looking down into it
         let tilt = DeviceTilt.shared
-        let counterRotation = max(-0.4, min(0.4, -tilt.roll * 0.55))
-        let horizon = size.height * (0.30 + max(-0.12, min(0.12, tilt.pitch * 0.35)))
-        let cameraX = tilt.roll * 0.35
+        let horizon = size.height * (0.30 + max(-0.08, min(0.22, -tilt.pitch * 0.6)))
+        let swirl = tilt.energy
         let cameraHeight = Self.cameraHeight
-        canvas.translateBy(x: size.width / 2, y: size.height * 0.45)
-        canvas.rotate(by: .radians(counterRotation))
-        canvas.translateBy(x: -size.width / 2, y: -size.height * 0.45)
         let centerX = size.width / 2
         let fraction = flowRows - floor(flowRows)
         let columns = Self.columns
@@ -248,9 +280,13 @@ struct WaveMesh {
                 let index = row * columns + column
                 guard z > 0.25 else { continue }
                 let sample = height(x: x, z: z, worldZ: worldZ)
+                // Each dot follows the current a little later the further away it is, so it travels like a wave
+                let current = tilt.flow(delay: 0.03 + z * 0.045 + abs(x) * 0.02)
+                let depthScale = min(1.6, 1.2 / z)
+                let eddy = swirl * sin(x * 1.7 + worldZ * 1.3 + time * 2.4)
                 let screen = CGPoint(
-                    x: centerX + (x - cameraX) / z * focal,
-                    y: horizon + (cameraHeight - sample.height) / z * focal
+                    x: centerX + x / z * focal + CGFloat((current.x * 26 + eddy * 3) * depthScale),
+                    y: horizon + (cameraHeight - sample.height) / z * focal + CGFloat((current.y * 18 + eddy * 2) * depthScale)
                 )
                 points[index] = screen
                 alphas[index] = fog * entry * min(1, (0.5 + 0.8 * sample.crest) * (1 + 0.9 * bounce))
