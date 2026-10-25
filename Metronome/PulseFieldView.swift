@@ -30,21 +30,21 @@ enum PulseClock {
     }
 }
 
-// How the phone is held, used to move the camera over the wave field like looking through a window
+// How the phone is held: the field behaves like a place behind the screen, its horizon stays level with the real world
 final class DeviceTilt: ObservableObject {
     static let shared = DeviceTilt()
 
     // True while the phone is being moved, wakes the field up even when nothing plays
     @Published private(set) var isMoving = false
-    private var lastMove: TimeInterval = 0
 
-    // Smoothed offset from the resting position, roughly -1...1 on each axis
-    private(set) var x: Double = 0
-    private(set) var y: Double = 0
+    // Sideways lean in radians, 0 when the phone is held upright
+    private(set) var roll: Double = 0
+    // Forward and back tilt relative to how the phone is usually held
+    private(set) var pitch: Double = 0
 
     private let motion = CMMotionManager()
-    private var baseX: Double?
-    private var baseY: Double = 0
+    private var basePitch: Double?
+    private var lastMove: TimeInterval = 0
     private var running = false
 
     func start() {
@@ -53,22 +53,16 @@ final class DeviceTilt: ObservableObject {
         motion.deviceMotionUpdateInterval = 1.0 / 60.0
         motion.startDeviceMotionUpdates(to: .main) { [weak self] data, _ in
             guard let self, let gravity = data?.gravity else { return }
-            let rawX = gravity.x
-            let rawY = gravity.y
-            if self.baseX == nil {
-                self.baseX = rawX
-                self.baseY = rawY
-            }
-            // The resting position follows slowly, so a new grip re-centres after a few seconds
-            self.baseX! += (rawX - self.baseX!) * 0.0011
-            self.baseY += (rawY - self.baseY) * 0.0011
-            let targetX = max(-1, min(1, (rawX - self.baseX!) * 3.5))
-            let targetY = max(-1, min(1, (rawY - self.baseY) * 3.5))
-            let previousX = self.x, previousY = self.y
-            self.x += (targetX - self.x) * 0.2
-            self.y += (targetY - self.y) * 0.2
+            let rawRoll = atan2(gravity.x, -gravity.y)
+            let rawPitch = asin(max(-1, min(1, gravity.z)))
+            if self.basePitch == nil { self.basePitch = rawPitch }
+            // Only the forward tilt adapts to the grip, very slowly; the sideways lean stays absolute
+            self.basePitch! += (rawPitch - self.basePitch!) * 0.0008
+            let previousRoll = self.roll, previousPitch = self.pitch
+            self.roll += (rawRoll - self.roll) * 0.35
+            self.pitch += ((rawPitch - self.basePitch!) - self.pitch) * 0.35
             let now = ProcessInfo.processInfo.systemUptime
-            if abs(self.x - previousX) + abs(self.y - previousY) > 0.0015 {
+            if abs(self.roll - previousRoll) + abs(self.pitch - previousPitch) > 0.002 {
                 self.lastMove = now
                 if !self.isMoving { self.isMoving = true }
             } else if self.isMoving && now - self.lastMove > 0.6 {
@@ -81,9 +75,9 @@ final class DeviceTilt: ObservableObject {
         guard running else { return }
         running = false
         motion.stopDeviceMotionUpdates()
-        baseX = nil
-        x = 0
-        y = 0
+        basePitch = nil
+        roll = 0
+        pitch = 0
         isMoving = false
     }
 }
@@ -224,11 +218,15 @@ struct WaveMesh {
 
     func draw(in canvas: inout GraphicsContext, size: CGSize) {
         let focal = size.width * 0.95
-        // Tilting the phone moves the camera: sideways shifts it, forward and back raise or lower it
+        // The horizon counter-rotates against the lean, damped, and moves with the forward tilt
         let tilt = DeviceTilt.shared
-        let cameraX = tilt.x * 2.6
-        let cameraHeight = max(0.6, Self.cameraHeight - tilt.y * 0.8)
-        let horizon = size.height * (0.30 + tilt.y * 0.08)
+        let counterRotation = max(-0.4, min(0.4, -tilt.roll * 0.55))
+        let horizon = size.height * (0.30 + max(-0.12, min(0.12, tilt.pitch * 0.35)))
+        let cameraX = tilt.roll * 0.35
+        let cameraHeight = Self.cameraHeight
+        canvas.translateBy(x: size.width / 2, y: size.height * 0.45)
+        canvas.rotate(by: .radians(counterRotation))
+        canvas.translateBy(x: -size.width / 2, y: -size.height * 0.45)
         let centerX = size.width / 2
         let fraction = flowRows - floor(flowRows)
         let columns = Self.columns
@@ -261,7 +259,7 @@ struct WaveMesh {
             }
         }
 
-        let bounds = CGRect(origin: .zero, size: size).insetBy(dx: -20, dy: -20)
+        let bounds = CGRect(origin: .zero, size: size).insetBy(dx: -size.width * 0.35, dy: -size.height * 0.15)
         let levels = Self.alphaLevels
         var lightLines = [Path](repeating: Path(), count: levels)
         var accentLines = [Path](repeating: Path(), count: levels)
