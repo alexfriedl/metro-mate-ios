@@ -30,75 +30,56 @@ enum PulseClock {
     }
 }
 
-// How the phone moves: turning it stirs a current through the dots like a hand through water,
-// the forward tilt moves the horizon
+// Light depth like the iOS wallpaper: steering, panning and tilting the phone shift the field a few points
+// against the movement, near dots more than far ones; holding still lets it glide back to the middle
 final class DeviceTilt: ObservableObject {
     static let shared = DeviceTilt()
 
-    // True while the phone moves or the water still settles, wakes the field up even when nothing plays
+    // True while the phone moves or the field still glides, wakes the field up even when nothing plays
     @Published private(set) var isMoving = false
 
-    // Forward and back tilt relative to how the phone is usually held, in radians
-    private(set) var pitch: Double = 0
+    // Smoothed offset in radians: x from steering and panning, y from tilting forward and back
+    private(set) var x: Double = 0
+    private(set) var y: Double = 0
 
     private let motion = CMMotionManager()
-    private var basePitch: Double?
-    private var lastRoll: Double?
-    private var lastPitch: Double?
-    private var running = false
-
-    // Current as a damped spring per axis, pushed by how fast the phone turns
-    private var current = (x: 0.0, y: 0.0)
-    private var velocity = (x: 0.0, y: 0.0)
-    // The last second of the current, so each dot can follow it a little later
-    private var history = [(x: Double, y: Double)](repeating: (0, 0), count: 64)
-    private var head = 0
+    private var reference: CMAttitude?
+    private var base = (x: 0.0, y: 0.0)
     private var calmSince: TimeInterval = 0
-
-    // Current as it was `delay` seconds ago
-    func flow(delay: Double) -> (x: Double, y: Double) {
-        let steps = min(history.count - 1, max(0, Int(delay * 60)))
-        return history[(head - steps + history.count) % history.count]
-    }
-
-    // How much is going on right now, used for the gentle swirl
-    var energy: Double { min(1, abs(current.x) + abs(current.y) + (abs(velocity.x) + abs(velocity.y)) * 0.1) }
+    private var running = false
 
     func start() {
         guard !running, motion.isDeviceMotionAvailable, !UIAccessibility.isReduceMotionEnabled else { return }
         running = true
         motion.deviceMotionUpdateInterval = 1.0 / 60.0
-        motion.startDeviceMotionUpdates(to: .main) { [weak self] data, _ in
-            guard let self, let gravity = data?.gravity else { return }
-            self.step(roll: atan2(gravity.x, -gravity.y), pitch: asin(max(-1, min(1, gravity.z))))
+        motion.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: .main) { [weak self] data, _ in
+            guard let self, let attitude = data?.attitude else { return }
+            self.step(attitude)
         }
     }
 
-    private func step(roll: Double, pitch rawPitch: Double) {
-        let dt = 1.0 / 60.0
-        if basePitch == nil { basePitch = rawPitch }
-        basePitch! += (rawPitch - basePitch!) * 0.0008
-        pitch += ((rawPitch - basePitch!) - pitch) * 0.25
-
-        // Turning speed pushes the water, a soft spring pulls it back and lets it sway out
-        let turnX = (roll - (lastRoll ?? roll)) / dt
-        let turnY = (rawPitch - (lastPitch ?? rawPitch)) / dt
-        lastRoll = roll
-        lastPitch = rawPitch
-        let push = 9.0, stiffness = 9.0, damping = 3.2
-        velocity.x += (turnX * push - stiffness * current.x - damping * velocity.x) * dt
-        velocity.y += (turnY * push - stiffness * current.y - damping * velocity.y) * dt
-        current.x = max(-1.5, min(1.5, current.x + velocity.x * dt))
-        current.y = max(-1.5, min(1.5, current.y + velocity.y * dt))
-        head = (head + 1) % history.count
-        history[head] = current
+    private func step(_ attitude: CMAttitude) {
+        guard let reference else {
+            reference = attitude.copy() as? CMAttitude
+            return
+        }
+        let relative = attitude.copy() as! CMAttitude
+        relative.multiply(byInverseOf: reference)
+        // Gyro based, so panning around the vertical axis counts as much as steering
+        let rawX = max(-0.6, min(0.6, relative.yaw + relative.roll))
+        let rawY = max(-0.6, min(0.6, relative.pitch))
+        // The resting position follows within a few seconds, like the wallpaper settling back
+        base.x += (rawX - base.x) * 0.005
+        base.y += (rawY - base.y) * 0.005
+        let previousX = x, previousY = y
+        x += ((rawX - base.x) - x) * 0.15
+        y += ((rawY - base.y) - y) * 0.15
 
         let now = ProcessInfo.processInfo.systemUptime
-        let active = energy > 0.01 || abs(turnX) + abs(turnY) > 0.05
-        if active {
+        if abs(x - previousX) + abs(y - previousY) > 0.0008 || abs(x) + abs(y) > 0.01 {
             calmSince = now
             if !isMoving { isMoving = true }
-        } else if isMoving && now - calmSince > 0.8 {
+        } else if isMoving && now - calmSince > 0.6 {
             isMoving = false
         }
     }
@@ -107,13 +88,10 @@ final class DeviceTilt: ObservableObject {
         guard running else { return }
         running = false
         motion.stopDeviceMotionUpdates()
-        basePitch = nil
-        lastRoll = nil
-        lastPitch = nil
-        pitch = 0
-        current = (0, 0)
-        velocity = (0, 0)
-        history = history.map { _ in (0, 0) }
+        reference = nil
+        base = (0, 0)
+        x = 0
+        y = 0
         isMoving = false
     }
 }
@@ -254,10 +232,12 @@ struct WaveMesh {
 
     func draw(in canvas: inout GraphicsContext, size: CGSize) {
         let focal = size.width * 0.95
-        // Top of the phone toward you moves the field further down, like looking down into it
+        // A few points of parallax against the movement, top toward you moves the field down
         let tilt = DeviceTilt.shared
-        let horizon = size.height * (0.30 + max(-0.08, min(0.22, -tilt.pitch * 0.6)))
-        let swirl = tilt.energy
+        let horizon = size.height * 0.30
+        // Panning or steering left (positive roll and yaw) slides the field right, top toward you (positive pitch) moves it down
+        let shiftX = tilt.x * 40
+        let shiftY = tilt.y * 28
         let cameraHeight = Self.cameraHeight
         let centerX = size.width / 2
         let fraction = flowRows - floor(flowRows)
@@ -280,13 +260,11 @@ struct WaveMesh {
                 let index = row * columns + column
                 guard z > 0.25 else { continue }
                 let sample = height(x: x, z: z, worldZ: worldZ)
-                // Each dot follows the current a little later the further away it is, so it travels like a wave
-                let current = tilt.flow(delay: 0.03 + z * 0.045 + abs(x) * 0.02)
-                let depthScale = min(1.6, 1.2 / z)
-                let eddy = swirl * sin(x * 1.7 + worldZ * 1.3 + time * 2.4)
+                // Near dots move a little more than far ones, that is what reads as depth
+                let depth = CGFloat(0.4 + 0.6 * min(1, 1.2 / z))
                 let screen = CGPoint(
-                    x: centerX + x / z * focal + CGFloat((current.x * 26 + eddy * 3) * depthScale),
-                    y: horizon + (cameraHeight - sample.height) / z * focal + CGFloat((current.y * 18 + eddy * 2) * depthScale)
+                    x: centerX + x / z * focal + shiftX * depth,
+                    y: horizon + (cameraHeight - sample.height) / z * focal + shiftY * depth
                 )
                 points[index] = screen
                 alphas[index] = fog * entry * min(1, (0.5 + 0.8 * sample.crest) * (1 + 0.9 * bounce))
